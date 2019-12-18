@@ -24,6 +24,8 @@
 #define uol_len(s) ((s)->len)
 #define uol_dat(s) ((s)->ptr)
 
+#define min(x, y) (((x)<(y))?(x):(y))
+
 /**
  *  uol_memchr -- locate byte in uol string
  *
@@ -38,7 +40,12 @@ void *uol_memchr(const uol_str_t *s, int c, size_t n)
 	size_t  _n;
 	uint8_t *ptr;
 
-	_n  = (n < s->len) ? n : s->len; /* min(n, s->len) */
+#ifdef UOL_STR_SUPERALLOC
+	_n  = min(n, s->used);
+#else
+	_n  = min(n, s->len);
+#endif
+
 	ptr = s->ptr;
 
 	while (_n-- > 0) {
@@ -70,8 +77,8 @@ int uol_memcmp(const uol_str_t *str1, const uol_str_t *str2, size_t n)
 	register uint8_t * s2;
 	register size_t count;
 
-	count = (str1->len < str2->len) ? str1->len : str2->len;
-	count = (count < n) ? count : n ;
+	count = min(str1->len, str2->len);
+	count = min(count, n);
 
 	s1 = str1->ptr;
 	s2 = str2->ptr;

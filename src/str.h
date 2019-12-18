@@ -29,7 +29,9 @@ typedef struct uol_str_s uol_str_t;
 
 struct uol_str_s {
 	size_t len;
+#ifdef UOL_STR_SUPERALLOC
 	size_t used;
+#endif
 	uint8_t *ptr;
 };
 
