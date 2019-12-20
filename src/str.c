@@ -77,7 +77,12 @@ int uol_memcmp(const uol_str_t *str1, const uol_str_t *str2, size_t n)
 	register uint8_t * s2;
 	register size_t count;
 
+#ifdef UOL_STR_SUPERALLOC
+	count = min(str1->used, str2->used);
+#else
 	count = min(str1->len, str2->len);
+#endif
+
 	count = min(count, n);
 
 	s1 = str1->ptr;
