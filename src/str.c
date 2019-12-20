@@ -59,7 +59,7 @@ void *uol_memchr(const uol_str_t *s, int c, size_t n)
 
 
 /**
- *  uol_memcmp -- compare uol string
+ *  uol_memcmp -- compare uol str as a memory
  *
  * The uol_memcmp() function compares byte string s1 against byte string s2.
  * Both strings are assumed to be n bytes long.
@@ -85,9 +85,45 @@ int uol_memcmp(const uol_str_t *str1, const uol_str_t *str2, size_t n)
 
 	while (count-- > 0) {
 		if (*s1++ != *s2++) {
-	  		return s1[-1] - s2[-1];
+			return s1[-1] - s2[-1];
 		}
 	}
 
 	return 0;
+}
+
+
+/**
+ *  uol_strcmp -- compare uol strings as string
+ *
+ * The uol_strcmp() function lexicographically compare the null-terminated 
+ * strings s1 and s2.
+ *
+ * The uol_strcmp() function return an integer greater than, equal to, or less
+ * than 0, according as the string s1 is greater than, equal to, or less than
+ * the string s2.  The comparison is done using unsigned characters, so that
+ * `\200' is greater than `\0'.
+ */
+int uol_strcmp(const uol_str_t *str1, const uol_str_t *str2)
+{
+	const unsigned char *s1 = (const unsigned char *)str1->ptr;
+	const unsigned char *s2 = (const unsigned char *)str2->ptr;
+
+	size_t count;
+
+#ifdef UOL_STR_SUPERALLOC
+	count = min(str1->used, str2->used);
+#else
+	count = min(str1->len, str2->len);
+#endif
+
+	while (count-- > 0) {
+		if (*s1 == '\0' || *s2 == '\0') {
+			return s1[0] - s2[0];
+		}
+		if (*s1++ != *s2++) {
+			return s1[-1] - s2[-1];
+		}
+	}
+
 }

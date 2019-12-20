@@ -47,7 +47,12 @@ uol_memmove();
 uol_memset();
 uol_strcat();
 uol_strchr();
-uol_strcmp();
+
+#endif
+
+int uol_strcmp(const uol_str_t *s1, const uol_str_t *s2);
+
+#if 0
 uol_strcmpi1();
 uol_strcoll();
 uol_strcpy();
