@@ -185,3 +185,45 @@ void uol_rbtree_rotateR(uol_hash_t * tree, uol_hash_node_t * node)
 	left->right  = node;
 	node->parent = left;
 }
+
+
+/**
+ *  uol_rbtree_compare -- compare two item of the uol hash rb-tree
+ *
+ * The uol_rbtree_compare() is used to compare two item of the uol hash RB-Tree.
+ * 
+ * The uol_rbtree_compare() function return an integer greater than, equal to, 
+ * or less than 0, according as the object key1 is greater than, equal to, or 
+ * less than the object key2. 
+ */
+int uol_rbtree_compare(uol_object_t * key1, uol_object_t * key2)
+{
+
+#ifdef UOL_HASH_NUMERICKEY
+
+	if (key1->type != key2->type) {
+		return (key1->type - key2->type)
+	}
+
+	if (key1->type == UOL_STRING) {
+
+#endif /* UOL_HASH_NUMERICKEY */
+
+		return uol_strcmp((uol_str_t *)key1, (uol_str_t *)key2);
+
+#ifdef UOL_HASH_NUMERICKEY
+
+	} else { /* TODO: Add support of using int or arr */
+		return 0;
+	}
+#endif /* UOL_HASH_NUMERICKEY */
+}
+
+int main()
+{
+	uol_hash_t *hash;
+
+	hash = uol_hash_new();
+
+	return 0;
+}
