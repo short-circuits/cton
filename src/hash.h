@@ -47,6 +47,7 @@ struct uol_hash_s{
 
 uol_hash_t *uol_hash_new(void);
 int *uol_hash_insert(uol_hash_t *hash, uol_object_t *key, uol_object_t *value);
+int *uol_hash_remove(uol_hash_t *hash, uol_object_t *key);
 uol_object_t *uol_hash_search(uol_hash_t *hash, uol_object_t *key);
 
 #endif /* _UOL_HASH_H_ */
