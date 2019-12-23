@@ -22,10 +22,10 @@
 #include "obj.h"
 
 /* Functions for color in uol_hash_t */
-#define rbtree_set_red(node)   ((node)->color = 1)
-#define rbtree_set_black(node) ((node)->color = 0)
-#define rbtree_is_red(node)    ((node)->color)
-#define rbtree_is_black(node)  (!rbtree_is_red(node))
+#define uol_rbtree_set_red(node)   ((node)->color = 1)
+#define uol_rbtree_set_black(node) ((node)->color = 0)
+#define uol_rbtree_is_red(node)    ((node)->color)
+#define uol_rbtree_is_black(node)  (!uol_rbtree_is_red(node))
 
 
 /**
@@ -58,7 +58,7 @@ uol_hash_t *uol_hash_new(void)
 	hash->nil->left   = NULL;
 	hash->nil->right  = NULL;
 	hash->nil->parent = NULL;
-	rbtree_set_black(hash->nil); /* sentinel node should be black */
+	uol_rbtree_set_black(hash->nil); /* sentinel node should be black */
 
 	/* RB-Tree initialized as a empty tree */
 	hash->root = hash->nil;
