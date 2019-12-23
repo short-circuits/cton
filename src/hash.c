@@ -195,6 +195,8 @@ void uol_rbtree_rotateR(uol_hash_t * tree, uol_hash_node_t * node)
  * The uol_rbtree_compare() function return an integer greater than, equal to, 
  * or less than 0, according as the object key1 is greater than, equal to, or 
  * less than the object key2. 
+ *
+ * Problem: How will insert function deal with equal?
  */
 int uol_rbtree_compare(uol_object_t * key1, uol_object_t * key2)
 {
