@@ -20,11 +20,103 @@
  */
 
 #include "str.h"
+#include <string.h>
 
 #define uol_len(s) ((s)->len)
 #define uol_dat(s) ((s)->ptr)
 
 #define min(x, y) (((x)<(y))?(x):(y))
+
+
+/**
+ *  uol_str_new -- create new uol string objecy
+ *
+ * The uol_str_new() function creates a new uol string object. The size of new
+ * object is decided by both of str and len.
+ *
+ * When str equals to NULL and len greater than 0, the function will create a
+ * object with the size of len and will initialize it to all '\0'.
+ *
+ * If str is not NULL, the content of str will dumped into the new object. the
+ * size of the created object should equals to the len parameter passed in. If
+ * no len given (len equals to zero), the function will call strlen() and using
+ * the return value of strlen() as the length. Keep in mind that invalid pointer
+ * will cause a crash of the program (SIGSEGV).
+ *
+ * Otherwise the function won't create new object. NULL will be returned as 
+ * promissory.
+ *
+ * The uol_str_new() function returns a pointer to the object created, or NULL
+ * if any error occured.
+ */
+uol_str_t *uol_str_new(const char* str, size_t len)
+{
+	uol_str_t *obj;
+	size_t content_size;
+	size_t alloc_size;
+
+	if (len == 0 && str == NULL) {
+		/* Invalid input */
+		return NULL;
+	}
+
+	if (len > 0) {
+		content_size = len;
+	} else {
+		content_size = strlen(str) + 1; /* 1 for the ending '\0' */
+	}
+
+#ifdef UOL_STR_SUPERALLOC
+		alloc_size = content_size;
+#else
+		alloc_size = content_size + (4096 - content_size % 4096);
+#endif
+
+#ifdef UOL_STR_SINGLEALLOC
+
+	obj = malloc(sizeof(uol_str_t) + alloc_size);
+	if (obj == NULL) {
+		return NULL;
+	}
+
+	obj->ptr = &obj[1]; /* jump the first element */
+
+#else
+
+	obj = malloc(sizeof(uol_str_t));
+	if (obj == NULL) {
+		return NULL;
+	}
+
+	obj->ptr = malloc(alloc_size);
+	if (obj->ptr == NULL) {
+		free(obj);
+		return NULL;
+	}
+
+#endif
+
+	obj->len = alloc_size;
+
+	if (str == NULL) {
+		memset(obj->ptr, 0,   alloc_size);
+
+#ifdef UOL_STR_SUPERALLOC
+		obj->used = 0;
+#endif
+
+	} else {
+		memcpy(obj->ptr, str, content_size);
+
+#ifdef UOL_STR_SUPERALLOC
+		obj->used = content_size;
+#endif
+
+	}
+
+	return obj;
+}
+
 
 /**
  *  uol_memchr -- locate byte in uol string

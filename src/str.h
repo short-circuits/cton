@@ -35,6 +35,8 @@ struct uol_str_s {
 	uint8_t *ptr;
 };
 
+uol_str_t *uol_str_new(const char* str, size_t len);
+
 void *uol_memchr(const uol_str_t *s, int c, size_t n);
 int   uol_memcmp(const uol_str_t *str1, const uol_str_t *str2, size_t n);
 void *uol_memcpy(uol_str_t *restrict dst, \
