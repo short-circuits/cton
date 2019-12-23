@@ -223,4 +223,5 @@ int uol_strcmp(const uol_str_t *str1, const uol_str_t *str2)
 		}
 	}
 
+	return 0;
 }
