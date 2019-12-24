@@ -370,13 +370,3 @@ void uol_rbtree_insert(uol_hash_t * tree, uol_hash_node_t * node)
 	/* Confirm the root is black */
 	uol_rbtree_set_black(tree->root);
 }
-
-
-int main()
-{
-	uol_hash_t *hash;
-
-	hash = uol_hash_new();
-
-	return 0;
-}
