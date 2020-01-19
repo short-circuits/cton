@@ -63,6 +63,9 @@ _本节内容仅介绍所有对象通用的应用程序接口。各类对象特�
 
 `nrd_t` 非关系数据对象
 
+`NRD_NULL` 非关系数据对象 空对象类型标识
+`NRD_BOOL` 非关系数据对象 布尔对象类型标识
+
 ### 公共操作函数
 
 `nrd_t nrd_new(int type)`
@@ -72,13 +75,19 @@ _本节内容仅介绍所有对象通用的应用程序接口。各类对象特�
 
 _通过此方式创建的字符串、阵列等对象不会为其分配存储空间。如果希望创建包含存储空间的对象，请使用以下操作_
 
-> `nrd_t nrd_new_null(void)` `nrd_t nrd_new_true(void)` `nrd_t nrd_new_false(void)` `nrd_t nrd_new_int8(void)` `nrd_t nrd_new_int16(void)` `nrd_t nrd_new_int32(void)` `nrd_t nrd_new_int64(void)` `nrd_t nrd_new_float32(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_mp(void)` `nrd_t nrd_new_str(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_str(const char * str, size_t len)` `nrd_t nrd_new_bin(void)` `nrd_t nrd_new_arr(void)` `nrd_t nrd_new_hash(void)`
+> `nrd_t nrd_null_new(void)` `nrd_t nrd_new_true(void)` `nrd_t nrd_new_false(void)` `nrd_t nrd_new_int8(void)` `nrd_t nrd_new_int16(void)` `nrd_t nrd_new_int32(void)` `nrd_t nrd_new_int64(void)` `nrd_t nrd_new_float32(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_mp(void)` `nrd_t nrd_new_str(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_str(const char * str, size_t len)` `nrd_t nrd_new_bin(void)` `nrd_t nrd_new_arr(void)` `nrd_t nrd_new_hash(void)`
 
 `void nrd_del(nrd_t obj)`
 
 删除一个非关系对象。
 其传入参数应为一个合法的NRD对象。
-当传入一个非法的对象，其行为是未定义的。
+当传入一个非法的对象时，其行为是未定义的。
+
+`int nrd_type(nrd_t obj)`
+
+查询一个非关系对象的类型。
+其传入参数应为一个合法的NRD对象，并将返回这个对象的类型标识。
+当传入一个非法的对象时，其行为是未定义的。
 
 ### 私有操作函数
 
