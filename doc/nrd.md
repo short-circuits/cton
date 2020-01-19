@@ -75,7 +75,7 @@ _本节内容仅介绍所有对象通用的应用程序接口。各类对象特�
 
 _通过此方式创建的字符串、阵列等对象不会为其分配存储空间。如果希望创建包含存储空间的对象，请使用以下操作_
 
-> `nrd_t nrd_null_new(void)` `nrd_t nrd_new_true(void)` `nrd_t nrd_new_false(void)` `nrd_t nrd_new_int8(void)` `nrd_t nrd_new_int16(void)` `nrd_t nrd_new_int32(void)` `nrd_t nrd_new_int64(void)` `nrd_t nrd_new_float32(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_mp(void)` `nrd_t nrd_new_str(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_str(const char * str, size_t len)` `nrd_t nrd_new_bin(void)` `nrd_t nrd_new_arr(void)` `nrd_t nrd_new_hash(void)`
+> `nrd_t nrd_null_new(void)` `nrd_t nrd_bool_new(int val)` `nrd_t nrd_new_int8(void)` `nrd_t nrd_new_int16(void)` `nrd_t nrd_new_int32(void)` `nrd_t nrd_new_int64(void)` `nrd_t nrd_new_float32(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_mp(void)` `nrd_t nrd_new_str(void)` `nrd_t nrd_new_float64(void)` `nrd_t nrd_new_str(const char * str, size_t len)` `nrd_t nrd_new_bin(void)` `nrd_t nrd_new_arr(void)` `nrd_t nrd_new_hash(void)`
 
 `void nrd_del(nrd_t obj)`
 
