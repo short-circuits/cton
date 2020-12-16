@@ -1,3 +1,14 @@
+/*******************************************************************************
+ * "THE BEER-WARE LICENSE" (Revision 43):
+ * <yeonji@ieee.org> create this project. As long as you retain this notice you
+ * can do whatever you want with this stuff. If we meet some day, and you think
+ * this stuff is worth it, you can buy me a sweety curry rice in return (cuz
+ * I cannot drink alcoholic beverages). Yeonji Lee
+ *
+ ******************************************************************************/
+
+#ifndef _CTON_HEADER_
+#define _CTON_HEADER_ 1
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -212,3 +223,6 @@ cton_obj * cton_str_new_cstr(cton_ctx *ctx, const char *cstr);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+
+
+#endif /* _CTON_HEADER_ */
