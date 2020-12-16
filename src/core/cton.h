@@ -216,3 +216,6 @@ static void * cton_util_memset(void *b, int c, size_t len);
 cton_obj * cton_str_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_str_new_cstr(cton_ctx *ctx, const char *cstr);
+
+cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
+int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);

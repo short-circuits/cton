@@ -1,6 +1,9 @@
 SRC_DIR=src
 
-all: cton.o
+all: cton.o cton_json.o
+
+cton_json.o: cton.o test/json/json_test.c
+	cc -I./ cton.o test/json/json_test.c -o cton_json.o
 
 cton.o: cton.c cton.h
 	cc -c -fPIC -Wall -Wextra cton.c -o cton.o
