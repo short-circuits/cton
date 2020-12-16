@@ -32,5 +32,3 @@
 # Debug files
 *.dSYM/
 
-cton.c
-cton.h

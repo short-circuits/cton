@@ -164,11 +164,6 @@ cton_memhook* cton_memhook_init (void * pool,
     void      (*pfree)(void *pool, void *ptr),
     void      (*pdestroy)(void *pool));
 
-static void * cton_alloc(cton_ctx *ctx, size_t size);
-static void cton_free(cton_ctx *ctx, void *ptr);
-static void * cton_realloc(cton_ctx *ctx, void *ptr, size_t size_ori, size_t size_new);
-static void cton_pdestroy(cton_ctx *ctx);
-
 /* cton.c */
 cton_ctx *cton_init(cton_memhook *hook);
 int cton_destory(cton_ctx *ctx);
@@ -181,13 +176,15 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
 cton_obj *cton_tree_getroot(cton_ctx *ctx);
 cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
 
+int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
+cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
+
 /* cton_object.c */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
 void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
 cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
 void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
 
-static void cton_string_init(cton_ctx *ctx, cton_obj *str);
 uint8_t * cton_str_getptr(cton_ctx *ctx, cton_obj *obj);
 size_t cton_str_getlen(cton_ctx *ctx, cton_obj *obj);
 int cton_str_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
@@ -200,7 +197,6 @@ cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
 cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
 int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
 void * cton_array_getptr(cton_ctx *ctx, cton_obj *obj);
-static void cton_array_init(cton_ctx *ctx, cton_obj *obj);
 
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
@@ -210,9 +206,6 @@ uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
 double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_util.c */
-static size_t cton_util_align(size_t size, size_t align);
-static void * cton_util_memcpy(void *dst, const void *src, size_t n);
-static void * cton_util_memset(void *b, int c, size_t len);
 cton_obj * cton_str_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_str_new_cstr(cton_ctx *ctx, const char *cstr);
