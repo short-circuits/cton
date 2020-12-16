@@ -52,3 +52,48 @@ int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
 		return s1->payload.str.ptr[len_cmp];
 	}
 }
+
+cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
+{
+	cton_obj *data;
+	FILE     *fp;
+	size_t    len;
+	uint8_t  *ptr;
+
+	fp = fopen(path, "rb");
+	if (fp == NULL) {
+		return NULL;
+	}
+
+	fseek(fp, 0, SEEK_END);
+	len = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	data = cton_object_create(ctx, CTON_BINARY);
+	cton_str_setlen(ctx, data, len);
+
+	ptr = cton_str_getptr(ctx, data);
+	fread(ptr, len, 1, fp);
+	fclose(fp);
+
+	return data;
+}
+
+int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
+{
+	FILE     *fp;
+	size_t    len;
+	uint8_t  *ptr;
+
+	fp = fopen(path, "wb");
+	if (fp == NULL) {
+		return -1;
+	}
+
+	len = cton_str_getlen(ctx, obj);
+	ptr = cton_str_getptr(ctx, obj);
+	fwrite(ptr, len, 1, fp);
+	fclose(fp);
+
+	return 0;
+}
