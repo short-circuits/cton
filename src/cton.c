@@ -5,30 +5,73 @@
  * this stuff is worth it, you can buy me a sweety curry rice in return (cuz
  * I cannot drink alcoholic beverages). Yeonji Lee
  *
+ *******************************************************************************
+ * Sorry for my poor English and appreciate it if you could correct my English.
+ * 英語の悪かった申し訳ございません。修正してもらえば助かります。
+ * Простите за плохой английский.Было бы полезно если бы вы могли это исправить.
+ *******************************************************************************
+ *         LibCTON
+ *   Yet another object notation library for C language. (Toaru Object Notation)
+ *   This project aims to provide a strongly typed object manipulation library
+ * used by C language. It is expected to include unique binary and plain text
+ * storage formats, and hope to be compatible with markup languages such as
+ * JSON and YAML and binary formats such as NBT and ProtoBF, and become a
+ * unified object operation interface for C language.
+ *
  ******************************************************************************/
 
+#define _INTER_LIBCTON_
 #include <cton.h>
 
-static void * cton_alloc(cton_ctx *ctx, size_t size);
-static void cton_free(cton_ctx *ctx, void *ptr);
-static void * cton_realloc(cton_ctx *ctx, void *ptr, size_t size_ori, size_t size_new);
-static void cton_pdestroy(cton_ctx *ctx);
+static void *cton_alloc(cton_ctx *ctx, size_t size);
+static void  cton_free(cton_ctx *ctx, void *ptr);
+static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
+static void  cton_pdestroy(cton_ctx *ctx);
 
 static void cton_string_init(cton_ctx *ctx, cton_obj *str);
 static void cton_array_init(cton_ctx *ctx, cton_obj *obj);
 
-static size_t cton_util_align(size_t size, size_t align);
-static void * cton_util_memcpy(void *dst, const void *src, size_t n);
-static void * cton_util_memset(void *b, int c, size_t len);
+static size_t  cton_util_align(size_t size, size_t align);
+static void   *cton_util_memcpy(void *dst, const void *src, size_t n);
+static void   *cton_util_memset(void *b, int c, size_t len);
 
-/*
- * Init context structure.
- * Setup memory manage hook by parameter;
- * Default hook will be setup if pass the NULL value.
- * the cton_ctx structure will also allocated by memory hook.
- * This function won't initlize the root object.
+
+
+/*******************************************************************************
  *
- * *This function is not thread-safe*
+ *    CTON Common methods
+ *
+ *******************************************************************************
+ *         CTON Context
+ *******************************************************************************
+ *   CTON context is an object purposed to hold most important information for a
+ * context. The same context object does not guarantee thread safety, but you
+ * can safely manipulate different objects in different threads.
+ ******************************************************************************/
+
+
+/**
+ * cton_init()
+ *   - Create cton context object.
+ *
+ * PARAMETER
+ *   hook: the cton memory hook.
+
+ * RETURN VALUE
+ *   Handle of CTON context object created or NULL for any exception.
+ *
+ * DESCRIPTION
+ *   cton_init() creates a cton context object and initlize it by memory hook
+ * defined by parameter. If NULL pointer is passed, this function will init the
+ * default memory hook as just a proxy for malloc/free in C standard library.
+ *   In convenient, this object is also allocated from memory pool passed by
+ * parameter, so you may not need to call destroy method of cton context, call
+ * destroy method of your memory pool will destroy the cton context as well.
+ *   At least palloc handle is needed for the memory hook, if the palloc method
+ * is NULL, this function will failed and return NULL.
+ *   This method is threads safe. But the method to create memory hook is not
+ * thread-safe yet, so you may need to treating this method as not thread-safe.
+ *
  */
 cton_ctx *cton_init(cton_memhook *hook)
 {
@@ -37,6 +80,11 @@ cton_ctx *cton_init(cton_memhook *hook)
 
     if (hook == NULL) {
         hook = &cton_std_hook;
+    }
+
+    if (hook->palloc == NULL) {
+        /* palloc handle is necessary for cton_ctx */
+        return NULL;
     }
 
     ctx = hook->palloc(hook->pool, sizeof(cton_ctx));
@@ -60,41 +108,123 @@ cton_ctx *cton_init(cton_memhook *hook)
     return ctx;
 }
 
-/*
- * Destory context structure.
- * This function will check the memory hook.
- * If destroy hook is not NULL, it will call destroy hook directly.
- * If destroy hook is NULL, but free hook is not NULL, it will call free hook
- * to free all of the sub-object recurslly.
- * If both destroy and free hook is NULL, this function will do nothing.
+
+/**
+ * cton_destroy()
+ *   - Destroy a cton context object.
+ *
+ * PARAMETER
+ *   ctx: the cton context to be destroied.
+
+ * RETURN VALUE
+ *   0 for success or other value for any errors (?)
+ *
+ * DESCRIPTION
+ *   The cton_destroy() function will try to destroy a cton context object. If
+ * pdestroy is not NULL in he memory hook, it will just call this handle and
+ * destroy the whole memory pool. but if this handle is not set in the memory
+ * hook, this function will try to call pfree method for every object created
+ * from this cton context. If pfree handle is also not set, this function will
+ * return -1 and set the cton_err as INVALID_MHOOK.
+ *   
  */
 int cton_destory(cton_ctx *ctx)
 {
+    /** TODO */
     cton_pdestroy(ctx);
     return 0;
 }
 
+
+/**
+ * cton_seterr()
+ *   - Set error for cton context.
+ *
+ * PARAMETER
+ *   ctx: the cton context.
+ *   err: The error that happened.
+ *   
+ */
 void cton_seterr(cton_ctx *ctx, cton_err err)
 {
     ctx->err = err;
 }
 
-/*
- * Get last error for specific context
+
+/**
+ * cton_geterr()
+ *   - Get error for cton context.
+ *
+ * PARAMETER
+ *   ctx: the cton context that holds an error.
+ *
+ * RETURN VALUE
+ *   The error that was set by cton_seterr() in this context.
+ *
+ * NOTE
+ *   You can use `cton_geterr(ctx) == CTON_OK` in condition sentence to confirm
+ * no error has occured.
+ *   
  */
 cton_err cton_geterr(cton_ctx *ctx)
 {
     return ctx->err;
 }
 
-/*
- * Get error string for spedific error code.
+/**
+ * cton_strerr()
+ *   - look up the error message string corresponding to an error number.
+ *
+ * PARAMETER
+ *   err: the error number.
+ *
+ * RETURN VALUE
+ *   Printible error message string pointer.
+ *   
  */
-char * cton_strerr(cton_err err);
+char * cton_strerr(cton_err err); /** TODO */
 
+
+
+/*******************************************************************************
+ *         CTON Tree
+ *******************************************************************************
+ *   CTON can manage data in the form of a tree. This part is the interface used
+ * to manage data in this way.
+ ******************************************************************************/
+
+
+/**
+ * cton_tree_setroot()
+ *   - Set the root object for a cton_tree.
+ *
+ * PARAMETER
+ *   ctx: the cton context.
+
+ * RETURN VALUE
+ *   0 for success and other value for any error.
+ *
+ * DESCRIPTION
+ *   This function will make the given object to be the new root element of the
+ * cton tree. Unless wrong parameter such as null pointer or invalid object is
+ * passed to the function, this function will always success. But the function
+ * will set cton error when the root is already not NULL. This error suggests
+ * that the tree has been replaced, and maybe there are leaked object.
+ *
+ * ERRORs
+ *   CTON_ERROR_REPLACE: The root is already set, and has been replaced by the
+ *                      new passed in object.
+ *   CTON_ERROR_TYPE: The object passed by parameter is not valid type for cton
+ *                   tree or not valid cton object.
+ *
+ * TODO
+ *   Some code in this function maybe not necessary.
+ */
 int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
 {
     cton_type type;
+
+#if 1 /* Is this part necessary? */
 
     type = cton_object_gettype(ctx, obj);
 
@@ -103,6 +233,12 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
     }
 
     if (type != CTON_HASH && type != CTON_ARRAY) {
+        
+        /**     TODO
+         *  In JSON standard, not only hash and array, a number or other values
+         * also seems as a valid JSON, so maybe it is no necessary to limit the
+         * type of the root object?
+         */ 
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return -1;
     }
@@ -118,11 +254,23 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
     return 0;
 }
 
+
+/**
+ * cton_tree_getroot()
+ *   - Get the root object of the cton tree
+ */
 cton_obj *cton_tree_getroot(cton_ctx *ctx)
 {
     return ctx->root;
 }
 
+
+/**
+ * cton_tree_get_by_path()
+ *   - Search object by string.
+ *
+ * TODO
+ */
 cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
 
 /*******************************************************************************
@@ -341,6 +489,8 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
 
 	return 0;
 }
+
+
 /*******************************************************************************
  * CTON type dependent methods
  *
