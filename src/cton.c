@@ -356,7 +356,8 @@ static void cton_free(cton_ctx *ctx, void *ptr)
     ctx->memhook.pfree(ctx->memhook.pool, ptr);
 }
 
-static void * cton_realloc(cton_ctx *ctx, void *ptr, size_t size_ori, size_t size_new)
+static void * cton_realloc(cton_ctx *ctx,
+    void *ptr, size_t size_ori, size_t size_new)
 {
     void * new_ptr;
 
