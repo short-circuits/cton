@@ -814,6 +814,23 @@ void * cton_array_getptr(cton_ctx *ctx, cton_obj *arr)
     return arr->payload.arr.ptr;
 }
 
+/*
+ * cton_hash_search()
+ *
+ * DESCRIPTION
+ *   CTON用hash查找，
+ *   在一个哈希表里面寻找一个值.
+ *
+ * PARAMETER
+ *   h: 一个CTON哈希表
+ *   k: 一个CTON值
+ *
+ * RETURN
+ *   哈希表的项目（cton_hash_item）.
+ *
+ * ERRORS
+ *   找不到返回NULL.
+ */
 static cton_hash_item *cton_hash_search(cton_obj *h, cton_obj *k)
 {
 	cton_hash_item *current;
