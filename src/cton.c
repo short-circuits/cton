@@ -406,16 +406,53 @@ static size_t cton_util_align(size_t size, size_t align)
     return remain > 0 ? aligned + align : aligned ;
 }
 
+/*
+ * cton_util_memcpy()
+ *
+ * DESCRIPTION
+ *   挂名CTON的memcpy套娃，
+ *   从src开始复制n个字符到dst.
+ *
+ * PARAMETER
+ *   dst: 被粘贴的内存起始位置
+ *   src: 复制源的内存起始位置
+ *   n: 长度（字节数）
+ *
+ * RETURN
+ *   与memcpy定义一致.
+ *
+ * ERRORS
+ *   与memcpy定义一致.
+ */
 static void * cton_util_memcpy(void *dst, const void *src, size_t n)
 {
     return memcpy(dst, src, n);
 }
+
+
 
 static void * cton_util_memset(void *b, int c, size_t len)
 {
 	return memset(b, c, len);
 }
 
+/*
+ * cton_util_strcmp()
+ *
+ * DESCRIPTION
+ *   CTON用比较字符串，
+ *   先当作一般字符串进行strncmp比较，如果两个字符串相等，则比较空间大小.
+ *
+ * PARAMETER
+ *   s1: 一个CTON结构
+ *   s2: 另一个CTON结构
+ *
+ * RETURN
+ *   与strcmp定义一致（如果不等则返回非零值）.
+ *
+ * ERRORS
+ *   好像没有这种东西.
+ */
 int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
 {
 	size_t len_s1;
