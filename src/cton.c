@@ -21,6 +21,8 @@
  ******************************************************************************/
 
 #define _INTER_LIBCTON_
+
+#include <limits.h>
 #include <cton.h>
 
 static void *cton_alloc(cton_ctx *ctx, size_t size);
@@ -985,7 +987,22 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
 	return v;
 }
-#include <limits.h>
+
+
+
+/*******************************************************************************
+ * CTON type dependent methods
+ *
+ *******************************************************************************
+ *         Numeric
+ *******************************************************************************
+ *
+ *   TODO: CTON holds totally 12 types of numeric. Both of them holds the almost
+ * same API as init, get and set methods. So is it possible or is it necessary
+ * to create APIs for every type?
+ *
+ ******************************************************************************/
+
 /*******************************************************************************
  * init
  ******************************************************************************/
