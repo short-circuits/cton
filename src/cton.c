@@ -245,6 +245,8 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
         return -1;
     }
 
+#endif
+
     if (cton_tree_getroot(ctx) != NULL) {
         cton_seterr(ctx, CTON_ERROR_REPLACE);
 
