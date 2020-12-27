@@ -814,6 +814,22 @@ void * cton_array_getptr(cton_ctx *ctx, cton_obj *arr)
     return arr->payload.arr.ptr;
 }
 
+
+/*******************************************************************************
+ * CTON type dependent methods
+ *
+ *******************************************************************************
+ *         Hash
+ *******************************************************************************
+ *   Hash in cton is defined as a key-value pair structure. It allow's getting
+ * value object by key object. Only string object can stands as key object.
+ *
+ *******************************************************************************
+ *
+ *   In this part, all of the function should start with `cton_hash_`.
+ *
+ ******************************************************************************/
+
 /*
  * cton_hash_search()
  *
