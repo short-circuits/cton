@@ -1514,6 +1514,8 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
 
     return cton_class_hook[obj->type].getptr(ctx, obj);
 }
+
+
 /*******************************************************************************
  * CTON type dependent methods
  *
@@ -1521,7 +1523,7 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
  * String
  ******************************************************************************/
 
-#define cton_object_confirm_str(ctx, obj, ret) \
+#define cton_string_type_confirm(ctx, obj, ret) \
     if (cton_object_gettype(ctx, obj) != CTON_STRING && \
         cton_object_gettype(ctx, obj) != CTON_BINARY) { \
         cton_seterr(ctx, CTON_ERROR_TYPE);         \
@@ -1551,14 +1553,14 @@ static void cton_string_init(cton_ctx *ctx, cton_obj *str)
  */
 uint8_t * cton_str_getptr(cton_ctx *ctx, cton_obj *obj)
 {
-    cton_object_confirm_str(ctx, obj, NULL);
+    cton_string_type_confirm(ctx, obj, NULL);
 
     return obj->payload.str.ptr;
 }
 
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
 {
-    cton_object_confirm_str(ctx, obj, NULL);
+    cton_string_type_confirm(ctx, obj, NULL);
 
     return obj->payload.str.ptr;
 }
@@ -1578,7 +1580,7 @@ void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
  */
 size_t cton_str_getlen(cton_ctx *ctx, cton_obj *obj)
 {
-    cton_object_confirm_str(ctx, obj, 0);
+    cton_string_type_confirm(ctx, obj, 0);
 
     return obj->payload.str.used;
 }
@@ -1588,7 +1590,7 @@ int cton_str_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
     size_t aligned;
     void * new_ptr;
 
-    cton_object_confirm_str(ctx, obj, 0);
+    cton_string_type_confirm(ctx, obj, 0);
 
     if (obj->payload.str.len == 0) {
         obj->payload.str.ptr = cton_alloc(ctx, len);
