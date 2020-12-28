@@ -1450,11 +1450,11 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
         obj->prev->next = obj->next;
     }
 
-    if (ctx->nodes = obj) {
+    if (ctx->nodes == obj) {
         ctx->nodes = obj->next;
     }
 
-    if (ctx->nodes_last = obj) {
+    if (ctx->nodes_last == obj) {
         ctx->nodes_last = obj->prev;
     }
 
