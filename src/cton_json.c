@@ -344,13 +344,14 @@ cton_obj * cton_json_parse_value(cton_ctx *ctx,
 	return obj;
 }
 
-int cton_json_parse(cton_ctx *ctx, const char *json, size_t len)
+int cton_json_parse(cton_ctx *ctx, cton_obj *json)
 {
 	size_t index;
 	index = 0;
 	cton_obj *root;
 
-	root = cton_json_parse_value(ctx, json, &index, len);
+	root = cton_json_parse_value(ctx, 
+		(char *)cton_string_getptr(ctx, json), &index, cton_string_getlen(ctx, json));
 
 	cton_tree_setroot(ctx, root);
 

@@ -14,12 +14,11 @@ int main(int argc, const char **argv)
 	ctx = cton_init(NULL);
 	data = cton_util_readfile(ctx, argv[1]);
 
-	cton_json_parse(ctx, 
-		(const char*)cton_str_getptr(ctx, data), cton_str_getlen(ctx, data));
+	cton_json_parse(ctx, data);
 
 	out = cton_json_stringify(ctx);
 
-	printf("%s\n", cton_str_getptr(ctx, out));
+	printf("%s\n", cton_string_getptr(ctx, out));
 
 	return 0;
 }
