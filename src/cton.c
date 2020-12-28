@@ -504,9 +504,9 @@ cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
 	fseek(fp, 0, SEEK_SET);
 
 	data = cton_object_create(ctx, CTON_BINARY);
-	cton_str_setlen(ctx, data, len);
+	cton_string_setlen(ctx, data, len);
 
-	ptr = cton_str_getptr(ctx, data);
+	ptr = cton_string_getptr(ctx, data);
 	fread(ptr, len, 1, fp);
 	fclose(fp);
 
@@ -524,8 +524,8 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
 		return -1;
 	}
 
-	len = cton_str_getlen(ctx, obj);
-	ptr = cton_str_getptr(ctx, obj);
+	len = cton_string_getlen(ctx, obj);
+	ptr = cton_string_getptr(ctx, obj);
 	fwrite(ptr, len, 1, fp);
 	fclose(fp);
 
@@ -1300,10 +1300,10 @@ cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
         CTON_BOOL, NULL, NULL, NULL
     },{
         CTON_BINARY, cton_string_init, NULL,
-        (void *(*)(cton_ctx *, cton_obj *))cton_str_getptr
+        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
     },{
         CTON_STRING, cton_string_init, NULL,
-        (void *(*)(cton_ctx *, cton_obj *))cton_str_getptr
+        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
     },{
         CTON_ARRAY, cton_array_init, NULL, cton_array_getptr
     },{
@@ -1539,7 +1539,7 @@ static void cton_string_init(cton_ctx *ctx, cton_obj *str)
 }
 
 /*
- * cton_str_getptr()
+ * cton_string_getptr()
  *
  * DESCRIPTION
  *   Get the string pointer of an cton string object.
@@ -1551,7 +1551,7 @@ static void cton_string_init(cton_ctx *ctx, cton_obj *str)
  * RETURN
  *   The data pointer of the string object.
  */
-uint8_t * cton_str_getptr(cton_ctx *ctx, cton_obj *obj)
+uint8_t * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
 {
     cton_string_type_confirm(ctx, obj, NULL);
 
@@ -1566,7 +1566,7 @@ void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
 }
 
 /*
- * cton_str_getptr()
+ * cton_string_getptr()
  *
  * DESCRIPTION
  *   Get the string pointer of an cton string object.
@@ -1578,14 +1578,14 @@ void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The data pointer of the string object.
  */
-size_t cton_str_getlen(cton_ctx *ctx, cton_obj *obj)
+size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj)
 {
     cton_string_type_confirm(ctx, obj, 0);
 
     return obj->payload.str.used;
 }
 
-int cton_str_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
+int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
 {
     size_t aligned;
     void * new_ptr;
@@ -1614,7 +1614,7 @@ int cton_str_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
     return len;
 }
 
-cton_obj * cton_str_fromcstr(cton_ctx *ctx,
+cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote)
 {
     cton_obj *obj;
@@ -1633,9 +1633,9 @@ cton_obj * cton_str_fromcstr(cton_ctx *ctx,
 
     obj = cton_object_create(ctx, CTON_STRING);
 
-    cton_str_setlen(ctx, obj, index + 1);
+    cton_string_setlen(ctx, obj, index + 1);
 
-    ptr = cton_str_getptr(ctx, obj);
+    ptr = cton_string_getptr(ctx, obj);
 
     cton_util_memcpy(ptr, str, index);
 
@@ -1644,8 +1644,8 @@ cton_obj * cton_str_fromcstr(cton_ctx *ctx,
     return obj;
 }
 
-cton_obj * cton_str_new_cstr(cton_ctx *ctx, const char *cstr)
+cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr)
 {
-    return cton_str_fromcstr(ctx, cstr, '\0', '\\');
+    return cton_string_fromcstr(ctx, cstr, '\0', '\\');
 }
 

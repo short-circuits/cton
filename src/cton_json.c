@@ -194,9 +194,9 @@ cton_json_parse_string(cton_ctx *ctx,
 	}
 
 	obj = cton_object_create(ctx, CTON_STRING);
-	cton_str_setlen(ctx, obj, str_len + 1);
+	cton_string_setlen(ctx, obj, str_len + 1);
 
-	dst = (char *)cton_str_getptr(ctx, obj);
+	dst = (char *)cton_string_getptr(ctx, obj);
 	str_index = 0;
 	dst_index = 0;
 
@@ -379,12 +379,12 @@ int cton_json_stringify_bufputchar(cton_json_ctx *jctx, int c)
 		cton_array_setlen(jctx->ctx, jctx->buf, array_len);
 
 		str = cton_object_create(jctx->ctx, CTON_STRING);
-		cton_str_setlen(jctx->ctx, str, CTON_JSON_BUFPAGE);
+		cton_string_setlen(jctx->ctx, str, CTON_JSON_BUFPAGE);
 		cton_array_set(jctx->ctx, jctx->buf, str, array_len - 1);
 	}
 
 	str = cton_array_get(jctx->ctx, jctx->buf, array_len - 1);
-	ptr = (char *)cton_str_getptr(jctx->ctx, str);
+	ptr = (char *)cton_string_getptr(jctx->ctx, str);
 	ptr[jctx->index % CTON_JSON_BUFPAGE] = c;
 	jctx->index += 1;
 
@@ -398,7 +398,7 @@ cton_json_ctx *cton_json_stringify_create_ctx(cton_ctx *ctx)
 
 	obj = cton_object_create(ctx, CTON_BINARY);
 
-	cton_str_setlen(ctx, obj, sizeof(cton_json_ctx));
+	cton_string_setlen(ctx, obj, sizeof(cton_json_ctx));
 
 	jctx = cton_binary_getptr(ctx, obj);
 	jctx->ctx  = ctx;
@@ -426,15 +426,15 @@ cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx)
 	uint8_t *buf_ptr;
 
 	str = cton_object_create(jctx->ctx, CTON_STRING);
-	cton_str_setlen(jctx->ctx, str, jctx->index + 1);
-	o_ptr = cton_str_getptr(jctx->ctx, str);
+	cton_string_setlen(jctx->ctx, str, jctx->index + 1);
+	o_ptr = cton_string_getptr(jctx->ctx, str);
 
 	buf_len = CTON_JSON_BUFPAGE;
 	buf_cnt = cton_array_getlen(jctx->ctx, jctx->buf);
 	for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
 		buf = cton_array_get(jctx->ctx, jctx->buf, buf_index);
 
-		buf_ptr = cton_str_getptr(jctx->ctx, buf);
+		buf_ptr = cton_string_getptr(jctx->ctx, buf);
 
 		if (buf_index == buf_cnt - 1) {
 			buf_len = jctx->index % CTON_JSON_BUFPAGE;
@@ -496,8 +496,8 @@ int cton_json_stringify_string(cton_json_ctx *jctx, cton_obj *obj)
 
 	cton_json_stringify_bufputchar(jctx, '\"');
 
-	len = cton_str_getlen(jctx->ctx, obj);
-	ptr = (char *)cton_str_getptr(jctx->ctx, obj);
+	len = cton_string_getlen(jctx->ctx, obj);
+	ptr = (char *)cton_string_getptr(jctx->ctx, obj);
 
 	len --;
 

@@ -196,9 +196,9 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
 cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
 void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
 
-uint8_t * cton_str_getptr(cton_ctx *ctx, cton_obj *obj);
-size_t cton_str_getlen(cton_ctx *ctx, cton_obj *obj);
-int cton_str_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
+uint8_t * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
+size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
+int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
 
 size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
@@ -217,9 +217,9 @@ uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
 double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_util.c */
-cton_obj * cton_str_fromcstr(cton_ctx *ctx,
+cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote);
-cton_obj * cton_str_new_cstr(cton_ctx *ctx, const char *cstr);
+cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
