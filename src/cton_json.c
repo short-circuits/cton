@@ -516,26 +516,29 @@ int cton_json_stringify_binary(cton_json_ctx *jctx, cton_obj *obj)
 	return cton_json_stringify_string(jctx, obj);
 }
 
+int cton_json_stringify_arrcb(cton_ctx *obj,
+	cton_obj *arr_item, size_t index, void *jctx)
+{
+	(void) obj;
+
+	if (index != 0) {
+		cton_json_stringify_bufputchar(jctx, ',');
+	}
+
+	cton_json_stringify_obj(jctx, arr_item);
+
+	return 0;
+}
 
 int cton_json_stringify_array(cton_json_ctx *jctx, cton_obj *obj)
 {
-	cton_obj *sub_obj;
 	size_t len;
-	size_t index;
 
 	cton_json_stringify_bufputchar(jctx, '[');
 
 	len = cton_array_getlen(jctx->ctx, obj);
 
-	for (index = 0; index < len; index ++) {
-		if (index != 0) {
-			cton_json_stringify_bufputchar(jctx, ',');
-		}
-		
-		sub_obj = cton_array_get(jctx->ctx, obj, index);
-		cton_json_stringify_obj(jctx, sub_obj);
-
-	}
+	cton_array_foreach(jctx->ctx, obj, (void *)jctx, cton_json_stringify_arrcb);
 
 	cton_json_stringify_bufputchar(jctx, ']');
 
