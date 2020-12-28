@@ -196,7 +196,7 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
 cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
 void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
 
-uint8_t * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
+char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
 size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
 int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);

@@ -493,7 +493,7 @@ cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
 	cton_obj *data;
 	FILE     *fp;
 	size_t    len;
-	uint8_t  *ptr;
+	char     *ptr;
 
 	fp = fopen(path, "rb");
 	if (fp == NULL) {
@@ -518,7 +518,7 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
 {
 	FILE     *fp;
 	size_t    len;
-	uint8_t  *ptr;
+	char     *ptr;
 
 	fp = fopen(path, "wb");
 	if (fp == NULL) {
@@ -1557,18 +1557,18 @@ static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
  * RETURN
  *   The data pointer of the string object.
  */
-uint8_t * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
+char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
 {
     cton_string_type_confirm(ctx, obj, NULL);
 
-    return obj->payload.str.ptr;
+    return (char *)obj->payload.str.ptr;
 }
 
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
 {
     cton_string_type_confirm(ctx, obj, NULL);
 
-    return obj->payload.str.ptr;
+    return (void *)obj->payload.str.ptr;
 }
 
 /*
@@ -1624,8 +1624,8 @@ cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote)
 {
     cton_obj *obj;
-    uint8_t  *ptr;
-    size_t index;
+    char     *ptr;
+    size_t    index;
 
     for (index = 0; ; index ++) {
         if (str[index] == end) {

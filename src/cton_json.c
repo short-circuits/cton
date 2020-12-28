@@ -423,8 +423,8 @@ cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx)
 	size_t buf_len;
 	size_t ch_index;
 
-	uint8_t *o_ptr;
-	uint8_t *buf_ptr;
+	char  *o_ptr;
+	char  *buf_ptr;
 
 	str = cton_object_create(jctx->ctx, CTON_STRING);
 	cton_string_setlen(jctx->ctx, str, jctx->index + 1);
