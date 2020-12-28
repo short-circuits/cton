@@ -31,6 +31,7 @@ static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
 static void  cton_pdestroy(cton_ctx *ctx);
 
 static void cton_string_init(cton_ctx *ctx, cton_obj *str);
+static void cton_string_delete(cton_ctx *ctx, cton_obj *str);
 static void cton_array_init(cton_ctx *ctx, cton_obj *obj);
 
 static size_t  cton_util_align(size_t size, size_t align);
@@ -1299,10 +1300,10 @@ cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
     },{
         CTON_BOOL, NULL, NULL, NULL
     },{
-        CTON_BINARY, cton_string_init, NULL,
+        CTON_BINARY, cton_string_init, cton_string_delete,
         (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
     },{
-        CTON_STRING, cton_string_init, NULL,
+        CTON_STRING, cton_string_init, cton_string_delete,
         (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
     },{
         CTON_ARRAY, cton_array_init, NULL, cton_array_getptr
@@ -1536,6 +1537,11 @@ static void cton_string_init(cton_ctx *ctx, cton_obj *str)
     str->payload.str.ptr  = NULL;
     str->payload.str.len  = 0;
     str->payload.str.used = 0;
+}
+
+static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
+{
+    cton_free(ctx, str->payload.str.ptr);
 }
 
 /*
