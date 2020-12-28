@@ -819,6 +819,29 @@ void * cton_array_getptr(cton_ctx *ctx, cton_obj *arr)
     return arr->payload.arr.ptr;
 }
 
+int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+    int (*func)(cton_ctx *, cton_obj *, size_t, void*))
+{
+    size_t len;
+    size_t index;
+    int    ret;
+    cton_obj **ptr;
+
+    ret = 0;
+    len = cton_array_getlen(ctx, arr);
+    ptr = cton_array_getptr(ctx, arr);
+
+    for (index = 0; index < len; index ++) {
+        ret = func(ctx, ptr[index], index, rctx);
+
+        if (ret != 0) {
+            break;
+        }
+    }
+
+    return ret;
+}
+
 
 /*******************************************************************************
  * CTON type dependent methods

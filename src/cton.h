@@ -208,6 +208,8 @@ cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
 cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
 int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
 void * cton_array_getptr(cton_ctx *ctx, cton_obj *obj);
+int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+    int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
