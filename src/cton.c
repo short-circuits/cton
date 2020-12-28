@@ -1285,7 +1285,7 @@ cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
 typedef struct {
     cton_type   type;
     void      (*init)(cton_ctx *ctx, cton_obj *obj);
-    void      (*destroy)(cton_ctx *ctx, cton_obj *obj);
+    void      (*delete)(cton_ctx *ctx, cton_obj *obj);
     void *    (*getptr)(cton_ctx *ctx, cton_obj *obj);
 } cton_class_hook_s;
 
@@ -1426,7 +1426,40 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
  *   ctx: The cton context
  *   obj: The object that will be deleted.
  */
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
+void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
+{
+    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
+    cton_type type;
+
+    type = cton_object_gettype(ctx, obj);
+    if (type == CTON_INVALID) {
+        return;
+    }
+
+    /* Delete context by type specificed hook */
+    if (cton_class_hook[type].delete != NULL) {
+        cton_class_hook[type].delete(ctx, obj);
+    }
+
+    /* Remove this object from object link list */
+    if (obj->next != NULL) {
+        obj->next->prev = obj->prev;
+    }
+
+    if (obj->prev != NULL) {
+        obj->prev->next = obj->next;
+    }
+
+    if (ctx->nodes = obj) {
+        ctx->nodes = obj->next;
+    }
+
+    if (ctx->nodes_last = obj) {
+        ctx->nodes_last = obj->prev;
+    }
+
+    cton_free(ctx, obj);
+}
 
 /*
  * cton_object_gettype()
