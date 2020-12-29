@@ -11,6 +11,8 @@ _源代码中亦存在相应说明，若本文说明与源代码相异，请以�
     4. [cton\_geterr()](#cton\_geterr)
     5. [cton\_strerr()](#cton\_strerr)
     6. [cton\_err\_clear()](#cton\_err\_clear)
+2. [CTON内存钩子](#内存钩子)
+    1. [cton\_memhook\_init](#cton\_memhook\_init)
 
 ## CTON上下文（前缀: cton_)
 
@@ -56,6 +58,20 @@ _源代码中亦存在相应说明，若本文说明与源代码相异，请以�
 
 - ctx: 需要解构的上下文句柄。
 
+#### 功能描述
+
+本API会根据传入的上下文句柄有两种略不同的行为。
+
+如果传入的上下文句柄被设置了内存钩子中的destroy方法，则此API会直接调用destroy方法销毁内存池。
+
+如果传入的上下文句柄中没有设置destroy方法（设置为NULL），则此API会尝试对所有对象调用内存钩子的free方法来释放所有对象。
+
+如果free方法也没有被设置，这个函数将什么也不做（等待进程结束后或内存池生命周期结束时回收）。函数将返回-1，并设置ctx上下文的错误代码为CTON_EMHOOK。
+
+#### 使用提示
+
+- 尽管使用此调用后原始句柄不会被改变，但除非本API返回值不为0，原始句柄应当视为不可用，不应当继续尝试对原始句柄进行任何调用。
+
 #### TODO
 
 本API尚未完成
@@ -96,6 +112,10 @@ cton\_geterr cton\_strerr cton\_err\_clear
 
 - ctx: 欲查看错误代码的上下文句柄。
 
+#### 使用提示
+
+- 可以在判断语句中使用如`cton_geterr(ctx) == CTON_OK`的语句来确认此上下文没有发生错误。
+
 ---
 
 ### cton_strerr
@@ -125,4 +145,44 @@ cton\_geterr cton\_strerr cton\_err\_clear
 
 - ctx: 欲清除错误代码的上下文句柄。
 
----
+
+## 内存钩子
+
+### cton\_memhook\_init
+
+```
+cton_memhook* cton_memhook_init (void * pool,
+    void * (*palloc)(void *pool, size_t size),
+    void * (*prealloc)(void *pool, void *ptr, size_t size),
+    void   (*pfree)(void *pool, void *ptr),
+    void   (*pdestroy)(void *pool))
+```
+
+- 创建一个内存钩子。
+
+#### 参数
+
+- pool: 需要传递给内存钩子的结构体，如内存池等。
+- palloc: 类似于malloc
+- prealloc: 类似于realloc
+- pfree: 类似于free
+- pdestroy: 可以用来一次性清空所有内存使用的函数。
+
+#### 内存钩子简介
+
+按照设计，CTON程序库会在一定程度上接管对于内存的管理。而内存钩子允许在一定程度上修改内存申请及释放的行为。当完成一个CTON上下文的创建后，通过该上下文创建的所有新对象都会使用这个内存钩子来申请内存。
+
+与标准库中的malloc/free函数不同，CTON中定义的palloc/pfree系列函数需要一个任意类型指针的传入参数，并且在调用对应的函数时会传入这个参数。因此使用者可以尝试通过自行实现一个内存分配器来回避系统内存分配导致的性能问题。也可以通过设置一个可以整体销毁的内存池来保证不会有内存泄漏的出现。
+
+#### 使用提示
+
+- 本函数及返回的结构体并非线程安全，请不要尝试并行创建多个拥有不同参数的内存钩子。
+- 本调用创建的内存钩子在部署到CTON上下文的时候会被复制一份，因此在完成了上下文创建之前请不要尝试创建第二个内存钩子。
+
+#### 使用案例
+
+- 通过传入一个可整体free的内存池来保证不会有内存泄漏。
+- 通过传入一个支持内存分配统计的中间件来统计你的CTON总共使用了多少内存。
+- 通过设置一个可以直接修改页表的prealloc钩子来加速realloc操作。
+- etc.
+
