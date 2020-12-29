@@ -4,7 +4,7 @@ _源代码中亦存在相应说明，若本文说明与源代码相异，请以�
 
 本文档中提及的API均为公共API，私有API的说明请参考源代码文件中的说明。
 
-1. [CTON上下文API](#CTON上下文 \(前缀: cton\_\))
+1. [CTON上下文API](#CTON上下文\ \(前缀: cton\_\))
     1. [cton\_init()](#cton\_init)
     2. [cton\_destroy()](#cton\_destroy) 
     3. [cton\_seterr()](#cton\_seterr)
@@ -12,7 +12,12 @@ _源代码中亦存在相应说明，若本文说明与源代码相异，请以�
     5. [cton\_strerr()](#cton\_strerr)
     6. [cton\_err\_clear()](#cton\_err\_clear)
 2. [CTON内存钩子](#内存钩子)
-    1. [cton\_memhook\_init](#cton\_memhook\_init)
+    1. [cton\_memhook\_init()](#cton\_memhook\_init)
+3. [CTON对象](#CTON对象\ (前缀:\ cton\_object\_))
+    1. [cton\_object\_create()](#cton\_object\_create)
+    2. [cton\_object\_delete()](#cton\_object\_delete)
+    3. [cton\_object\_gettype()](#cton\_object\_gettype)
+    4. [cton\_object\_getval()](#cton\_object\_getval)
 
 ## CTON上下文（前缀: cton_)
 
@@ -185,4 +190,78 @@ cton_memhook* cton_memhook_init (void * pool,
 - 通过传入一个支持内存分配统计的中间件来统计你的CTON总共使用了多少内存。
 - 通过设置一个可以直接修改页表的prealloc钩子来加速realloc操作。
 - etc.
+
+## CTON对象 (前缀: cton\_object\_)
+
+### cton\_object\_create
+
+`cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);`
+
+- 创建一个新的CTON对象。
+
+#### 参数
+
+- ctx: 新创建的对象所属的上下文。
+- type: 新创建的对象的类型。
+
+#### 返回值
+
+若成功则返回新创建的对象句柄，否则返回NULL并设置错误代码。
+
+---
+
+### cton\_object\_delete
+
+`void cton_object_delete(cton_ctx *ctx, cton_obj *obj);`
+
+- 删除一个CTON对象。
+
+#### 参数
+
+- ctx: 要删除的对象所属的上下文。
+- obj: 要删除的对象。
+
+#### 功能描述
+
+本调用将调用ctx中的内存钩子对obj对象进行回收。此函数不会检查传入的obj对象是否属于ctx上下文。如果传入的obj对象不属于传入的ctx上下文，其行为是未定义的（取决于设置的内存池）。
+
+本调用不会对obj对象进行解构，即如果obj对象是数组或散列类型，不会释放其子元素。但会导致其子对象成为不可到达的对象，如果长时间使用一个ctx上下文，可能会因此导致内存泄露问题。（TODO：添加基于连通性的自动对象回收调用。）
+
+---
+
+### cton\_object\_gettype
+
+`cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);`
+
+- 获得一个对象的类型。
+
+#### 参数
+
+- ctx: 要获取类型的对象所属的上下文。
+- obj: 要获取类型的对象。
+
+#### 使用提示
+
+- CTON是一个静态类型的库，因此不提供修改对象类型的调用。如果有必要修改一个对象的类型，请重新创建一个对象。
+
+---
+
+### cton\_object\_getvalue
+
+`void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);`
+
+- 获得当前对象的数据指针。（不推荐）
+
+#### 参数
+
+- ctx: 要获取数据指针的对象所属的上下文。
+- obj: 要获取数据指针的对象。
+
+#### 返回值
+
+如果成功则返回对象中表示数据的指针。否则返回NULL。
+
+#### 使用提示
+
+这个方法可以用来方便的处理数值类型和字符串类型等，返回的指针可供直接访问。虽然对于数组和散列，此方法依旧可以返回对应的指针，但是因为返回的是内部的数据结构指针，对这个指针进行解引用并进行操作的行为是未定义的。
 
