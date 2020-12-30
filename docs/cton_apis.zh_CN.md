@@ -193,6 +193,35 @@ cton_memhook* cton_memhook_init (void * pool,
 
 ## CTON对象 (前缀: cton\_object\_)
 
+CTON对象是CTON函数库中的基本单位之一。
+
+CTON对象保存一个静态类型的变量，变量类型在初始化对象的时候被决定，在对象生命周期中不会被任何开放API所更改。
+
+可用于CTON对象的变量类型包括：
+
+| 名称         | 类型            | 前缀        |
+|:-------------|:----------------|:------------|
+| CTON_NULL    | 空对象          |             |
+| CTON_BOOL    | 布尔对象        | cton_bool   |
+| CTON_BINARY  | 二进制对象      | cton_binary |
+| CTON_STRING  | C风格字符串对象 | cton_string |
+| CTON_ARRAY   | 阵列对象        | cton_array  |
+| CTON_HASH    | 散列对象        | cton_hash   |
+| CTON_INT8    | 8位有符号整数   |             |
+| CTON_INT16   | 16位有符号整数  |             |
+| CTON_INT32   | 32位有符号整数  |             |
+| CTON_INT64   | 64位有符号整数  |             |
+| CTON_UINT8   | 8位无符号整数   |             |
+| CTON_UINT16  | 16位无符号整数  |             |
+| CTON_UINT32  | 32位无符号整数  |             |
+| CTON_UINT64  | 64位无符号整数  |             |
+| CTON_FLOAT8  | 8位浮点数       |             |
+| CTON_FLOAT16 | 16位浮点数      |             |
+| CTON_FLOAT32 | 32位浮点数      |             |
+| CTON_FLOAT64 | 64位浮点数      |             |
+
+---
+
 ### cton\_object\_create
 
 `cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);`
@@ -259,9 +288,59 @@ cton_memhook* cton_memhook_init (void * pool,
 
 #### 返回值
 
-如果成功则返回对象中表示数据的指针。否则返回NULL。
+如果成功则返回对象中表示数据的指针。否则返回NULL。特别地，对于CTON_NULL类型变量，此调用将永远返回NULL指针。
 
 #### 使用提示
 
 这个方法可以用来方便的处理数值类型和字符串类型等，返回的指针可供直接访问。虽然对于数组和散列，此方法依旧可以返回对应的指针，但是因为返回的是内部的数据结构指针，对这个指针进行解引用并进行操作的行为是未定义的。
+
+## CTON布尔对象 (前缀: cton\_bool\_)
+
+布尔对象是一类只有真(`true`)和假(`false`)两种取值的类型。
+
+cton中没有明确规定使用0还是1代表真，但是这个取值需要能满足机器或者语言提供的布尔运算规则。例如在x86体系中1被视为真，因此如果将一个布尔真赋值给一个8位有符号整数，将会获得数值1。
+
+### cton\_bool\_set
+
+`int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);`
+
+- 设置一个布尔对象的值。
+
+#### 参数
+
+- ctx: 要设置布尔值的对象所属的上下文。
+- obj: 要设置布尔值的对象。
+- val: 要设置的布尔值。
+
+#### 返回值
+
+成功时返回0，若发生了任何错误则返回非零值。
+
+#### 功能描述
+
+本API会为传入对象设置一个布尔值。
+
+若传入对象非布尔对象，则本调用会返回`-1`，并不会对传入对象进行任何操作。
+若传入对象是布尔对象，则本调用会检查`val`参数，只有传入`CTON_TRUE`时，布尔变量才会被设置为真值。传入任何非`CTON_TRUE`的值均会设置布尔变量为假。但如果传入参数为`CTON_TRUE`或`CTON_FALSE`以外的数值，调用会返回`1`。
+
+---
+
+### cton\_bool\_get
+
+`cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);`
+
+- 获取一个布尔对象的值。
+
+#### 参数
+
+- ctx: 要获取布尔值的对象所属的上下文。
+- obj: 要获取布尔值的对象。
+
+#### 返回值
+
+返回要获取的布尔对象的布尔值。如果传入对象非布尔类型将永远获得`CTON_FALSE`。
+
+
+
+
 
