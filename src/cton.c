@@ -1284,20 +1284,35 @@ double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
 
 int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
 {
+    int ret;
+
     if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
-    obj->payload.b = val;
-    return 0;
+    ret = 0;
+
+    if (val == CTON_TRUE) {
+        obj->payload.b = CTON_TRUE;
+
+    } else {
+        obj->payload.b = CTON_FALSE;
+
+        if (val != CTON_FALSE) {
+            ret = 1;
+        }
+
+    }
+
+    return ret;
 }
 
 cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
 {
     if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
         cton_seterr(ctx, CTON_ERROR_TYPE);
-        return -1;
+        return CTON_FALSE;
     }
 
     return obj->payload.b;
