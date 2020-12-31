@@ -453,6 +453,77 @@ CTON的字符串对象和二进制对象共享了绝大多数的API。
 - 对于一个刚创建，还没有被分配内存的二进制类型，这个调用可能会返回NULL指针。
 - 这是唯一一个二进制类型独立于字符串类型的调用，虽然实际上对于字符串的调用同样可以使用。设置这个调用的意义是可以避免一次类型转换。（如果你使用了`-Werror`编译选项会很方便）
 
+## CTON阵列对象 (前缀: cton\_array\_)
+
+在CTON中，阵列被定义为若干个同一类型的数据组成的有序且支持随机访问的数据结构。
+CTON没有强制阵列必须是稠密的。因此一个阵列中可能在不确定的位置有任意个空缺元素。
+
+### cton\_array\_getlen
+
+`size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);`
+
+- 获得阵列对象可以容纳的元素数量。
+
+---
+
+`size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);`
+
+- 设置阵列对象可以容纳的元素数量
+
+---
+
+`int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);`
+
+- 设置阵列对象允许容纳的元素类型
+
+---
+
+`cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);`
+
+- 获得阵列对象允许容纳的元素类型
+
+---
+
+`cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);`
+
+- 获得阵列对象中指定位置的元素。
+
+---
+
+`int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);`
+
+- 设置阵列对象中指定位置的元素。
+
+---
+
+```
+int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+    int (*func)(cton_ctx *, cton_obj *, size_t, void*));
+```
+
+- 对阵列对象中每个元素进行循环操作。
+
+## CTON散列对象 (前缀: cton\_hash\_)
+
+在CTON中，散列被定义为通过键值对的方式存储的，非有序数据结构。
+目前的实现中限制了key必须是一个字符串对象，但这不应当是一个硬性限制，未来的版本可能会取消这一限制以实现更灵活的功能。
+
+`cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);`
+
+- 在散列对象中设置一个键值对
+
+---
+
+`cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);`
+
+- 在散列对象中根据key获得其value
+
+---
+
+`cton_hash_foreach`
+
+- TODO
+
 
 
 
