@@ -20,6 +20,7 @@
  *
  ******************************************************************************/
 
+/* This macro must go before cton.h */
 #define _INTER_LIBCTON_
 
 #include <limits.h>
@@ -185,7 +186,14 @@ cton_err cton_geterr(cton_ctx *ctx)
  *   Printible error message string pointer.
  *   
  */
-char * cton_strerr(cton_err err); /** TODO */
+char * cton_strerr(cton_err err)
+{
+    static char str[] = "Not Implemented.\n";
+
+    (void) err;
+
+    return str;
+}
 
 
 
