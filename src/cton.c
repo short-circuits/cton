@@ -60,10 +60,61 @@ static void * cton_float16_getptr(cton_ctx *ctx, cton_obj *obj);
 static void * cton_float32_getptr(cton_ctx *ctx, cton_obj *obj);
 static void * cton_float64_getptr(cton_ctx *ctx, cton_obj *obj);
 
-static size_t  cton_util_align(size_t size, size_t align);
-static void   *cton_util_memcpy(void *dst, const void *src, size_t n);
-static void   *cton_util_memset(void *b, int c, size_t len);
 
+/*******************************************************************************
+ * CTON Low level functions
+ *
+ *   These functions is used by cton as low level functions. some of them is
+ * supposed to be offered by standard library, but for compatibily, we create
+ * an abstruct of these functions.
+ * 
+ ******************************************************************************/
+
+/*
+ * cton_util_memcpy()
+ *
+ * DESCRIPTION
+ *   挂名CTON的memcpy套娃，
+ *   从src开始复制n个字符到dst.
+ *
+ * PARAMETER
+ *   dst: 被粘贴的内存起始位置
+ *   src: 复制源的内存起始位置
+ *   n: 长度（字节数）
+ *
+ * RETURN
+ *   与memcpy定义一致.
+ *
+ * ERRORS
+ *   与memcpy定义一致.
+ */
+static void * cton_llib_memcpy(void *dst, const void *src, size_t n)
+{
+    return memcpy(dst, src, n);
+}
+
+
+static void * cton_llib_memset(void *b, int c, size_t len)
+{
+    return memset(b, c, len);
+}
+
+
+static int cton_llib_strncmp(const char *s1, const char *s2, size_t n)
+{
+    return strncmp(s1, s2, n);
+}
+
+
+static size_t cton_llib_align(size_t size, size_t align)
+{
+    size_t remain;
+    size_t aligned;
+
+    remain = size % align;
+    aligned = size ^ remain;
+    return remain > 0 ? aligned + align : aligned ;
+}
 
 
 /*******************************************************************************
@@ -433,7 +484,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
 
     obj = cton_alloc(ctx, sizeof(cton_obj));
 
-    cton_util_memset(obj, 0, sizeof(cton_obj));
+    cton_llib_memset(obj, 0, sizeof(cton_obj));
 
     obj->magic = CTON_STRUCT_MAGIC;
     obj->type  = type;
@@ -701,7 +752,7 @@ int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
         obj->payload.str.used = len;
 
     } else {
-        aligned = cton_util_align(len, 4096);
+        aligned = cton_llib_align(len, 128);
         new_ptr = cton_realloc(ctx, \
             obj->payload.str.ptr, obj->payload.str.len, aligned);
         if (new_ptr != NULL) {
@@ -1654,45 +1705,6 @@ cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
  * 
  ******************************************************************************/
 
-static size_t cton_util_align(size_t size, size_t align)
-{
-    size_t remain;
-    size_t aligned;
-
-    remain = size % align;
-    aligned = size ^ remain;
-    return remain > 0 ? aligned + align : aligned ;
-}
-
-/*
- * cton_util_memcpy()
- *
- * DESCRIPTION
- *   挂名CTON的memcpy套娃，
- *   从src开始复制n个字符到dst.
- *
- * PARAMETER
- *   dst: 被粘贴的内存起始位置
- *   src: 复制源的内存起始位置
- *   n: 长度（字节数）
- *
- * RETURN
- *   与memcpy定义一致.
- *
- * ERRORS
- *   与memcpy定义一致.
- */
-static void * cton_util_memcpy(void *dst, const void *src, size_t n)
-{
-    return memcpy(dst, src, n);
-}
-
-
-
-static void * cton_util_memset(void *b, int c, size_t len)
-{
-    return memset(b, c, len);
-}
 
 /*
  * cton_util_strcmp()
@@ -1725,7 +1737,7 @@ int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
     len_cmp = len_s1 < len_s2 ? len_s1 : len_s2;
 
     ret = 0;
-    ret = strncmp((char *)s1->payload.str.ptr, 
+    ret = cton_llib_strncmp((char *)s1->payload.str.ptr, 
                   (char *)s2->payload.str.ptr, len_cmp - 1);
 
     if (ret != 0) {
@@ -1765,7 +1777,7 @@ cton_obj * cton_string_fromcstr(cton_ctx *ctx,
 
     ptr = cton_string_getptr(ctx, obj);
 
-    cton_util_memcpy(ptr, str, index);
+    cton_llib_memcpy(ptr, str, index);
 
     ptr[index] = 0;
 
