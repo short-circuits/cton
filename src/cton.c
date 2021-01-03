@@ -26,11 +26,6 @@
 #include <limits.h>
 #include <cton.h>
 
-static void *cton_alloc(cton_ctx *ctx, size_t size);
-static void  cton_free(cton_ctx *ctx, void *ptr);
-static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
-static void  cton_pdestroy(cton_ctx *ctx);
-
 static void cton_string_init(cton_ctx *ctx, cton_obj *str);
 static void cton_string_delete(cton_ctx *ctx, cton_obj *str);
 static void cton_array_init(cton_ctx *ctx, cton_obj *obj);
@@ -38,6 +33,136 @@ static void cton_array_init(cton_ctx *ctx, cton_obj *obj);
 static size_t  cton_util_align(size_t size, size_t align);
 static void   *cton_util_memcpy(void *dst, const void *src, size_t n);
 static void   *cton_util_memset(void *b, int c, size_t len);
+
+
+void * cton_array_getptr(cton_ctx *ctx, cton_obj *obj);
+
+
+
+/*******************************************************************************
+ * CTON memory hook
+ *
+ * CTON requests a memory hook to mamage the memory.
+ * CTON will try to create the structure of cton_ctx in the memory pool offered.
+ * 
+ * alloc hook is necessary, all of the alloc requirement will call this hook.
+ * realloc hook is not used currently, it just an reserved hook.
+ * if free hook is sat, it will be called when destroying an object.
+ * if destroy hook is sat, it will be called when destroying the cton_ctx.
+ * 
+ ******************************************************************************/
+
+static void *cton_alloc(cton_ctx *ctx, size_t size);
+static void  cton_free(cton_ctx *ctx, void *ptr);
+static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
+static void  cton_pdestroy(cton_ctx *ctx);
+
+/*
+ * Just proxy the call of malloc() and free()
+ */
+static void *cton_std_malloc(void *pool, size_t size)
+{
+    (void) pool;
+
+    return malloc(size);
+}
+
+static void  cton_std_free(void *pool, void *ptr)
+{
+    (void) pool;
+
+    free(ptr);
+}
+
+static void *cton_std_realloc(void *pool, void *ptr, size_t size)
+{
+    (void) pool;
+    
+    return realloc(ptr, size);
+}
+
+cton_memhook cton_std_hook = {
+    NULL, cton_std_malloc, cton_std_realloc, cton_std_free, NULL
+};
+
+/*
+ * Create a memory hook and return it's pointer.
+ * it will not allocate new memory for this pool.
+ * and it is not thread safe.
+ */
+cton_memhook* cton_memhook_init (void * pool,
+    void * (*palloc)(void *pool, size_t size),
+    void * (*prealloc)(void *pool, void *ptr, size_t size),
+    void   (*pfree)(void *pool, void *ptr),
+    void   (*pdestroy)(void *pool))
+{
+    static cton_memhook hook;
+
+    hook.pool     = pool;
+    hook.palloc   = palloc;
+    hook.prealloc = prealloc;
+    hook.pfree    = pfree;
+    hook.pdestroy = pdestroy;
+
+    return &hook;
+}
+
+/*
+ * cton_alloc()
+ *
+ * DESCRIPTION
+ *   Allocates size bytes of memory from mem pool and returns a pointer to the
+ *  allocated memory.
+ *
+ * PARAMETER
+ *   ctx: cton context
+ *   size: the size that will be allocated.
+ */
+static void * cton_alloc(cton_ctx *ctx, size_t size)
+{
+    return ctx->memhook.palloc(ctx->memhook.pool, size);
+}
+
+static void cton_free(cton_ctx *ctx, void *ptr)
+{
+    ctx->memhook.pfree(ctx->memhook.pool, ptr);
+}
+
+static void * cton_realloc(cton_ctx *ctx,
+    void *ptr, size_t size_ori, size_t size_new)
+{
+    void * new_ptr;
+
+    if (size_new <= size_ori) {
+        return ptr;
+    }
+
+    if (ctx->memhook.prealloc == NULL) {
+        
+        new_ptr = cton_alloc(ctx, size_new);
+        if (new_ptr == NULL) {
+            cton_seterr(ctx, CTON_ERROR_EALLOC);
+            return NULL;
+        }
+
+        memcpy(new_ptr, ptr, size_ori);
+
+        cton_free(ctx, ptr);
+
+    } else {
+        new_ptr = ctx->memhook.prealloc(ctx->memhook.pool, ptr, size_new);
+        if (new_ptr == NULL) {
+            cton_seterr(ctx, CTON_ERROR_EALLOC);
+        }
+    }
+
+    return new_ptr;
+}
+
+static void cton_pdestroy(cton_ctx *ctx)
+{
+    ctx->memhook.pdestroy(ctx->memhook.pool);
+}
 
 
 
@@ -196,349 +321,396 @@ char * cton_strerr(cton_err err)
 }
 
 
-
 /*******************************************************************************
- *         CTON Tree
- *******************************************************************************
- *   CTON can manage data in the form of a tree. This part is the interface used
- * to manage data in this way.
+ * CTON Object methods
  ******************************************************************************/
 
+typedef struct {
+    cton_type   type;
+    void      (*init)(cton_ctx *ctx, cton_obj *obj);
+    void      (*delete)(cton_ctx *ctx, cton_obj *obj);
+    void *    (*getptr)(cton_ctx *ctx, cton_obj *obj);
+} cton_class_hook_s;
+
+cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
+    {
+        CTON_INVALID, NULL, NULL, NULL
+    },{
+        CTON_OBJECT, NULL, NULL, NULL
+    },{
+        CTON_NULL, NULL, NULL, NULL
+    },{
+        CTON_BOOL, NULL, NULL, NULL
+    },{
+        CTON_BINARY, cton_string_init, cton_string_delete,
+        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
+    },{
+        CTON_STRING, cton_string_init, cton_string_delete,
+        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
+    },{
+        CTON_ARRAY, cton_array_init, NULL, cton_array_getptr
+    },{
+        CTON_HASH, NULL, NULL, NULL
+    },{
+#if 0
+        CTON_INT8, cton_int8_init, NULL, cton_int8_getptr
+    },{
+        CTON_INT16, cton_int16_init, NULL, cton_int16_getptr
+    },{
+        CTON_INT32, cton_int32_init, NULL, cton_int32_getptr
+    },{
+        CTON_INT64, cton_int64_init, NULL, cton_int64_getptr
+    },{
+        CTON_UINT8, cton_uint8_init, NULL, cton_uint8_getptr
+    },{
+        CTON_UINT16, cton_uint16_init, NULL, cton_uint16_getptr
+    },{
+        CTON_UINT32, cton_uint32_init, NULL, cton_uint32_getptr
+    },{
+        CTON_UINT64, cton_uint64_init, NULL, cton_uint64_getptr
+    },{
+        CTON_FLOAT8, cton_float8_init, NULL, cton_float8_getptr
+    },{
+        CTON_FLOAT16, cton_float16_init, NULL, cton_float16_getptr
+    },{
+        CTON_FLOAT32, cton_float32_init, NULL, cton_float32_getptr
+    },{
+        CTON_FLOAT64, cton_float64_init, NULL, cton_float64_getptr
+#else
+        CTON_INT8,  NULL, NULL, NULL
+    },{
+        CTON_INT16, NULL, NULL, NULL
+    },{
+        CTON_INT32, NULL, NULL, NULL
+    },{
+        CTON_INT64, NULL, NULL, NULL
+    },{
+        CTON_UINT8,  NULL, NULL, NULL
+    },{
+        CTON_UINT16, NULL, NULL, NULL
+    },{
+        CTON_UINT32, NULL, NULL, NULL
+    },{
+        CTON_UINT64, NULL, NULL, NULL
+    },{
+        CTON_FLOAT8,  NULL, NULL, NULL
+    },{
+        CTON_FLOAT16, NULL, NULL, NULL
+    },{
+        CTON_FLOAT32, NULL, NULL, NULL
+    },{
+        CTON_FLOAT64, NULL, NULL, NULL
+#endif
+    }
+};
 
 /**
- * cton_tree_setroot()
- *   - Set the root object for a cton_tree.
+ * cton_object(s) are managed by cton_ctx by Doubly linked list.
  *
- * PARAMETER
- *   ctx: the cton context.
+ * cton_ctx.
+ *
+ */
 
- * RETURN VALUE
- *   0 for success and other value for any error.
+/*
+ * cton_object_create()
  *
  * DESCRIPTION
- *   This function will make the given object to be the new root element of the
- * cton tree. Unless wrong parameter such as null pointer or invalid object is
- * passed to the function, this function will always success. But the function
- * will set cton error when the root is already not NULL. This error suggests
- * that the tree has been replaced, and maybe there are leaked object.
+ *   Create an object with the specific type and add it to the object list.
  *
- * ERRORs
- *   CTON_ERROR_REPLACE: The root is already set, and has been replaced by the
- *                      new passed in object.
- *   CTON_ERROR_TYPE: The object passed by parameter is not valid type for cton
- *                   tree or not valid cton object.
+ * PARAMETER
+ *   ctx: cton context
+ *   type: the type that the new object will hold
  *
- * TODO
- *   Some code in this function maybe not necessary.
+ * RETURN
+ *     Handle of new created object or NULL for any exception.
  */
-int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
+cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
 {
-    cton_type type;
+    cton_obj *obj;
 
-#if 1 /* Is this part necessary? */
+    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
 
-    type = cton_object_gettype(ctx, obj);
+    obj = cton_alloc(ctx, sizeof(cton_obj));
 
-    if (cton_geterr(ctx) != CTON_OK) {
-        return -1;
+    cton_util_memset(obj, 0, sizeof(cton_obj));
+
+    obj->magic = CTON_STRUCT_MAGIC;
+    obj->type  = type;
+    obj->prev  = NULL;
+    obj->next  = NULL;
+
+    /* Insert object into object pool linked list */
+    if (ctx->nodes == NULL) {
+        ctx->nodes = obj;
+
+    } else {
+        obj->prev = ctx->nodes_last;
+        ctx->nodes_last->next = obj;
+
     }
 
-    if (type != CTON_HASH && type != CTON_ARRAY) {
-        
-        /**     TODO
-         *  In JSON standard, not only hash and array, a number or other values
-         * also seems as a valid JSON, so maybe it is no necessary to limit the
-         * type of the root object?
-         */ 
+    ctx->nodes_last = obj;
+
+    if (cton_class_hook[type].init != NULL) {
+        cton_class_hook[type].init(ctx, obj);
+    }
+
+    return obj;
+}
+
+/*
+ * cton_object_delete()
+ *
+ * DESCRIPTION
+ *   Destory an object and recollect its memory.
+ *   备忘：如果将来添加了引用计数功能，这个API要不要更改为引用减一？
+ *
+ * PARAMETER
+ *   ctx: The cton context
+ *   obj: The object that will be deleted.
+ */
+void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
+{
+    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
+    cton_type type;
+
+    type = cton_object_gettype(ctx, obj);
+    if (type == CTON_INVALID) {
+        return;
+    }
+
+    /* Delete context by type specificed hook */
+    if (cton_class_hook[type].delete != NULL) {
+        cton_class_hook[type].delete(ctx, obj);
+    }
+
+    /* Remove this object from object link list */
+    if (obj->next != NULL) {
+        obj->next->prev = obj->prev;
+    }
+
+    if (obj->prev != NULL) {
+        obj->prev->next = obj->next;
+    }
+
+    if (ctx->nodes == obj) {
+        ctx->nodes = obj->next;
+    }
+
+    if (ctx->nodes_last == obj) {
+        ctx->nodes_last = obj->prev;
+    }
+
+    cton_free(ctx, obj);
+}
+
+/*
+ * cton_object_gettype()
+ *
+ * DESCRIPTION
+ *   Return the type of given object.
+ *
+ * PARAMETER
+ *   obj: The object which you want to get it's type
+ *
+ * RETURN
+ *   The type of give object or invalid type for NULL ptr.
+ */
+cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
+{
+    if (obj->type >= CTON_TYPE_CNT) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return CTON_INVALID;
+    }
+
+    return obj->type;
+}
+
+/*
+ * cton_object_getvalue()
+ *
+ * DESCRIPTION
+ *   Get the payload pointer of an cton object.
+ *
+ * PARAMETER
+ *   obj: The object which you want to get it's type
+ *
+ * RETURN
+ *   The payload pointer of give object or NULL for NULL ptr.
+ */
+void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
+{
+    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
+
+    if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_INVALID) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    if (obj->type == CTON_NULL) {
+        return NULL;
+    }
+
+    if (cton_class_hook[obj->type].getptr == NULL) {
+        return &obj->payload;
+    }
+
+    return cton_class_hook[obj->type].getptr(ctx, obj);
+}
+
+
+/*******************************************************************************
+ * CTON type dependent methods
+ *
+ *******************************************************************************
+ *         Bool
+ ******************************************************************************/
+
+int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
+{
+    int ret;
+
+    if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
-#endif
+    ret = 0;
 
-    if (cton_tree_getroot(ctx) != NULL) {
-        cton_seterr(ctx, CTON_ERROR_REPLACE);
-
-        ctx->root = obj;
-        return -2;
-    }
-
-    ctx->root = obj;
-    return 0;
-}
-
-
-/**
- * cton_tree_getroot()
- *   - Get the root object of the cton tree
- */
-cton_obj *cton_tree_getroot(cton_ctx *ctx)
-{
-    return ctx->root;
-}
-
-
-/**
- * cton_tree_get_by_path()
- *   - Search object by string.
- *
- * TODO
- */
-cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
-
-/*******************************************************************************
- * CTON memory hook
- *
- * CTON requests a memory hook to mamage the memory.
- * CTON will try to create the structure of cton_ctx in the memory pool offered.
- * 
- * alloc hook is necessary, all of the alloc requirement will call this hook.
- * realloc hook is not used currently, it just an reserved hook.
- * if free hook is sat, it will be called when destroying an object.
- * if destroy hook is sat, it will be called when destroying the cton_ctx.
- * 
- ******************************************************************************/
-
-static int cton_alloc_debug = 0;
-
-/*
- * Just proxy the call of malloc() and free()
- */
-static void *cton_std_malloc(void *pool, size_t size)
-{
-    extern int cton_alloc_debug;
-    (void) pool;
-
-    if (cton_alloc_debug) {
-        fprintf(stderr, "Trying to alloc %ld byte(s)\n", size);
-    }
-
-    return malloc(size);
-}
-
-static void  cton_std_free(void *pool, void *ptr)
-{
-    (void) pool;
-    free(ptr);
-}
-
-cton_memhook cton_std_hook = {
-    NULL, cton_std_malloc, NULL, cton_std_free, NULL
-};
-
-/*
- * Create a memory hook and return it's pointer.
- * it will not allocate new memory for this pool.
- * and it is not thread safe.
- */
-cton_memhook* cton_memhook_init (void * pool,
-    void * (*palloc)(void *pool, size_t size),
-    void * (*prealloc)(void *pool, void *ptr, size_t size),
-    void   (*pfree)(void *pool, void *ptr),
-    void   (*pdestroy)(void *pool))
-{
-    static cton_memhook hook;
-
-    hook.pool     = pool;
-    hook.palloc   = palloc;
-    hook.prealloc = prealloc;
-    hook.pfree    = pfree;
-    hook.pdestroy = pdestroy;
-
-    return &hook;
-}
-
-/*
- * cton_alloc()
- *
- * DESCRIPTION
- *   Allocates size bytes of memory from mem pool and returns a pointer to the
- *  allocated memory.
- *
- * PARAMETER
- *   ctx: cton context
- *   size: the size that will be allocated.
- */
-static void * cton_alloc(cton_ctx *ctx, size_t size)
-{
-    return ctx->memhook.palloc(ctx->memhook.pool, size);
-}
-
-static void cton_free(cton_ctx *ctx, void *ptr)
-{
-    ctx->memhook.pfree(ctx->memhook.pool, ptr);
-}
-
-static void * cton_realloc(cton_ctx *ctx,
-    void *ptr, size_t size_ori, size_t size_new)
-{
-    void * new_ptr;
-
-    if (size_new <= size_ori) {
-        return ptr;
-    }
-
-    if (ctx->memhook.prealloc == NULL) {
+    if (val == CTON_TRUE) {
         
-        new_ptr = cton_alloc(ctx, size_new);
-        if (new_ptr == NULL) {
-            cton_seterr(ctx, CTON_ERROR_EALLOC);
-            return NULL;
-        }
+        /*
+         * Only CTON_TRUE is treated as true, any other value or invalidate
+         * values are all treated as false.
+         */
 
-        memcpy(new_ptr, ptr, size_ori);
-
-        cton_free(ctx, ptr);
+        obj->payload.b = CTON_TRUE;
 
     } else {
-        new_ptr = ctx->memhook.prealloc(ctx->memhook.pool, ptr, size_new);
-        if (new_ptr == NULL) {
-            cton_seterr(ctx, CTON_ERROR_EALLOC);
+
+        obj->payload.b = CTON_FALSE;
+
+        if (val != CTON_FALSE) {
+            ret = 1;
+        }
+
+    }
+
+    return ret;
+}
+
+cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
+{
+    if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return CTON_FALSE;
+    }
+
+    return obj->payload.b;
+}
+
+
+/*******************************************************************************
+ * CTON type dependent methods
+ *
+ *******************************************************************************
+ * String
+ ******************************************************************************/
+
+#define cton_string_type_confirm(ctx, obj, ret) \
+    if (cton_object_gettype(ctx, obj) != CTON_STRING && \
+        cton_object_gettype(ctx, obj) != CTON_BINARY) { \
+        cton_seterr(ctx, CTON_ERROR_TYPE);         \
+        return ret;                                \
+    }
+
+static void cton_string_init(cton_ctx *ctx, cton_obj *str)
+{
+    (void) ctx;
+    str->payload.str.ptr  = NULL;
+    str->payload.str.len  = 0;
+    str->payload.str.used = 0;
+}
+
+static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
+{
+    cton_free(ctx, str->payload.str.ptr);
+}
+
+/*
+ * cton_string_getptr()
+ *
+ * DESCRIPTION
+ *   Get the string pointer of an cton string object.
+ *
+ * PARAMETER
+ *   ctx: The cton context
+ *   obj: The string object that pointer will be returned.
+ *
+ * RETURN
+ *   The data pointer of the string object.
+ */
+char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
+{
+    cton_string_type_confirm(ctx, obj, NULL);
+
+    return (char *)obj->payload.str.ptr;
+}
+
+void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
+{
+    cton_string_type_confirm(ctx, obj, NULL);
+
+    return (void *)obj->payload.str.ptr;
+}
+
+/*
+ * cton_string_getptr()
+ *
+ * DESCRIPTION
+ *   Get the string pointer of an cton string object.
+ *
+ * PARAMETER
+ *   ctx: The cton context
+ *   obj: The string object that pointer will be returned.
+ *
+ * RETURN
+ *   The data pointer of the string object.
+ */
+size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj)
+{
+    cton_string_type_confirm(ctx, obj, 0);
+
+    return obj->payload.str.used;
+}
+
+int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
+{
+    size_t aligned;
+    void * new_ptr;
+
+    cton_string_type_confirm(ctx, obj, 0);
+
+    if (obj->payload.str.len == 0) {
+        obj->payload.str.ptr = cton_alloc(ctx, len);
+        obj->payload.str.len = len;
+        obj->payload.str.used = len;
+
+    } else if (obj->payload.str.len >= len) {
+        obj->payload.str.used = len;
+
+    } else {
+        aligned = cton_util_align(len, 4096);
+        new_ptr = cton_realloc(ctx, \
+            obj->payload.str.ptr, obj->payload.str.len, aligned);
+        if (new_ptr != NULL) {
+            obj->payload.str.ptr  = new_ptr;
+            obj->payload.str.len  = aligned;
+            obj->payload.str.used = len;
         }
     }
 
-    return new_ptr;
-}
-
-static void cton_pdestroy(cton_ctx *ctx)
-{
-    ctx->memhook.pdestroy(ctx->memhook.pool);
-}
-/*******************************************************************************
- * CTON util functions
- * 
- ******************************************************************************/
-
-static size_t cton_util_align(size_t size, size_t align)
-{
-    size_t remain;
-    size_t aligned;
-
-    remain = size % align;
-    aligned = size ^ remain;
-    return remain > 0 ? aligned + align : aligned ;
-}
-
-/*
- * cton_util_memcpy()
- *
- * DESCRIPTION
- *   挂名CTON的memcpy套娃，
- *   从src开始复制n个字符到dst.
- *
- * PARAMETER
- *   dst: 被粘贴的内存起始位置
- *   src: 复制源的内存起始位置
- *   n: 长度（字节数）
- *
- * RETURN
- *   与memcpy定义一致.
- *
- * ERRORS
- *   与memcpy定义一致.
- */
-static void * cton_util_memcpy(void *dst, const void *src, size_t n)
-{
-    return memcpy(dst, src, n);
-}
-
-
-
-static void * cton_util_memset(void *b, int c, size_t len)
-{
-	return memset(b, c, len);
-}
-
-/*
- * cton_util_strcmp()
- *
- * DESCRIPTION
- *   CTON用比较字符串，
- *   先当作一般字符串进行strncmp比较，如果两个字符串相等，则比较空间大小.
- *
- * PARAMETER
- *   s1: 一个CTON结构
- *   s2: 另一个CTON结构
- *
- * RETURN
- *   与strcmp定义一致（如果不等则返回非零值）.
- *
- * ERRORS
- *   好像没有这种东西.
- */
-int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
-{
-	size_t len_s1;
-	size_t len_s2;
-	size_t len_cmp;
-
-	volatile int ret;
-
-	len_s1 = s1->payload.str.used;
-	len_s2 = s2->payload.str.used;
-
-	len_cmp = len_s1 < len_s2 ? len_s1 : len_s2;
-
-	ret = 0;
-	ret = strncmp((char *)s1->payload.str.ptr, 
-		          (char *)s2->payload.str.ptr, len_cmp - 1);
-
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (len_s1 == len_s2) {
-		return 0;
-	} else if (len_s1 < len_s2) {
-		return s2->payload.str.ptr[len_cmp];
-	} else {
-		return s1->payload.str.ptr[len_cmp];
-	}
-}
-
-cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
-{
-	cton_obj *data;
-	FILE     *fp;
-	size_t    len;
-	char     *ptr;
-
-	fp = fopen(path, "rb");
-	if (fp == NULL) {
-		return NULL;
-	}
-
-	fseek(fp, 0, SEEK_END);
-	len = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-
-	data = cton_object_create(ctx, CTON_BINARY);
-	cton_string_setlen(ctx, data, len);
-
-	ptr = cton_string_getptr(ctx, data);
-	fread(ptr, len, 1, fp);
-	fclose(fp);
-
-	return data;
-}
-
-int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
-{
-	FILE     *fp;
-	size_t    len;
-	char     *ptr;
-
-	fp = fopen(path, "wb");
-	if (fp == NULL) {
-		return -1;
-	}
-
-	len = cton_string_getlen(ctx, obj);
-	ptr = cton_string_getptr(ctx, obj);
-	fwrite(ptr, len, 1, fp);
-	fclose(fp);
-
-	return 0;
+    return len;
 }
 
 
@@ -1315,381 +1487,190 @@ double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
     return val;
 }
 
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
-{
-    int ret;
 
-    if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
+/*******************************************************************************
+ *         CTON Tree
+ *******************************************************************************
+ *   CTON can manage data in the form of a tree. This part is the interface used
+ * to manage data in this way.
+ ******************************************************************************/
+
+
+/**
+ * cton_tree_setroot()
+ *   - Set the root object for a cton_tree.
+ *
+ * PARAMETER
+ *   ctx: the cton context.
+
+ * RETURN VALUE
+ *   0 for success and other value for any error.
+ *
+ * DESCRIPTION
+ *   This function will make the given object to be the new root element of the
+ * cton tree. Unless wrong parameter such as null pointer or invalid object is
+ * passed to the function, this function will always success. But the function
+ * will set cton error when the root is already not NULL. This error suggests
+ * that the tree has been replaced, and maybe there are leaked object.
+ *
+ * ERRORs
+ *   CTON_ERROR_REPLACE: The root is already set, and has been replaced by the
+ *                      new passed in object.
+ *   CTON_ERROR_TYPE: The object passed by parameter is not valid type for cton
+ *                   tree or not valid cton object.
+ *
+ * TODO
+ *   Some code in this function maybe not necessary.
+ */
+int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
+{
+    cton_type type;
+
+#if 1 /* Is this part necessary? */
+
+    type = cton_object_gettype(ctx, obj);
+
+    if (cton_geterr(ctx) != CTON_OK) {
+        return -1;
+    }
+
+    if (type != CTON_HASH && type != CTON_ARRAY) {
+        
+        /**     TODO
+         *  In JSON standard, not only hash and array, a number or other values
+         * also seems as a valid JSON, so maybe it is no necessary to limit the
+         * type of the root object?
+         */ 
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
-    ret = 0;
-
-    if (val == CTON_TRUE) {
-        obj->payload.b = CTON_TRUE;
-
-    } else {
-        obj->payload.b = CTON_FALSE;
-
-        if (val != CTON_FALSE) {
-            ret = 1;
-        }
-
-    }
-
-    return ret;
-}
-
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
-{
-    if (cton_object_gettype(ctx, obj) != CTON_BOOL) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
-        return CTON_FALSE;
-    }
-
-    return obj->payload.b;
-}
-/*******************************************************************************
- * CTON Object methods
- ******************************************************************************/
-
-typedef struct {
-    cton_type   type;
-    void      (*init)(cton_ctx *ctx, cton_obj *obj);
-    void      (*delete)(cton_ctx *ctx, cton_obj *obj);
-    void *    (*getptr)(cton_ctx *ctx, cton_obj *obj);
-} cton_class_hook_s;
-
-cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
-    {
-        CTON_INVALID, NULL, NULL, NULL
-    },{
-        CTON_OBJECT, NULL, NULL, NULL
-    },{
-        CTON_NULL, NULL, NULL, NULL
-    },{
-        CTON_BOOL, NULL, NULL, NULL
-    },{
-        CTON_BINARY, cton_string_init, cton_string_delete,
-        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
-    },{
-        CTON_STRING, cton_string_init, cton_string_delete,
-        (void *(*)(cton_ctx *, cton_obj *))cton_string_getptr
-    },{
-        CTON_ARRAY, cton_array_init, NULL, cton_array_getptr
-    },{
-        CTON_HASH, NULL, NULL, NULL
-    },{
-#if 0
-        CTON_INT8, cton_int8_init, NULL, cton_int8_getptr
-    },{
-        CTON_INT16, cton_int16_init, NULL, cton_int16_getptr
-    },{
-        CTON_INT32, cton_int32_init, NULL, cton_int32_getptr
-    },{
-        CTON_INT64, cton_int64_init, NULL, cton_int64_getptr
-    },{
-        CTON_UINT8, cton_uint8_init, NULL, cton_uint8_getptr
-    },{
-        CTON_UINT16, cton_uint16_init, NULL, cton_uint16_getptr
-    },{
-        CTON_UINT32, cton_uint32_init, NULL, cton_uint32_getptr
-    },{
-        CTON_UINT64, cton_uint64_init, NULL, cton_uint64_getptr
-    },{
-        CTON_FLOAT8, cton_float8_init, NULL, cton_float8_getptr
-    },{
-        CTON_FLOAT16, cton_float16_init, NULL, cton_float16_getptr
-    },{
-        CTON_FLOAT32, cton_float32_init, NULL, cton_float32_getptr
-    },{
-        CTON_FLOAT64, cton_float64_init, NULL, cton_float64_getptr
-#else
-        CTON_INT8,  NULL, NULL, NULL
-    },{
-        CTON_INT16, NULL, NULL, NULL
-    },{
-        CTON_INT32, NULL, NULL, NULL
-    },{
-        CTON_INT64, NULL, NULL, NULL
-    },{
-        CTON_UINT8,  NULL, NULL, NULL
-    },{
-        CTON_UINT16, NULL, NULL, NULL
-    },{
-        CTON_UINT32, NULL, NULL, NULL
-    },{
-        CTON_UINT64, NULL, NULL, NULL
-    },{
-        CTON_FLOAT8,  NULL, NULL, NULL
-    },{
-        CTON_FLOAT16, NULL, NULL, NULL
-    },{
-        CTON_FLOAT32, NULL, NULL, NULL
-    },{
-        CTON_FLOAT64, NULL, NULL, NULL
 #endif
+
+    if (cton_tree_getroot(ctx) != NULL) {
+        cton_seterr(ctx, CTON_ERROR_REPLACE);
+
+        ctx->root = obj;
+        return -2;
     }
-};
+
+    ctx->root = obj;
+    return 0;
+}
+
 
 /**
- * cton_object(s) are managed by cton_ctx by Doubly linked list.
- *
- * cton_ctx.
- *
+ * cton_tree_getroot()
+ *   - Get the root object of the cton tree
  */
-
-/*
- * cton_object_create()
- *
- * DESCRIPTION
- *   Create an object with the specific type and add it to the object list.
- *
- * PARAMETER
- *   ctx: cton context
- *   type: the type that the new object will hold
- *
- * RETURN
- *     Handle of new created object or NULL for any exception.
- */
-cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
+cton_obj *cton_tree_getroot(cton_ctx *ctx)
 {
-    cton_obj *obj;
-
-    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
-
-    obj = cton_alloc(ctx, sizeof(cton_obj));
-
-    cton_util_memset(obj, 0, sizeof(cton_obj));
-
-    obj->magic = CTON_STRUCT_MAGIC;
-    obj->type  = type;
-    obj->prev  = NULL;
-    obj->next  = NULL;
-
-    /* Insert object into object pool linked list */
-    if (ctx->nodes == NULL) {
-        ctx->nodes = obj;
-
-    } else {
-        obj->prev = ctx->nodes_last;
-        ctx->nodes_last->next = obj;
-
-    }
-
-    ctx->nodes_last = obj;
-
-    if (cton_class_hook[type].init != NULL) {
-        cton_class_hook[type].init(ctx, obj);
-    }
-
-    return obj;
+    return ctx->root;
 }
 
-/*
- * cton_object_delete()
+
+/**
+ * cton_tree_get_by_path()
+ *   - Search object by string.
  *
- * DESCRIPTION
- *   Destory an object and recollect its memory.
- *   备忘：如果将来添加了引用计数功能，这个API要不要更改为引用减一？
- *
- * PARAMETER
- *   ctx: The cton context
- *   obj: The object that will be deleted.
+ * TODO
  */
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
-{
-    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
-    cton_type type;
+cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
 
-    type = cton_object_gettype(ctx, obj);
-    if (type == CTON_INVALID) {
-        return;
-    }
-
-    /* Delete context by type specificed hook */
-    if (cton_class_hook[type].delete != NULL) {
-        cton_class_hook[type].delete(ctx, obj);
-    }
-
-    /* Remove this object from object link list */
-    if (obj->next != NULL) {
-        obj->next->prev = obj->prev;
-    }
-
-    if (obj->prev != NULL) {
-        obj->prev->next = obj->next;
-    }
-
-    if (ctx->nodes == obj) {
-        ctx->nodes = obj->next;
-    }
-
-    if (ctx->nodes_last == obj) {
-        ctx->nodes_last = obj->prev;
-    }
-
-    cton_free(ctx, obj);
-}
-
-/*
- * cton_object_gettype()
- *
- * DESCRIPTION
- *   Return the type of given object.
- *
- * PARAMETER
- *   obj: The object which you want to get it's type
- *
- * RETURN
- *   The type of give object or invalid type for NULL ptr.
- */
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
-{
-    if (obj->type >= CTON_TYPE_CNT) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
-        return CTON_INVALID;
-    }
-
-    return obj->type;
-}
-
-/*
- * cton_object_getvalue()
- *
- * DESCRIPTION
- *   Get the payload pointer of an cton object.
- *
- * PARAMETER
- *   obj: The object which you want to get it's type
- *
- * RETURN
- *   The payload pointer of give object or NULL for NULL ptr.
- */
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
-{
-    extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
-
-    if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
-    if (obj->type == CTON_NULL) {
-        return NULL;
-    }
-
-    if (cton_class_hook[obj->type].getptr == NULL) {
-        return &obj->payload;
-    }
-
-    return cton_class_hook[obj->type].getptr(ctx, obj);
-}
 
 
 /*******************************************************************************
- * CTON type dependent methods
- *
- *******************************************************************************
- * String
+ * CTON util functions
+ * 
  ******************************************************************************/
 
-#define cton_string_type_confirm(ctx, obj, ret) \
-    if (cton_object_gettype(ctx, obj) != CTON_STRING && \
-        cton_object_gettype(ctx, obj) != CTON_BINARY) { \
-        cton_seterr(ctx, CTON_ERROR_TYPE);         \
-        return ret;                                \
-    }
-
-static void cton_string_init(cton_ctx *ctx, cton_obj *str)
+static size_t cton_util_align(size_t size, size_t align)
 {
-    (void) ctx;
-    str->payload.str.ptr  = NULL;
-    str->payload.str.len  = 0;
-    str->payload.str.used = 0;
-}
-
-static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
-{
-    cton_free(ctx, str->payload.str.ptr);
-}
-
-/*
- * cton_string_getptr()
- *
- * DESCRIPTION
- *   Get the string pointer of an cton string object.
- *
- * PARAMETER
- *   ctx: The cton context
- *   obj: The string object that pointer will be returned.
- *
- * RETURN
- *   The data pointer of the string object.
- */
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
-{
-    cton_string_type_confirm(ctx, obj, NULL);
-
-    return (char *)obj->payload.str.ptr;
-}
-
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
-{
-    cton_string_type_confirm(ctx, obj, NULL);
-
-    return (void *)obj->payload.str.ptr;
-}
-
-/*
- * cton_string_getptr()
- *
- * DESCRIPTION
- *   Get the string pointer of an cton string object.
- *
- * PARAMETER
- *   ctx: The cton context
- *   obj: The string object that pointer will be returned.
- *
- * RETURN
- *   The data pointer of the string object.
- */
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj)
-{
-    cton_string_type_confirm(ctx, obj, 0);
-
-    return obj->payload.str.used;
-}
-
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
-{
+    size_t remain;
     size_t aligned;
-    void * new_ptr;
 
-    cton_string_type_confirm(ctx, obj, 0);
+    remain = size % align;
+    aligned = size ^ remain;
+    return remain > 0 ? aligned + align : aligned ;
+}
 
-    if (obj->payload.str.len == 0) {
-        obj->payload.str.ptr = cton_alloc(ctx, len);
-        obj->payload.str.len = len;
-        obj->payload.str.used = len;
+/*
+ * cton_util_memcpy()
+ *
+ * DESCRIPTION
+ *   挂名CTON的memcpy套娃，
+ *   从src开始复制n个字符到dst.
+ *
+ * PARAMETER
+ *   dst: 被粘贴的内存起始位置
+ *   src: 复制源的内存起始位置
+ *   n: 长度（字节数）
+ *
+ * RETURN
+ *   与memcpy定义一致.
+ *
+ * ERRORS
+ *   与memcpy定义一致.
+ */
+static void * cton_util_memcpy(void *dst, const void *src, size_t n)
+{
+    return memcpy(dst, src, n);
+}
 
-    } else if (obj->payload.str.len >= len) {
-        obj->payload.str.used = len;
 
-    } else {
-        aligned = cton_util_align(len, 4096);
-        new_ptr = cton_realloc(ctx, \
-            obj->payload.str.ptr, obj->payload.str.len, aligned);
-        if (new_ptr != NULL) {
-            obj->payload.str.ptr  = new_ptr;
-            obj->payload.str.len  = aligned;
-            obj->payload.str.used = len;
-        }
+
+static void * cton_util_memset(void *b, int c, size_t len)
+{
+    return memset(b, c, len);
+}
+
+/*
+ * cton_util_strcmp()
+ *
+ * DESCRIPTION
+ *   CTON用比较字符串，
+ *   先当作一般字符串进行strncmp比较，如果两个字符串相等，则比较空间大小.
+ *
+ * PARAMETER
+ *   s1: 一个CTON结构
+ *   s2: 另一个CTON结构
+ *
+ * RETURN
+ *   与strcmp定义一致（如果不等则返回非零值）.
+ *
+ * ERRORS
+ *   好像没有这种东西.
+ */
+int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
+{
+    size_t len_s1;
+    size_t len_s2;
+    size_t len_cmp;
+
+    volatile int ret;
+
+    len_s1 = s1->payload.str.used;
+    len_s2 = s2->payload.str.used;
+
+    len_cmp = len_s1 < len_s2 ? len_s1 : len_s2;
+
+    ret = 0;
+    ret = strncmp((char *)s1->payload.str.ptr, 
+                  (char *)s2->payload.str.ptr, len_cmp - 1);
+
+    if (ret != 0) {
+        return ret;
     }
 
-    return len;
+    if (len_s1 == len_s2) {
+        return 0;
+    } else if (len_s1 < len_s2) {
+        return s2->payload.str.ptr[len_cmp];
+    } else {
+        return s1->payload.str.ptr[len_cmp];
+    }
 }
+
 
 cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote)
@@ -1726,3 +1707,47 @@ cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr)
     return cton_string_fromcstr(ctx, cstr, '\0', '\\');
 }
 
+cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
+{
+    cton_obj *data;
+    FILE     *fp;
+    size_t    len;
+    char     *ptr;
+
+    fp = fopen(path, "rb");
+    if (fp == NULL) {
+        return NULL;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    len = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    data = cton_object_create(ctx, CTON_BINARY);
+    cton_string_setlen(ctx, data, len);
+
+    ptr = cton_string_getptr(ctx, data);
+    fread(ptr, len, 1, fp);
+    fclose(fp);
+
+    return data;
+}
+
+int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
+{
+    FILE     *fp;
+    size_t    len;
+    char     *ptr;
+
+    fp = fopen(path, "wb");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    len = cton_string_getlen(ctx, obj);
+    ptr = cton_string_getptr(ctx, obj);
+    fwrite(ptr, len, 1, fp);
+    fclose(fp);
+
+    return 0;
+}

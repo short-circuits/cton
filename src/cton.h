@@ -198,14 +198,14 @@ struct cton_ctx_s {
 
 #endif
 
-/* cton_alloc.c */
+/* cton memhook methods */
 cton_memhook* cton_memhook_init (void * pool,
     void *    (*palloc)(void *pool, size_t size),
     void *    (*prealloc)(void *pool, void *ptr, size_t size),
     void      (*pfree)(void *pool, void *ptr),
     void      (*pdestroy)(void *pool));
 
-/* cton.c */
+/* cton context methods */
 cton_ctx *cton_init(cton_memhook *hook);
 int cton_destory(cton_ctx *ctx);
 void cton_seterr(cton_ctx *ctx, cton_err err);
@@ -213,41 +213,44 @@ cton_err cton_geterr(cton_ctx *ctx);
 char * cton_strerr(cton_err err);
 #define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
 
-int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
-cton_obj *cton_tree_getroot(cton_ctx *ctx);
-cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
-
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
-
-/* cton_object.c */
+/* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
 void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
 cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
 void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
 
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
+/* cton bool type specific methods */
+int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
+cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
+
+/* cton string type specific methods */
 int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
+size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
+char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
 
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);
+/* cton array type specific methods */
 int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);
 cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
+size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);
+size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
 int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
-void * cton_array_getptr(cton_ctx *ctx, cton_obj *obj);
+cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
 int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
+/* cton hash type specific methods */
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
 int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
+/* cton numeric types specific methods */
+int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val);
 int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj);
+uint64_t cton_numeric_setuint(cton_ctx *ctx, cton_obj *obj, uint64_t val);
 uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
+double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val);
 double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_util.c */
@@ -255,8 +258,14 @@ cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr);
 
+int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+
+/* cton tree methods */
+int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
+cton_obj *cton_tree_getroot(cton_ctx *ctx);
+cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
 
 
 #endif /* _CTON_HEADER_ */
