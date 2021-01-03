@@ -15,11 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
-/*
- * CTON memory hook structure.
- * These function is supposed to have the same function with malloc/free in the
- * stdlib.
- */
+#ifdef _INTER_LIBCTON_
+
 typedef struct {
     void *      pool;
     void *    (*palloc)(void *pool, size_t size);
@@ -30,15 +27,33 @@ typedef struct {
 
 extern cton_memhook cton_std_hook;
 
+#else
+
+typedef void cton_memhook;
+
+#endif
+
 /*
  * CTON object types
  */
+
+#ifdef _INTER_LIBCTON_
 
 typedef struct cton_obj_s       cton_obj;
 typedef struct cton_string_s    cton_string;
 typedef struct cton_array_s     cton_array;
 typedef struct cton_hash_item_s cton_hash_item;
 typedef struct cton_hash_s      cton_hash;
+
+#else
+
+typedef void cton_obj;
+typedef void cton_string;
+typedef void cton_array;
+typedef void cton_hash_item;
+typedef void cton_hash;
+
+#endif
 
 enum cton_type_e {
     CTON_INVALID = 0,
@@ -69,6 +84,8 @@ enum cton_bool_e {
     CTON_FALSE = 0,
     CTON_TRUE  = 1
 };
+
+#ifdef _INTER_LIBCTON_
 
 struct cton_string_s {
     size_t   len;
@@ -121,6 +138,8 @@ struct cton_obj_s {
     enum cton_type_e type;   /* CTON type */
 };
 
+#endif
+
 typedef enum   cton_type_e      cton_type;
 typedef enum   cton_bool_e      cton_bool;
 
@@ -138,8 +157,15 @@ typedef enum   cton_bool_e      cton_bool;
  * 不同上下文结构体之间应保证线程安全。（避免static变量的使用）
  * 是否要求所有函数都使用上下文结构体作为第一个传入参数？
  ******************************************************************************/
+#ifdef _INTER_LIBCTON_
 
 typedef struct cton_ctx_s       cton_ctx;
+
+#else
+
+typedef void cton_ctx;
+
+#endif
 
 enum cton_error_e {
     CTON_OK            = 0,
@@ -156,6 +182,8 @@ enum cton_error_e {
 
 typedef enum cton_error_e       cton_err;
 
+#ifdef _INTER_LIBCTON_
+
 struct cton_ctx_s {
     cton_memhook memhook;
 
@@ -167,6 +195,8 @@ struct cton_ctx_s {
 
     cton_err  err;
 };
+
+#endif
 
 /* cton_alloc.c */
 cton_memhook* cton_memhook_init (void * pool,
