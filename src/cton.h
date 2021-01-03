@@ -213,6 +213,8 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
 
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
+int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+    int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
 int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj);
 uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
