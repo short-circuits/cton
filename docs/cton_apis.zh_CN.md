@@ -455,8 +455,58 @@ CTON的字符串对象和二进制对象共享了绝大多数的API。
 
 ## CTON阵列对象 (前缀: cton\_array\_)
 
-在CTON中，阵列被定义为若干个同一类型的数据组成的有序且支持随机访问的数据结构。
-CTON没有强制阵列必须是稠密的。因此一个阵列中可能在不确定的位置有任意个空缺元素。
+在CTON中，阵列被定义为若干个**同一类型**的数据组成的**有序**且支持随机访问的数据结构。尽管阵列要求了数据是同一类型的，但仍然保留了一个`CTON_OBJECT`特殊类型。这个类型虽然无法在创建对象的时候使用，但是却是一个合理的阵列元素类型。指定了元素类型为`CTON_OBJECT`的阵列会创建`cton_obj *`对象的阵列，允许在元素内部存储自身的类型信息。因此阵列对象实质上是允许了存储不同类型的对象。强制统一类型允许以更紧凑的方式存储若干相同类型的变量，而保留此特殊类型则允许了兼容如JSON等只要求有序的场合。
+
+创建CTON阵列对象可能是创建所有对象中操作最复杂的一个。创建阵列对象的操作大致可以总结为以下步骤：
+
+1. 通过`cton_object_create(ctx, CTON_ARRAY)`创建一个基本的阵列对象。此时阵列对象还没有被设置允许的元素类型，因此还不能够被申请存储空间，更不能被直接使用。
+2. 使用`cton_array_settype()`调用来为阵列元素设置一个合理的类型。这个类型将用于申请存储空间以及验证新设置的元素是否符合要求。阵列继承了CTON的静态类型特性，此调用完成后，阵列的类型将不可更改。
+3. 使用`cton_array_setlen()`调用为阵列元素设置长度。CTON的阵列允许动态调节长度，因此可以随时通过此调用修改阵列的长度。
+
+完成了以上三步之后，即可通过对应的set和get调用来修改和访问阵列中的元素。CTON没有强制阵列必须是稠密的。因此一个阵列中可能在不确定的位置有任意个空缺元素。如果尝试get一个从来没有被set过的下标，那么将获得一个NULL指针。
+
+
+### cton\_array\_settype
+
+`int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);`
+
+- 设置阵列对象允许容纳的元素类型
+
+#### 功能说明
+
+本调用可以用来设置阵列允许容纳的元素类型。任何一个CTON对象的类型都是一个合理的元素类型。此外`CTON_OBJECT`也可以作为阵列的元素类型。
+
+对于一个已经完成类型设置的阵列调用此方法会返回错误，且类型不会被修改。
+
+#### 返回值
+
+返回0表示成功，如果遇到任何错误则返回-1
+
+#### TODO
+
+对于已设置类型的阵列的检查尚未完成。
+
+---
+
+### cton\_array\_gettype
+
+`cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);`
+
+- 获得阵列对象允许容纳的元素类型
+
+---
+
+### cton\_array\_setlen
+
+`size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);`
+
+- 设置阵列对象可以容纳的元素数量
+
+#### 功能说明
+
+此调用将会设置一个阵列对象最大可容纳的元素数量，同时尝试为所有可容纳元素分配内存。若传入参数len小于当前的最大可容纳数量，那么此调用会减少数组的长度，**但不会尝试回收超出数组长度的元素的存储空间**。
+
+---
 
 ### cton\_array\_getlen
 
@@ -466,23 +516,7 @@ CTON没有强制阵列必须是稠密的。因此一个阵列中可能在不确�
 
 ---
 
-`size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);`
-
-- 设置阵列对象可以容纳的元素数量
-
----
-
-`int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);`
-
-- 设置阵列对象允许容纳的元素类型
-
----
-
-`cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);`
-
-- 获得阵列对象允许容纳的元素类型
-
----
+### cton\_array\_get
 
 `cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);`
 
@@ -490,18 +524,31 @@ CTON没有强制阵列必须是稠密的。因此一个阵列中可能在不确�
 
 ---
 
+### cton\_array\_set
+
 `int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);`
 
 - 设置阵列对象中指定位置的元素。
 
 ---
 
+### cton\_array\_foreach
+
 ```
 int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 ```
 
-- 对阵列对象中每个元素进行循环操作。
+- 对一个阵列中的每一个元素调用一次传入的函数。
+
+#### 功能说明
+
+本调用需要传入一个按照如下方式定义的函数指针。
+`int func(cton_ctx *ctx, cton_obj *obj, size_t *index, void *rctx);`
+
+本调用会对阵列中的每一个元素按照index递增的顺序调用一次此函数指针，并传入阵列所在的上下文，当前调用对应的对象指针，当前调用的对象的下标，一个用户自定义的指针。用户可以通过自定义指针来保存用户自己需要的上下文。
+
+####
 
 ## CTON散列对象 (前缀: cton\_hash\_)
 
