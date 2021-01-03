@@ -545,29 +545,29 @@ int cton_json_stringify_array(cton_json_ctx *jctx, cton_obj *obj)
 	return 0;
 }
 
+int cton_json_stringify_hashcb(cton_ctx *obj,
+	cton_obj *key, cton_obj *value, size_t index, void *jctx)
+{
+	(void) obj;
+
+	if (index > 0) {
+		cton_json_stringify_bufputchar(jctx, ',');
+	}
+	
+	cton_json_stringify_string(jctx, key);
+	cton_json_stringify_bufputchar(jctx, ':');
+	cton_json_stringify_bufputchar(jctx, ' ');
+	cton_json_stringify_obj(jctx, value);
+
+	return 0;
+}
+
 int cton_json_stringify_hash(cton_json_ctx *jctx, cton_obj *obj)
 {
-	cton_hash_item *kvp;
-	size_t cnt = 0;
 
 	cton_json_stringify_bufputchar(jctx, '{');
 
-	kvp = obj->payload.hash.root;
-
-	while (kvp != NULL) {
-		if (cnt > 0) {
-			cton_json_stringify_bufputchar(jctx, ',');
-		}
-
-		cton_json_stringify_string(jctx, kvp->key);
-		cton_json_stringify_bufputchar(jctx, ':');
-		cton_json_stringify_bufputchar(jctx, ' ');
-		cton_json_stringify_obj(jctx, kvp->value);
-
-		kvp = kvp->next;
-
-		cnt ++;
-	}
+	cton_hash_foreach(jctx->ctx, obj, jctx, cton_json_stringify_hashcb);
 
 	cton_json_stringify_bufputchar(jctx, '}');
 
