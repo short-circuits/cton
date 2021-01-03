@@ -254,9 +254,9 @@ double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val);
 double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_util.c */
-cton_obj * cton_string_fromcstr(cton_ctx *ctx,
+cton_obj * cton_util_create_str(cton_ctx *ctx,
     const char *str, char end, char quote);
-cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr);
+cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 
 int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);

@@ -1754,7 +1754,7 @@ int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
 }
 
 
-cton_obj * cton_string_fromcstr(cton_ctx *ctx,
+cton_obj * cton_util_create_str(cton_ctx *ctx,
     const char *str, char end, char quote)
 {
     cton_obj *obj;
@@ -1784,9 +1784,9 @@ cton_obj * cton_string_fromcstr(cton_ctx *ctx,
     return obj;
 }
 
-cton_obj * cton_string_new_cstr(cton_ctx *ctx, const char *cstr)
+cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr)
 {
-    return cton_string_fromcstr(ctx, cstr, '\0', '\\');
+    return cton_util_create_str(ctx, cstr, '\0', '\\');
 }
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
