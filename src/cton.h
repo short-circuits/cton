@@ -177,6 +177,7 @@ enum cton_error_e {
     CTON_ERROR_REPLACE = 6,
     CTON_ERROR_SUBTYPE = 7,
     CTON_ERROR_INDEX,
+    CTON_ERROR_INPUT,
     CTON_ERROR_UNKNOWN = 127  /* Unknown error */
 };
 
@@ -261,6 +262,7 @@ cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+cton_obj * cton_util_decode64(cton_ctx *ctx, cton_obj* obj);
 
 /* cton tree methods */
 int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
