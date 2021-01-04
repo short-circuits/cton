@@ -505,7 +505,27 @@ static int cton_json_stringify_string(cton_json_ctx *jctx, cton_obj *obj)
 	len --;
 
 	for (index = 0; index < len; index ++) {
-		cton_json_stringify_bufputchar(jctx, ptr[index]);
+		if (ptr[index] == '\"' || ptr[index] == '\'' || ptr[index] == '\\') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, ptr[index]);
+		} else if (ptr[index] == '\b') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, 'b');
+		} else if (ptr[index] == '\f') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, 'f');
+		} else if (ptr[index] == '\n') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, 'n');
+		} else if (ptr[index] == '\r') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, 'r');
+		} else if (ptr[index] == '\t') {
+			cton_json_stringify_bufputchar(jctx, '\\');
+			cton_json_stringify_bufputchar(jctx, 't');
+		} else {
+			cton_json_stringify_bufputchar(jctx, ptr[index]);
+		}
 	}
 
 	cton_json_stringify_bufputchar(jctx, '\"');
