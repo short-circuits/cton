@@ -4,6 +4,7 @@
 int main(int argc, const char **argv)
 {
 	cton_ctx *ctx;
+	cton_obj *json;
 	cton_obj *data;
 	cton_obj *out;
 
@@ -12,11 +13,11 @@ int main(int argc, const char **argv)
 	}
 
 	ctx = cton_init(NULL);
-	data = cton_util_readfile(ctx, argv[1]);
+	json = cton_util_readfile(ctx, argv[1]);
 
-	cton_json_parse(ctx, data);
+	data = cton_json_parse(ctx, json);
 
-	out = cton_json_stringify(ctx);
+	out = cton_json_stringify(ctx, data);
 
 	printf("%s\n", cton_string_getptr(ctx, out));
 

@@ -5,43 +5,85 @@
  * JSON parse
  ******************************************************************************/
 
-struct cton_json_ctx_s {
-	cton_ctx *ctx;
-	cton_obj *jctx;
-	cton_obj *buf;
-	size_t    index;
-};
-
-typedef struct cton_json_ctx_s cton_json_ctx;
-
-cton_obj *cton_json_parse_value(cton_ctx *ctx,
+static cton_obj *cton_json_parse_value(cton_ctx *ctx,
 	const char *json, size_t *index, size_t len);
-size_t cton_json_skip_whitespace(cton_ctx *ctx,
-	const char *json, size_t start, size_t len);
-cton_obj *cton_json_parse_number(cton_ctx *ctx, 
+static cton_obj *cton_json_parse_number(cton_ctx *ctx, 
 	const char *json, size_t *index, size_t len);
+static cton_obj *cton_json_parse_array(cton_ctx *ctx, 
+	const char *json, size_t *index, size_t len);
+static cton_obj *cton_json_parse_hash(cton_ctx *ctx, 
+	const char *json, size_t *index, size_t len);
+static cton_obj *cton_json_parse_string(cton_ctx *ctx, 
+	const char *json, size_t *index, size_t len);
+static size_t cton_json_skip_whitespace(cton_ctx *ctx,
+	const char *json, size_t *start, size_t len);
 
 
-
-size_t cton_json_skip_whitespace(cton_ctx *ctx,
-	const char *json, size_t start, size_t len)
+cton_obj *cton_json_parse(cton_ctx *ctx, cton_obj *json)
 {
+	cton_obj *obj;
 	size_t index;
 
-	(void) ctx;
+	index = 0;
+	obj = cton_json_parse_value(ctx, 
+		(char *)cton_string_getptr(ctx, json), &index, cton_string_getlen(ctx, json));
 
-	index = start;
-	while (isspace(json[index])) {
-		index ++;
-		if (index == len) {
-			break;
-		}
-	}
-
-	return index;
+	return obj;
 }
 
-cton_obj *
+static cton_obj * cton_json_parse_value(cton_ctx *ctx,
+	const char *json, size_t *index, size_t len)
+{
+	cton_obj * obj;
+	char ch;
+
+	cton_json_skip_whitespace(ctx, json, index, len);
+
+	if (*index == len) {
+		return NULL;
+	}
+
+	ch = json[*index];
+
+	if (ch == '{') {
+		/* Hash (json:object) */
+		obj = cton_json_parse_hash(ctx, json, index, len);
+
+	} else if (ch == '[') {
+		/* Array (json:array) */
+		obj = cton_json_parse_array(ctx, json, index, len);
+
+	} else if (ch == '\"') {
+		/* String (json:string) */
+		obj = cton_json_parse_string(ctx, json, index, len);
+
+	} else if (ch == '-' || ch == '.' || (ch >= '0' && ch <= '9')) {
+		obj = cton_json_parse_number(ctx, json, index, len);
+
+	} else if (strncmp(&json[*index], "true", 4) == 0) {
+		obj = cton_object_create(ctx, CTON_BOOL);
+		cton_bool_set(ctx, obj, CTON_TRUE);
+		*index += 4;
+
+	} else if (strncmp(&json[*index], "false", 5) == 0) {
+		obj = cton_object_create(ctx, CTON_BOOL);
+		cton_bool_set(ctx, obj, CTON_FALSE);
+		*index += 5;
+
+	} else if (strncmp(&json[*index], "null", 4) == 0) {
+		obj = cton_object_create(ctx, CTON_NULL);
+		*index += 4;
+
+	} else {
+		return NULL;
+	}
+
+	cton_json_skip_whitespace(ctx, json, index, len);
+
+	return obj;
+}
+
+static cton_obj *
 cton_json_parse_number(cton_ctx *ctx, 
 	const char *json, size_t *index, size_t len)
 {
@@ -98,7 +140,7 @@ loop_end:
 }
 
 
-cton_obj *
+static cton_obj *
 cton_json_parse_array(cton_ctx *ctx, 
 	const char *json, size_t *index, size_t len)
 {
@@ -119,7 +161,7 @@ cton_json_parse_array(cton_ctx *ctx,
 	cnt = 0;
 	cton_array_setlen(ctx, arr, cnt);
 
-	*index = cton_json_skip_whitespace(ctx, json, *index, len);
+	cton_json_skip_whitespace(ctx, json, index, len);
 	if (json[*index] == ']') {
 		return arr;
 	}
@@ -145,7 +187,7 @@ cton_json_parse_array(cton_ctx *ctx,
 	return arr;
 }
 
-cton_obj *
+static cton_obj *
 cton_json_parse_string(cton_ctx *ctx, 
 	const char *json, size_t *index, size_t len)
 {
@@ -209,11 +251,11 @@ cton_json_parse_string(cton_ctx *ctx,
 				case '\"': dst[dst_index] = '\"'; break;
 				case '\\': dst[dst_index] = '\\'; break;
 				case '/':  dst[dst_index] = '/';  break;
-				case 'b':  dst[dst_index] = 'b';  break;
-				case 'f':  dst[dst_index] = 'f';  break;
-				case 'n':  dst[dst_index] = 'n';  break;
-				case 'r':  dst[dst_index] = 'f';  break;
-				case 't':  dst[dst_index] = 't';  break;
+				case 'b':  dst[dst_index] = '\b';  break;
+				case 'f':  dst[dst_index] = '\f';  break;
+				case 'n':  dst[dst_index] = '\n';  break;
+				case 'r':  dst[dst_index] = '\r';  break;
+				case 't':  dst[dst_index] = '\t';  break;
 				default:
 					cton_seterr(ctx, CTON_ERROR_IMPLEM);
 					return NULL;
@@ -234,7 +276,7 @@ cton_json_parse_string(cton_ctx *ctx,
 	return obj;
 }
 
-cton_obj * cton_json_parse_hash(cton_ctx *ctx,
+static cton_obj * cton_json_parse_hash(cton_ctx *ctx,
 	const char *json, size_t *index, size_t len)
 {
 	cton_obj *hash;
@@ -252,7 +294,7 @@ cton_obj * cton_json_parse_hash(cton_ctx *ctx,
 	parse_index = *index;
 	parse_index ++;
 
-	parse_index = cton_json_skip_whitespace(ctx, json, parse_index, len);
+	cton_json_skip_whitespace(ctx, json, &parse_index, len);
 
 	if (json[parse_index] == '}') {
 		*index = parse_index + 1;
@@ -262,9 +304,9 @@ cton_obj * cton_json_parse_hash(cton_ctx *ctx,
 
 	while (parse_index < len) {
 
-		parse_index = cton_json_skip_whitespace(ctx, json, parse_index, len);
+		cton_json_skip_whitespace(ctx, json, &parse_index, len);
 		key = cton_json_parse_string(ctx, json, &parse_index, len);
-		parse_index = cton_json_skip_whitespace(ctx, json, parse_index, len);
+		cton_json_skip_whitespace(ctx, json, &parse_index, len);
 
 		if (json[parse_index] != ':') {
 			fprintf(stderr, "Get '%c', exceped ':'\n", json[parse_index]);
@@ -292,289 +334,73 @@ cton_obj * cton_json_parse_hash(cton_ctx *ctx,
 	return hash;
 }
 
-cton_obj * cton_json_parse_value(cton_ctx *ctx,
-	const char *json, size_t *index, size_t len)
-{
-	cton_obj * obj;
-	char ch;
-
-	*index = cton_json_skip_whitespace(ctx, json, *index, len);
-
-	if (*index == len) {
-		return NULL;
-	}
-
-	ch = json[*index];
-
-	if (ch == '{') {
-		/* Hash (json:object) */
-		obj = cton_json_parse_hash(ctx, json, index, len);
-
-	} else if (ch == '[') {
-		/* Array (json:array) */
-		obj = cton_json_parse_array(ctx, json, index, len);
-
-	} else if (ch == '\"') {
-		/* String (json:string) */
-		obj = cton_json_parse_string(ctx, json, index, len);
-
-	} else if (ch == '-' || ch == '.' || (ch >= '0' && ch <= '9')) {
-		obj = cton_json_parse_number(ctx, json, index, len);
-
-	} else if (strncmp(&json[*index], "true", 4) == 0) {
-		obj = cton_object_create(ctx, CTON_BOOL);
-		cton_bool_set(ctx, obj, CTON_TRUE);
-		*index += 4;
-
-	} else if (strncmp(&json[*index], "false", 5) == 0) {
-		obj = cton_object_create(ctx, CTON_BOOL);
-		cton_bool_set(ctx, obj, CTON_FALSE);
-		*index += 5;
-
-	} else if (strncmp(&json[*index], "null", 4) == 0) {
-		obj = cton_object_create(ctx, CTON_NULL);
-		*index += 4;
-
-	} else {
-		return NULL;
-	}
-
-	*index = cton_json_skip_whitespace(ctx, json, *index, len);
-
-	return obj;
-}
-
-int cton_json_parse(cton_ctx *ctx, cton_obj *json)
+static size_t cton_json_skip_whitespace(cton_ctx *ctx,
+	const char *json, size_t *start, size_t len)
 {
 	size_t index;
-	index = 0;
-	cton_obj *root;
 
-	root = cton_json_parse_value(ctx, 
-		(char *)cton_string_getptr(ctx, json), &index, cton_string_getlen(ctx, json));
+	(void) ctx;
 
-	cton_tree_setroot(ctx, root);
+	index = *start;
+	while (isspace(json[index])) {
+		index ++;
+		if (index == len) {
+			break;
+		}
+	}
 
-	return 0;
+	*start = index;
+
+	return index;
 }
 
 
 /*******************************************************************************
  * JSON stringify
  ******************************************************************************/
-#define CTON_JSON_BUFPAGE 4096
-int cton_json_stringify_obj(cton_json_ctx *jctx, cton_obj *obj);
 
-int cton_json_stringify_bufputchar(cton_json_ctx *jctx, int c)
-{
-	int array_len;
-	cton_obj *str;
-	char     *ptr;
-
-	array_len = cton_array_getlen(jctx->ctx, jctx->buf);
-
-	if (jctx->index % CTON_JSON_BUFPAGE == 0) {
-		/* expand buffer first */
-		array_len = cton_array_getlen(jctx->ctx, jctx->buf);
-		array_len += 1;
-		cton_array_setlen(jctx->ctx, jctx->buf, array_len);
-
-		str = cton_object_create(jctx->ctx, CTON_STRING);
-		cton_string_setlen(jctx->ctx, str, CTON_JSON_BUFPAGE);
-		cton_array_set(jctx->ctx, jctx->buf, str, array_len - 1);
-	}
-
-	str = cton_array_get(jctx->ctx, jctx->buf, array_len - 1);
-	ptr = (char *)cton_string_getptr(jctx->ctx, str);
-	ptr[jctx->index % CTON_JSON_BUFPAGE] = c;
-	jctx->index += 1;
-
-	return c;
-}
-
-cton_json_ctx *cton_json_stringify_create_ctx(cton_ctx *ctx)
-{
-	cton_json_ctx *jctx;
-	cton_obj *obj;
-
-	obj = cton_object_create(ctx, CTON_BINARY);
-
-	cton_string_setlen(ctx, obj, sizeof(cton_json_ctx));
-
-	jctx = cton_binary_getptr(ctx, obj);
-	jctx->ctx  = ctx;
-	jctx->jctx = obj;
-	jctx->buf  = cton_object_create(ctx, CTON_ARRAY);
-	cton_array_settype(ctx, jctx->buf, CTON_STRING);
-	cton_array_setlen(ctx, jctx->buf, 0);
-
-	jctx->index = 0;
-
-	return jctx;
-}
-
-cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx)
-{
-	cton_obj *str;
+struct cton_json_ctx_s {
+	cton_ctx *ctx;
+	cton_obj *jctx;
 	cton_obj *buf;
+	size_t    index;
+};
 
-	size_t buf_cnt;
-	size_t buf_index;
-	size_t buf_len;
-	size_t ch_index;
+typedef struct cton_json_ctx_s cton_json_ctx;
 
-	char  *o_ptr;
-	char  *buf_ptr;
+#define CTON_JSON_BUFPAGE 4096
 
-	str = cton_object_create(jctx->ctx, CTON_STRING);
-	cton_string_setlen(jctx->ctx, str, jctx->index + 1);
-	o_ptr = cton_string_getptr(jctx->ctx, str);
+static cton_json_ctx *cton_json_stringify_create_ctx(cton_ctx *ctx);
+static void cton_json_stringify_destroy_ctx(cton_json_ctx *jctx);
+static int cton_json_stringify_bufputchar(cton_json_ctx *jctx, int c);
+static cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx);
 
-	buf_len = CTON_JSON_BUFPAGE;
-	buf_cnt = cton_array_getlen(jctx->ctx, jctx->buf);
-	for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
-		buf = cton_array_get(jctx->ctx, jctx->buf, buf_index);
+static int cton_json_stringify_obj(cton_json_ctx *jctx, cton_obj *obj);
+static int cton_json_stringify_hash(cton_json_ctx *jctx, cton_obj *obj);
+static int cton_json_stringify_array(cton_json_ctx *jctx, cton_obj *obj);
+static int cton_json_stringify_string(cton_json_ctx *jctx, cton_obj *obj);
+static int cton_json_stringify_binary(cton_json_ctx *jctx, cton_obj *obj);
+static int cton_json_stringify_number(cton_json_ctx *jctx, cton_obj *obj);
 
-		buf_ptr = cton_string_getptr(jctx->ctx, buf);
-
-		if (buf_index == buf_cnt - 1) {
-			buf_len = jctx->index % CTON_JSON_BUFPAGE;
-		}
-
-		for (ch_index = 0; ch_index < buf_len; ch_index ++) {
-			*o_ptr = buf_ptr[ch_index];
-			o_ptr ++;
-		}
-
-	}
-
-	*o_ptr = '\0';
-
-	return str;
-}
-
-int cton_json_stringify_number(cton_json_ctx *jctx, cton_obj *obj)
+cton_obj * cton_json_stringify(cton_ctx *ctx, cton_obj *obj)
 {
-	char buf[32] = {0};
-	void *ptr;
+	cton_obj *output;
 
-	int ch_index;
+	cton_json_ctx *jctx;
 
-	ptr = cton_object_getvalue(jctx->ctx, obj);
+	jctx = cton_json_stringify_create_ctx(ctx);
 
-	switch (cton_object_gettype(jctx->ctx, obj)) {
-		case CTON_INT8: sprintf(buf, "%hhd", *(int8_t *)ptr); break;
-		case CTON_INT16: sprintf(buf, "%hd", *(int16_t *)ptr); break;
-		case CTON_INT32: sprintf(buf, "%d", *(int32_t *)ptr); break;
-		case CTON_INT64: sprintf(buf, "%ld", *(int64_t *)ptr); break;
-		case CTON_UINT8: sprintf(buf, "%hhu", *(uint8_t *)ptr); break;
-		case CTON_UINT16: sprintf(buf, "%hu", *(uint16_t *)ptr); break;
-		case CTON_UINT32: sprintf(buf, "%u", *(uint32_t *)ptr); break;
-		case CTON_UINT64: sprintf(buf, "%lu", *(uint64_t *)ptr); break;
-		case CTON_FLOAT32: sprintf(buf, "%g", *(float *)ptr); break;
-		case CTON_FLOAT64: sprintf(buf, "%lg", *(double *)ptr); break;
-		default:
-			/* Should never go here */
-			return -1;
-	}
+	cton_json_stringify_obj(jctx, obj);
 
-	for (ch_index = 0; ch_index < 32; ch_index ++) {
-		if (buf[ch_index] == '\0') {
-			break;
-		}
+	output = cton_json_stringify_buf2str(jctx);
 
-		cton_json_stringify_bufputchar(jctx, buf[ch_index]);
-	}
+	cton_json_stringify_destroy_ctx(jctx);
 
-	return 0;
+	return output;
 }
 
-int cton_json_stringify_string(cton_json_ctx *jctx, cton_obj *obj)
-{
-	char *ptr;
-	size_t len;
-	size_t index;
 
-	cton_json_stringify_bufputchar(jctx, '\"');
-
-	len = cton_string_getlen(jctx->ctx, obj);
-	ptr = (char *)cton_string_getptr(jctx->ctx, obj);
-
-	len --;
-
-	for (index = 0; index < len; index ++) {
-		cton_json_stringify_bufputchar(jctx, ptr[index]);
-	}
-
-	cton_json_stringify_bufputchar(jctx, '\"');
-
-	return 0;
-}
-
-int cton_json_stringify_binary(cton_json_ctx *jctx, cton_obj *obj)
-{
-	return cton_json_stringify_string(jctx, obj);
-}
-
-int cton_json_stringify_arrcb(cton_ctx *obj,
-	cton_obj *arr_item, size_t index, void *jctx)
-{
-	(void) obj;
-
-	if (index != 0) {
-		cton_json_stringify_bufputchar(jctx, ',');
-	}
-
-	cton_json_stringify_obj(jctx, arr_item);
-
-	return 0;
-}
-
-int cton_json_stringify_array(cton_json_ctx *jctx, cton_obj *obj)
-{
-	size_t len;
-
-	cton_json_stringify_bufputchar(jctx, '[');
-
-	len = cton_array_getlen(jctx->ctx, obj);
-
-	cton_array_foreach(jctx->ctx, obj, (void *)jctx, cton_json_stringify_arrcb);
-
-	cton_json_stringify_bufputchar(jctx, ']');
-
-	return 0;
-}
-
-int cton_json_stringify_hashcb(cton_ctx *obj,
-	cton_obj *key, cton_obj *value, size_t index, void *jctx)
-{
-	(void) obj;
-
-	if (index > 0) {
-		cton_json_stringify_bufputchar(jctx, ',');
-	}
-	
-	cton_json_stringify_string(jctx, key);
-	cton_json_stringify_bufputchar(jctx, ':');
-	cton_json_stringify_bufputchar(jctx, ' ');
-	cton_json_stringify_obj(jctx, value);
-
-	return 0;
-}
-
-int cton_json_stringify_hash(cton_json_ctx *jctx, cton_obj *obj)
-{
-
-	cton_json_stringify_bufputchar(jctx, '{');
-
-	cton_hash_foreach(jctx->ctx, obj, jctx, cton_json_stringify_hashcb);
-
-	cton_json_stringify_bufputchar(jctx, '}');
-
-	return 0;
-}
-
-int cton_json_stringify_obj(cton_json_ctx *jctx, cton_obj *obj)
+static int cton_json_stringify_obj(cton_json_ctx *jctx, cton_obj *obj)
 {
 	cton_bool *b;
 
@@ -629,20 +455,241 @@ int cton_json_stringify_obj(cton_json_ctx *jctx, cton_obj *obj)
 	return 0;
 }
 
-cton_obj * cton_json_stringify(cton_ctx *ctx)
+static int cton_json_stringify_number(cton_json_ctx *jctx, cton_obj *obj)
 {
-	cton_obj *output;
-	cton_obj *root;
+	char buf[32] = {0};
+	void *ptr;
 
-	cton_json_ctx *jctx;
+	int ch_index;
 
-	jctx = cton_json_stringify_create_ctx(ctx);
+	ptr = cton_object_getvalue(jctx->ctx, obj);
 
-	root = cton_tree_getroot(ctx);
+	switch (cton_object_gettype(jctx->ctx, obj)) {
+		case CTON_INT8: sprintf(buf, "%hhd", *(int8_t *)ptr); break;
+		case CTON_INT16: sprintf(buf, "%hd", *(int16_t *)ptr); break;
+		case CTON_INT32: sprintf(buf, "%d", *(int32_t *)ptr); break;
+		case CTON_INT64: sprintf(buf, "%ld", *(int64_t *)ptr); break;
+		case CTON_UINT8: sprintf(buf, "%hhu", *(uint8_t *)ptr); break;
+		case CTON_UINT16: sprintf(buf, "%hu", *(uint16_t *)ptr); break;
+		case CTON_UINT32: sprintf(buf, "%u", *(uint32_t *)ptr); break;
+		case CTON_UINT64: sprintf(buf, "%lu", *(uint64_t *)ptr); break;
+		case CTON_FLOAT32: sprintf(buf, "%g", *(float *)ptr); break;
+		case CTON_FLOAT64: sprintf(buf, "%lg", *(double *)ptr); break;
+		default:
+			/* Should never go here */
+			return -1;
+	}
 
-	cton_json_stringify_obj(jctx, root);
+	for (ch_index = 0; ch_index < 32; ch_index ++) {
+		if (buf[ch_index] == '\0') {
+			break;
+		}
 
-	output = cton_json_stringify_buf2str(jctx);
+		cton_json_stringify_bufputchar(jctx, buf[ch_index]);
+	}
 
-	return output;
+	return 0;
 }
+
+static int cton_json_stringify_string(cton_json_ctx *jctx, cton_obj *obj)
+{
+	char *ptr;
+	size_t len;
+	size_t index;
+
+	cton_json_stringify_bufputchar(jctx, '\"');
+
+	len = cton_string_getlen(jctx->ctx, obj);
+	ptr = (char *)cton_string_getptr(jctx->ctx, obj);
+
+	len --;
+
+	for (index = 0; index < len; index ++) {
+		cton_json_stringify_bufputchar(jctx, ptr[index]);
+	}
+
+	cton_json_stringify_bufputchar(jctx, '\"');
+
+	return 0;
+}
+
+static int cton_json_stringify_binary(cton_json_ctx *jctx, cton_obj *obj)
+{
+	cton_obj *base64;
+	int ret;
+
+	base64 = cton_util_encode64(jctx->ctx, obj, CTON_BASE64);
+	ret = cton_json_stringify_string(jctx, base64);
+
+	cton_object_delete(jctx->ctx, base64);
+
+	return ret;
+}
+
+static int cton_json_stringify_arrcb(cton_ctx *obj,
+	cton_obj *arr_item, size_t index, void *jctx)
+{
+	(void) obj;
+
+	if (index != 0) {
+		cton_json_stringify_bufputchar(jctx, ',');
+	}
+
+	cton_json_stringify_obj(jctx, arr_item);
+
+	return 0;
+}
+
+static int cton_json_stringify_array(cton_json_ctx *jctx, cton_obj *obj)
+{
+	size_t len;
+
+	cton_json_stringify_bufputchar(jctx, '[');
+
+	len = cton_array_getlen(jctx->ctx, obj);
+
+	cton_array_foreach(jctx->ctx, obj, (void *)jctx, cton_json_stringify_arrcb);
+
+	cton_json_stringify_bufputchar(jctx, ']');
+
+	return 0;
+}
+
+static int cton_json_stringify_hashcb(cton_ctx *obj,
+	cton_obj *key, cton_obj *value, size_t index, void *jctx)
+{
+	(void) obj;
+
+	if (index > 0) {
+		cton_json_stringify_bufputchar(jctx, ',');
+	}
+	
+	cton_json_stringify_string(jctx, key);
+	cton_json_stringify_bufputchar(jctx, ':');
+	cton_json_stringify_bufputchar(jctx, ' ');
+	cton_json_stringify_obj(jctx, value);
+
+	return 0;
+}
+
+static int cton_json_stringify_hash(cton_json_ctx *jctx, cton_obj *obj)
+{
+
+	cton_json_stringify_bufputchar(jctx, '{');
+
+	cton_hash_foreach(jctx->ctx, obj, jctx, cton_json_stringify_hashcb);
+
+	cton_json_stringify_bufputchar(jctx, '}');
+
+	return 0;
+}
+
+static int cton_json_stringify_bufputchar(cton_json_ctx *jctx, int c)
+{
+	int array_len;
+	cton_obj *str;
+	char     *ptr;
+
+	array_len = cton_array_getlen(jctx->ctx, jctx->buf);
+
+	if (jctx->index % CTON_JSON_BUFPAGE == 0) {
+		/* expand buffer first */
+		array_len = cton_array_getlen(jctx->ctx, jctx->buf);
+		array_len += 1;
+		cton_array_setlen(jctx->ctx, jctx->buf, array_len);
+
+		str = cton_object_create(jctx->ctx, CTON_STRING);
+		cton_string_setlen(jctx->ctx, str, CTON_JSON_BUFPAGE);
+		cton_array_set(jctx->ctx, jctx->buf, str, array_len - 1);
+	}
+
+	str = cton_array_get(jctx->ctx, jctx->buf, array_len - 1);
+	ptr = (char *)cton_string_getptr(jctx->ctx, str);
+	ptr[jctx->index % CTON_JSON_BUFPAGE] = c;
+	jctx->index += 1;
+
+	return c;
+}
+
+static cton_json_ctx *cton_json_stringify_create_ctx(cton_ctx *ctx)
+{
+	cton_json_ctx *jctx;
+	cton_obj *obj;
+
+	obj = cton_object_create(ctx, CTON_BINARY);
+
+	cton_string_setlen(ctx, obj, sizeof(cton_json_ctx));
+
+	jctx = cton_binary_getptr(ctx, obj);
+	jctx->ctx  = ctx;
+	jctx->jctx = obj;
+	jctx->buf  = cton_object_create(ctx, CTON_ARRAY);
+	cton_array_settype(ctx, jctx->buf, CTON_STRING);
+	cton_array_setlen(ctx, jctx->buf, 0);
+
+	jctx->index = 0;
+
+	return jctx;
+}
+
+static int cton_json_stringify_destroy_ctx_arrcb(cton_ctx *ctx,
+	cton_obj *arr_item, size_t index, void *jctx)
+{
+
+	(void) index;
+	(void) jctx;
+
+	cton_object_delete(ctx, arr_item);
+
+	return 0;
+}
+
+static void cton_json_stringify_destroy_ctx(cton_json_ctx *jctx)
+{
+	cton_array_foreach(jctx->ctx,
+		jctx->buf, jctx, cton_json_stringify_destroy_ctx_arrcb);
+	cton_object_delete(jctx->ctx, jctx->buf);
+	cton_object_delete(jctx->ctx, jctx->jctx);
+}
+
+static cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx)
+{
+	cton_obj *str;
+	cton_obj *buf;
+
+	size_t buf_cnt;
+	size_t buf_index;
+	size_t buf_len;
+	size_t ch_index;
+
+	char  *o_ptr;
+	char  *buf_ptr;
+
+	str = cton_object_create(jctx->ctx, CTON_STRING);
+	cton_string_setlen(jctx->ctx, str, jctx->index + 1);
+	o_ptr = cton_string_getptr(jctx->ctx, str);
+
+	buf_len = CTON_JSON_BUFPAGE;
+	buf_cnt = cton_array_getlen(jctx->ctx, jctx->buf);
+	for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
+		buf = cton_array_get(jctx->ctx, jctx->buf, buf_index);
+
+		buf_ptr = cton_string_getptr(jctx->ctx, buf);
+
+		if (buf_index == buf_cnt - 1) {
+			buf_len = jctx->index % CTON_JSON_BUFPAGE;
+		}
+
+		for (ch_index = 0; ch_index < buf_len; ch_index ++) {
+			*o_ptr = buf_ptr[ch_index];
+			o_ptr ++;
+		}
+
+	}
+
+	*o_ptr = '\0';
+
+	return str;
+}
+
+
