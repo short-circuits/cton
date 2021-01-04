@@ -262,6 +262,8 @@ cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
+cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
 
 typedef enum {
     CTON_BASE64 = 0,

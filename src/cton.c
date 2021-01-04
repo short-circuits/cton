@@ -1834,6 +1834,72 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
     return 0;
 }
 
+cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
+{
+    cton_obj *lines;
+    cton_obj *line;
+
+    size_t src_len;
+    size_t dst_len;
+    size_t src_index;
+    size_t dst_index;
+    size_t arr_index;
+    size_t line_length;
+
+    uint8_t *src;
+    uint8_t *dst;
+    uint8_t ch;
+
+    lines = cton_object_create(ctx, CTON_ARRAY);
+    cton_array_settype(ctx, lines, CTON_STRING);
+
+    arr_index = 0;
+    cton_array_setlen(ctx, lines, arr_index);
+
+    src = (uint8_t *)cton_string_getptr(ctx, src_obj);
+    src_len = cton_string_getlen(ctx, src_obj);
+    src_index = 0;
+
+    while (src_index < src_len) {
+        line_length = 0;
+
+        while (src_index + line_length < src_len) {
+            /* Get line length */
+            ch = src[src_index + line_length];
+            if (ch == '\r' || ch == '\n') {
+                break;
+            }
+
+            line_length += 1;
+        }
+
+        line = cton_object_create(ctx, CTON_STRING);
+        cton_string_setlen(ctx, line, line_length + 1);
+        dst = (uint8_t *)cton_string_getptr(ctx, line);
+
+        for (dst_index = 0; dst_index < line_length; dst_index ++) {
+            dst[dst_index] = src[src_index + dst_index];
+        }
+
+        dst[line_length] = '\0';
+        cton_array_setlen(ctx, lines, arr_index + 1);
+        cton_array_set(ctx, lines, line, arr_index);
+
+        src_index += line_length;
+
+        if (src[src_index] == '\r') {
+            if ((src_index + 1 < src_len) && src[src_index + 1] == '\n') {
+                src_index += 1;
+            }
+        }
+
+        src_index += 1;
+        arr_index += 1;
+    }
+
+    return lines;
+}
+
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
 {
     cton_obj *dst;
@@ -1897,6 +1963,50 @@ cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
     }
 
     return dst;
+}
+
+
+/*******************************************************************************
+ * CTON util algorithms
+ *  Base16
+ ******************************************************************************/
+
+cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
+{
+    static uint8_t basis16_std[] = "0123456789ABCDEF";
+    static uint8_t basis16_low[] = "0123456789abcdef";
+
+    cton_obj *dst_obj;
+
+    uint8_t *src;
+    uint8_t *dst;
+    size_t   len;
+
+    uint8_t *basis16;
+
+    if (option == 1) {
+        basis16 = basis16_low;
+    } else {
+        basis16 = basis16_std;
+    }
+
+    dst_obj = cton_object_create(ctx, CTON_STRING);
+    cton_string_setlen(ctx, dst_obj, cton_string_getlen(ctx, obj) * 2 + 1);
+
+    len = cton_string_getlen(ctx, obj);
+    src = cton_binary_getptr(ctx, obj);
+    dst = cton_binary_getptr(ctx, dst_obj);
+
+    while (len > 0) {
+        *dst++ = basis16_std[((*src) & 0xF0) >> 4];
+        *dst++ = basis16_std[((*src) & 0x0F)];
+        len -= 1;
+        src ++;
+    }
+
+    *dst++ = '\0';
+
+    return dst_obj;
 }
 
 /*******************************************************************************
@@ -2157,7 +2267,7 @@ cton_obj * cton_util_decode64(cton_ctx *ctx, cton_obj* obj)
 typedef struct {
     uint64_t  bytes;
     uint32_t  a, b, c, d, e, f;
-    uint8_t    buffer[64];
+    uint8_t   buffer[64];
 } cton_util_sha1_ctx;
 
 static void
