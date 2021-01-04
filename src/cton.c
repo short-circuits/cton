@@ -1834,9 +1834,197 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
     return 0;
 }
 
-cton_obj * cton_util_encode64(cton_ctx *ctx, cton_obj* obj, int method)
+cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
 {
-    return NULL;
+    cton_obj *dst;
+    size_t src_len;
+    size_t dst_len;
+
+    size_t wrap_cnt;
+
+    size_t src_index;
+    size_t dst_index;
+
+    char *s;
+    char *d;
+
+    if (cton_object_gettype(ctx, src) != CTON_STRING) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    src_len = cton_string_getlen(ctx, src);
+
+    wrap_cnt = src_len / col;
+
+    if (w == '\0') {
+        dst_len = src_len + wrap_cnt * 2;
+    } else {
+        dst_len = src_len + wrap_cnt;
+    }
+
+    dst = cton_object_create(ctx, CTON_STRING);
+    cton_string_setlen(ctx, dst, dst_len);
+
+    s = cton_string_getptr(ctx, src);
+    d = cton_string_getptr(ctx, dst);
+    dst_index = 0;
+
+    if (w == '\0') {
+        for (src_index = 0; src_index < src_len; src_index ++) {
+            d[dst_index] = s[src_index];
+            dst_index ++;
+
+            if ((src_index + 1) % col == 0) {
+                d[dst_index] = '\r';
+                dst_index ++;
+                d[dst_index] = '\n';
+                dst_index ++;
+            }
+        }
+
+    } else {
+        
+        for (src_index = 0; src_index < src_len; src_index ++) {
+            d[dst_index] = s[src_index];
+            dst_index ++;
+
+            if ((src_index + 1) % col == 0) {
+                d[dst_index] = w;
+                dst_index ++;
+            }
+        }
+    }
+
+    return dst;
+}
+
+cton_obj *cton_util_encode64_internal(cton_ctx *ctx,
+    cton_obj* src, const uint8_t *basis, char padding, int wrap)
+{
+    size_t src_len;
+    size_t dst_len;
+
+    cton_obj *dst;
+    cton_obj *wrapd;
+
+    uint8_t *s;
+    uint8_t *d;
+
+    src_len = cton_string_getlen(ctx, src);
+    dst_len = (src_len / 3) * 4;
+
+    /* Get length with padding character */
+    if (src_len % 3 > 0) {
+        if (padding != 0) {
+            dst_len += 4;
+        } else {
+            dst_len += (1 + src_len % 3);
+        }
+    }
+
+    dst = cton_object_create(ctx, CTON_STRING);
+    if (cton_geterr(ctx) != CTON_OK) {
+        return NULL;
+    }
+
+    cton_string_setlen(ctx, dst, dst_len + 1);
+    if (cton_geterr(ctx) != CTON_OK) {
+        cton_object_delete(ctx, dst);
+        return NULL;
+    }
+
+
+    s = (uint8_t *)cton_string_getptr(ctx, src);
+    d = (uint8_t *)cton_string_getptr(ctx, dst);
+
+    while (src_len > 3) {
+
+        *d++ = basis[(s[0] >> 2) & 0x3f];
+        *d++ = basis[((s[0] & 3) << 4) | (s[1] >> 4)];
+        *d++ = basis[((s[1] & 0x0f) << 2) | (s[2] >> 6)];
+        *d++ = basis[s[2] & 0x3f];
+
+        s += 3;
+        src_len -= 3;
+    }
+
+    if (src_len) {
+        *d++ = basis[(s[0] >> 2) & 0x3f];
+
+        if (src_len == 1) {
+            *d++ = basis[(s[0] & 3) << 4];
+            if (padding) {
+                *d++ = padding;
+            }
+
+        } else { /* src_len == 2 */
+            *d++ = basis[((s[0] & 3) << 4) | (s[1] >> 4)];
+            *d++ = basis[(s[1] & 0x0f) << 2];
+        }
+
+        if (padding) {
+            *d++ = padding;
+        }
+    }
+
+    d[dst_len] = '\0';
+
+    if (wrap != 0) {
+        wrapd = cton_util_linewrap(ctx, dst, wrap, 0);
+        cton_object_delete(ctx, dst);
+    } else {
+        wrapd = dst;
+    }
+
+    return wrapd;
+}
+
+cton_obj *cton_util_encode64(cton_ctx *ctx, cton_obj* obj, cton_base64_std std)
+{
+    static uint8_t basis64_std[] = 
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static uint8_t basis64_url[] = 
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    static uint8_t basis64_imap[] = 
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+,";
+
+    uint8_t *basis64;
+    char padding;
+    int wrap;
+
+    basis64 = basis64_std;
+    padding = '=';
+    wrap    = 0;
+
+    switch (std) {
+
+        case CTON_BASE64_RFC1421:
+            wrap = 64;
+            break;
+
+        case CTON_BASE64_RFC2045:
+        case CTON_BASE64_RFC4880:
+            wrap = 76;
+            break;
+
+        case CTON_BASE64_RFC3501:
+            basis64 = basis64_imap;
+        case CTON_BASE64_RFC2152:
+            padding = 0;
+            break;
+
+        case CTON_BASE64URL:
+        case CTON_BASE64_RFC4868S5:
+            basis64 = basis64_url;
+        case CTON_BASE64:
+        case CTON_BASE64_RFC3548:
+        case CTON_BASE64_RFC4868S4:
+        default:
+            /* Do nothing */;
+    }
+
+    return cton_util_encode64_internal(ctx, obj, basis64, padding, wrap);
 }
 
 cton_obj * cton_util_decode64(cton_ctx *ctx, cton_obj* obj)
