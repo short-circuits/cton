@@ -2,7 +2,7 @@ SRC_DIR=src
 CC=cc
 AR=ar
 LD=ld
-CFLAGS=-Wall -Wextra -fPIC -I$(SRC_DIR)
+CFLAGS=-Wall -Wextra -fPIC -O2 -I$(SRC_DIR)
 OBJ_DIR=obj
 
 all: cton.o
