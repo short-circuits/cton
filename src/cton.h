@@ -278,6 +278,7 @@ typedef enum {
 
 cton_obj *cton_util_encode64(cton_ctx *ctx, cton_obj* obj, cton_base64_std std);
 cton_obj *cton_util_decode64(cton_ctx *ctx, cton_obj* obj);
+cton_obj *cton_util_sha1(cton_ctx *ctx, cton_obj *obj);
 
 /* cton tree methods */
 int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
