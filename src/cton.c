@@ -203,7 +203,9 @@ static void * cton_alloc(cton_ctx *ctx, size_t size)
 
 static void cton_free(cton_ctx *ctx, void *ptr)
 {
-    ctx->memhook.pfree(ctx->memhook.pool, ptr);
+    if (ctx->memhook.pfree != NULL) {
+        ctx->memhook.pfree(ctx->memhook.pool, ptr);
+    }
 }
 
 static void * cton_realloc(cton_ctx *ctx,
@@ -239,7 +241,9 @@ static void * cton_realloc(cton_ctx *ctx,
 
 static void cton_pdestroy(cton_ctx *ctx)
 {
-    ctx->memhook.pdestroy(ctx->memhook.pool);
+    if (ctx->memhook.pdestroy != NULL) {
+        ctx->memhook.pdestroy(ctx->memhook.pool);
+    }
 }
 
 
