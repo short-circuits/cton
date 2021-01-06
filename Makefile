@@ -17,12 +17,22 @@ $(OBJ_DIR)/cton_json.o: $(SRC_DIR)/cton_json.c \
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton_json.c -o $(OBJ_DIR)/cton_json.o
 
+
+$(OBJ_DIR)/cton_bmp.o: $(SRC_DIR)/cton_bmp.c \
+						$(SRC_DIR)/cton_bmp.h \
+						$(SRC_DIR)/cton.h
+	@mkdir -p $(OBJ_DIR)
+	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton_bmp.c -o $(OBJ_DIR)/cton_bmp.o
+
 $(OBJ_DIR)/cton.o: $(SRC_DIR)/cton.c $(SRC_DIR)/cton.h
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton.c -o $(OBJ_DIR)/cton.o
 
-cton.o: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o
-	$(LD) -r $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o -o cton.o
+cton.o: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o $(OBJ_DIR)/cton_bmp.o
+	$(LD) -r \
+	$(OBJ_DIR)/cton_json.o \
+	$(OBJ_DIR)/cton_bmp.o \
+	$(OBJ_DIR)/cton.o -o cton.o
 
 libcton.so: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o
 	$(CC) $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o -shared -o libcton.so
