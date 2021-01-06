@@ -179,6 +179,13 @@ cton_memhook* cton_memhook_init (void * pool,
 
 与标准库中的malloc/free函数不同，CTON中定义的palloc/pfree系列函数需要一个任意类型指针的传入参数，并且在调用对应的函数时会传入这个参数。因此使用者可以尝试通过自行实现一个内存分配器来回避系统内存分配导致的性能问题。也可以通过设置一个可以整体销毁的内存池来保证不会有内存泄漏的出现。
 
+内存钩子的声明及期待的行为如下：
+
+* `void palloc(void *pool, size_t size);`: 在`pool`内存池中分配内存空间，其大小由指定的size决定。若配置成功则返回一指针，失败则返回NULL。
+* `void * (*prealloc)(void *pool, void *ptr, size_t size);`: 参数ptr为palloc或prealloc返回的内存指针。prealloc函数会尝试调节它的内存空间。如果有需要，prealloc会尝试一次新的alloc操作，将原来的内存内容复制到新的地址，并返回新的地址。
+* `void pfree(void *pool, void *ptr);`: 参数ptr为指向先前由palloc()或prealloc()所返回的内存指针。调用pfree()后ptr所指的内存空间便会被收回。假若参数ptr所指的内存空间已被收回或是非此内存池中分配内存地址，允许有无法预期的情况发生，但应尽量保证不会有破坏性动作的发生。若参数ptr为NULL，则free()不应有任何作用。
+* pdestroy钩子会在尝试删除一个上下文的时候被调用（如果存在）。它的行为可以是重置当前内存池以供下次使用，也可以是彻底销毁此内存池。
+
 #### 使用提示
 
 - 本函数及返回的结构体并非线程安全，请不要尝试并行创建多个拥有不同参数的内存钩子。
@@ -514,13 +521,17 @@ CTON的字符串对象和二进制对象共享了绝大多数的API。
 
 - 获得阵列对象可以容纳的元素数量。
 
+如果传入的对象非阵列对象，此调用会返回0并设置错误。
+
 ---
 
 ### cton\_array\_get
 
 `cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);`
 
-- 获得阵列对象中指定位置的元素。
+- 获得阵列arr中index位置的对象指针。
+
+如果index超过了arr包含的最大元素数量，那么会返回NULL并设置错误。
 
 ---
 
@@ -528,7 +539,11 @@ CTON的字符串对象和二进制对象共享了绝大多数的API。
 
 `int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);`
 
-- 设置阵列对象中指定位置的元素。
+- 将阵列arr中的第index个位置设置为obj对象。
+
+如果index超过了arr包含的最大元素数量，那么此调用将设置错误并直接返回，不会对arr对象进行操作。
+
+如果index的位置已经包含了某对象，此调用会覆盖掉原始对象但不会回收其空间。
 
 ---
 
@@ -548,7 +563,7 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
 
 本调用会对阵列中的每一个元素按照index递增的顺序调用一次此函数指针，并传入阵列所在的上下文，当前调用对应的对象指针，当前调用的对象的下标，一个用户自定义的指针。用户可以通过自定义指针来保存用户自己需要的上下文。
 
-####
+本调用收到传入函数返回非零值后会直接终止循环。因此可以在自定义函数中通过
 
 ## CTON散列对象 (前缀: cton\_hash\_)
 
