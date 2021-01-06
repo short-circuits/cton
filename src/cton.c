@@ -1313,6 +1313,25 @@ cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
     return result->value;
 }
 
+cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
+{
+    cton_obj *key;
+    cton_obj *val;
+
+    if (cton_object_gettype(ctx, h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    key = cton_util_strcstr(ctx, ks);
+
+    val = cton_hash_get(ctx, h, key);
+
+    cton_object_delete(ctx, key);
+
+    return val;
+}
+
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 {
 	cton_hash_item *pos;
