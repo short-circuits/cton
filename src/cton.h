@@ -169,13 +169,21 @@ typedef void cton_ctx;
 
 enum cton_error_e {
     CTON_OK            = 0,
-    CTON_ERROR_EMHOOK  = 1,   /* Invalid Memory hook */
-    CTON_ERROR_EALLOC  = 2,   /* Memory allocation failed */
-    CTON_ERROR_TYPE    = 3,
-    CTON_ERROR_IMPLEM  = 4,
-    CTON_ERROR_OVF     = 5,
-    CTON_ERROR_REPLACE = 6,
-    CTON_ERROR_SUBTYPE = 7,
+    CTON_ERROR_INVAL,         /* Invalid CTON object */
+    CTON_ERROR_ALLOC,         /* Memory allocation failed
+                                 (NULL was returnd from alloc) */
+    CTON_ERROR_CREATE,        /* Tring to create objcet with invalid type
+                                 (Only: cton_object_create() ) */
+    CTON_ERROR_TYPE,          /* Type specific method received object
+                                 with wrong type */
+    CTON_ERROR_INVSUBTYPE,    /* Tring to set array by invalid element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_RSTSUBTYPE,    /* Tring to reset array element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_IMPLEM,
+    CTON_ERROR_OVF,
+    CTON_ERROR_REPLACE,
+    CTON_ERROR_SUBTYPE,
     CTON_ERROR_INDEX,
     CTON_ERROR_INPUT,
     CTON_ERROR_UNKNOWN = 127  /* Unknown error */
