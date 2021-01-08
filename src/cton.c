@@ -1857,6 +1857,136 @@ cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr)
     return cton_util_create_str(ctx, cstr, '\0', '\\');
 }
 
+
+#define CTON_BUFFER_PAGESIZE 4096
+
+cton_buf *cton_util_buffer_create(cton_ctx *ctx)
+{
+    cton_buf *buf;
+
+    cton_obj *container;
+
+    container = cton_object_create(ctx, CTON_BINARY);
+    cton_string_setlen(ctx, container, sizeof(cton_buf));
+
+    buf = cton_binary_getptr(ctx, container);
+
+    buf->container = container;
+    buf->ctx = ctx;
+    buf->index = 0;
+
+    buf->arr = cton_object_create(ctx, CTON_ARRAY);
+
+    cton_array_settype(ctx, buf->arr, CTON_STRING);
+    cton_array_setlen(ctx, buf->arr, 0);
+
+    return buf;
+}
+
+static int 
+cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
+{
+    (void) i;
+    (void) c;
+    cton_object_delete(ctx, obj);
+    return 0;
+}
+
+void cton_util_buffer_destroy(cton_buf *buf)
+{
+    cton_array_foreach(buf->ctx, buf->arr, NULL, cton_util_buffer_destroy_arr);
+    cton_object_delete(buf->ctx, buf->arr);
+    cton_object_delete(buf->ctx, buf->container);
+}
+
+size_t cton_util_buffer_getlen(cton_buf *buf)
+{
+    return buf->index;
+}
+
+cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
+{
+    cton_obj *pack;
+    cton_obj *buf_seg;
+
+    size_t buf_cnt;
+    size_t buf_index;
+    size_t buf_len;
+    size_t ch_index;
+
+    char  *o_ptr;
+    char  *buf_ptr;
+
+    if (type != CTON_STRING && type != CTON_BINARY) {
+        return NULL;
+    }
+
+    pack = cton_object_create(buf->ctx, CTON_STRING);
+    if (type == CTON_STRING) {
+        /* String type need a space for ending '\0' */
+        cton_string_setlen(buf->ctx, pack, buf->index + 1);
+
+    } else {
+        cton_string_setlen(buf->ctx, pack, buf->index);
+
+    }
+
+
+    o_ptr = cton_string_getptr(buf->ctx, pack);
+
+    buf_len = CTON_BUFFER_PAGESIZE;
+    buf_cnt = cton_array_getlen(buf->ctx, buf->arr);
+
+    for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
+        buf_seg = cton_array_get(buf->ctx, buf->arr, buf_index);
+
+        buf_ptr = cton_string_getptr(buf->ctx, buf_seg);
+
+        if (buf_index == buf_cnt - 1) {
+            buf_len = buf->index % CTON_BUFFER_PAGESIZE;
+        }
+
+        for (ch_index = 0; ch_index < buf_len; ch_index ++) {
+            *o_ptr = buf_ptr[ch_index];
+            o_ptr ++;
+        }
+
+    }
+
+    if (type == CTON_STRING) {
+        *o_ptr = '\0';
+    }
+
+    return pack;
+}
+
+int cton_util_buffer_putchar(cton_buf *buf, int c)
+{
+    int array_len;
+    cton_obj *str;
+    char     *ptr;
+
+    array_len = cton_array_getlen(buf->ctx, buf->arr);
+
+    if (buf->index % CTON_BUFFER_PAGESIZE == 0) {
+        /* expand buffer first */
+        array_len = cton_array_getlen(buf->ctx, buf->arr);
+        array_len += 1;
+        cton_array_setlen(buf->ctx, buf->arr, array_len);
+
+        str = cton_object_create(buf->ctx, CTON_STRING);
+        cton_string_setlen(buf->ctx, str, CTON_BUFFER_PAGESIZE);
+        cton_array_set(buf->ctx, buf->arr, str, array_len - 1);
+    }
+
+    str = cton_array_get(buf->ctx, buf->arr, array_len - 1);
+    ptr = cton_binary_getptr(buf->ctx, str);
+    ptr[buf->index % CTON_BUFFER_PAGESIZE] = c;
+    buf->index += 1;
+
+    return c;
+}
+
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
 {
     cton_obj *data;

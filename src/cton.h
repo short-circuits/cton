@@ -268,6 +268,24 @@ cton_obj * cton_util_create_str(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 
+#ifdef _INTER_LIBCTON_
+typedef struct cton_buf_s cton_buf;
+struct cton_buf_s {
+    cton_ctx *ctx;
+    cton_obj *arr;
+    cton_obj *container;
+    size_t   index;
+};
+#else
+typedef void cton_buf;
+#endif
+
+cton_buf *cton_util_buffer_create(cton_ctx *ctx);
+void cton_util_buffer_destroy(cton_buf *buf);
+size_t cton_util_buffer_getlen(cton_buf *buf);
+cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
+int cton_util_buffer_putchar(cton_buf *buf, int c);
+
 int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
@@ -296,5 +314,10 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
 cton_obj *cton_tree_getroot(cton_ctx *ctx);
 cton_obj *cton_tree_get_by_path(cton_ctx *ctx, cton_obj *path);
 
+
+cton_obj * cton_stringify(cton_ctx *ctx, cton_obj *obj);
+cton_obj * cton_parse(cton_ctx *ctx, cton_obj *ton);
+cton_obj * cton_serialize(cton_ctx *ctx, cton_obj *obj);
+cton_obj * cton_deserialize(cton_ctx *ctx, cton_obj *tbon);
 
 #endif /* _CTON_HEADER_ */
