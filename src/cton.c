@@ -1213,6 +1213,8 @@ static void cton_hash_remove_item(cton_ctx *ctx,
 
         cton_free(ctx, item);
     }
+
+    hash->payload.hash.count -= 1;
 }
 
 static void cton_hash_insert_item(cton_ctx *ctx,
@@ -1229,6 +1231,8 @@ static void cton_hash_insert_item(cton_ctx *ctx,
 
     hash->payload.hash.last = item;
     item->next = NULL;
+
+    hash->payload.hash.count += 1;
 }
 
 #if 0
@@ -1280,6 +1284,7 @@ static void cton_hash_init(cton_ctx *ctx, cton_obj *obj)
 
     obj->payload.hash.root = NULL;
     obj->payload.hash.last = NULL;
+    obj->payload.hash.count = 0;
 }
 
 static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
@@ -1356,16 +1361,16 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
     if (pos != NULL) {
 
-    	pos->value = v;
-
-    } else {   
-
         if (v == NULL) {
             k_ori = pos->key;
             cton_hash_remove_item(ctx, h, pos);
             cton_free(ctx, k_ori);
             return v;
         }
+
+    	pos->value = v;
+
+    } else {   
 
     	pos = cton_alloc(ctx, sizeof(cton_hash_item));
     	if (pos == NULL) {
@@ -1381,6 +1386,17 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
     }
 
 	return v;
+}
+
+
+size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h)
+{
+    if (cton_object_gettype(ctx, h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return 0;;
+    }
+
+    return h->payload.hash.count;
 }
 
 

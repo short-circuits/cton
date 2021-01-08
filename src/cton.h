@@ -107,6 +107,7 @@ struct cton_hash_item_s {
 };
 
 struct cton_hash_s {
+    size_t          count;
     cton_hash_item *root;
     cton_hash_item *last;
 };
@@ -252,6 +253,7 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
 cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks);
+size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h);
 int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
