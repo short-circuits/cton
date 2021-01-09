@@ -2211,8 +2211,8 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
     dst = cton_binary_getptr(ctx, dst_obj);
 
     while (len > 0) {
-        *dst++ = basis16_std[((*src) & 0xF0) >> 4];
-        *dst++ = basis16_std[((*src) & 0x0F)];
+        *dst++ = basis16[((*src) & 0xF0) >> 4];
+        *dst++ = basis16[((*src) & 0x0F)];
         len -= 1;
         src ++;
     }
