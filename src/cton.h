@@ -187,6 +187,8 @@ enum cton_error_e {
     CTON_ERROR_SUBTYPE,
     CTON_ERROR_INDEX,
     CTON_ERROR_INPUT,
+    CTON_ERROR_BROKEN,        /* Data is not complele (more data except) */
+    CTON_ERROR_SYNTAX,        /* Syntax error while parsing data */
     CTON_ERROR_UNKNOWN = 127  /* Unknown error */
 };
 
