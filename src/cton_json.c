@@ -517,7 +517,7 @@ static int cton_json_stringify_string(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 	len --;
 
 	for (index = 0; index < len; index ++) {
-		if (ptr[index] == '\"' || ptr[index] == '\'' || ptr[index] == '\\') {
+		if (ptr[index] == '\"' || ptr[index] == '\\') {
 			cton_util_buffer_putchar(buf, '\\');
 			cton_util_buffer_putchar(buf, ptr[index]);
 		} else if (ptr[index] == '\b') {
