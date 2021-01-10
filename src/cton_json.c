@@ -342,6 +342,11 @@ static size_t cton_json_skip_whitespace(cton_ctx *ctx,
 	(void) ctx;
 
 	index = *start;
+
+	if (index >= len) {
+		return len;
+	}
+	
 	while (isspace(json[index])) {
 		index ++;
 		if (index == len) {
