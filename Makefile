@@ -3,17 +3,37 @@ CC=cc
 AR=ar
 LD=ld
 CFLAGS=-Wall -Wextra -fPIC -O2 -I$(SRC_DIR)
-OBJ_DIR=obj
+BUILD_DIR=build
+OBJ_DIR=$(BUILD_DIR)/obj
 
-all: cton.o
+OBJECTS=$(OBJ_DIR)/cton_core.o $(OBJ_DIR)/cton_json.o $(OBJ_DIR)/cton_bmp.o $(OBJ_DIR)/cton_tbon.o
 
-cton_json.o: cton.o test/json/json_test.c
-	$(CC) $(CFLAGS) -I./ cton.o test/json/json_test.c -o cton_json.o
+all: $(BUILD_DIR)/libcton.o $(BUILD_DIR)/libcton.so $(BUILD_DIR)/libcton.a $(BUILD_DIR)/cton_json
 
+$(BUILD_DIR)/cton_json: $(BUILD_DIR)/libcton.o test/json/json_test.c
+	$(CC) $(CFLAGS) -I./ $(BUILD_DIR)/libcton.o test/json/json_test.c -o $(BUILD_DIR)/cton_json
+
+
+$(BUILD_DIR)/libcton.o: $(OBJECTS)
+	$(LD) -r $(OBJECTS) -o $(BUILD_DIR)/libcton.o
+
+$(BUILD_DIR)/libcton.so: $(OBJECTS)
+	$(CC) $(OBJECTS) -shared -o $(BUILD_DIR)/libcton.so
+
+$(BUILD_DIR)/libcton.a: $(OBJECTS)
+	$(AR) rs $(BUILD_DIR)/libcton.a $(OBJECTS)
+
+
+$(OBJ_DIR)/cton_tbon.o: $(SRC_DIR)/cton_tbon.c \
+						$(SRC_DIR)/cton.h
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(OBJ_DIR)
+	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton_tbon.c -o $(OBJ_DIR)/cton_tbon.o
 
 $(OBJ_DIR)/cton_json.o: $(SRC_DIR)/cton_json.c \
 						$(SRC_DIR)/cton_json.h \
 						$(SRC_DIR)/cton.h
+	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton_json.c -o $(OBJ_DIR)/cton_json.o
 
@@ -21,26 +41,15 @@ $(OBJ_DIR)/cton_json.o: $(SRC_DIR)/cton_json.c \
 $(OBJ_DIR)/cton_bmp.o: $(SRC_DIR)/cton_bmp.c \
 						$(SRC_DIR)/cton_bmp.h \
 						$(SRC_DIR)/cton.h
+	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(OBJ_DIR)
 	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton_bmp.c -o $(OBJ_DIR)/cton_bmp.o
 
-$(OBJ_DIR)/cton.o: $(SRC_DIR)/cton.c $(SRC_DIR)/cton.h
+$(OBJ_DIR)/cton_core.o: $(SRC_DIR)/cton.c $(SRC_DIR)/cton.h
+	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(OBJ_DIR)
-	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton.c -o $(OBJ_DIR)/cton.o
-
-cton.o: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o $(OBJ_DIR)/cton_bmp.o
-	$(LD) -r \
-	$(OBJ_DIR)/cton_json.o \
-	$(OBJ_DIR)/cton_bmp.o \
-	$(OBJ_DIR)/cton.o -o cton.o
-
-libcton.so: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o
-	$(CC) $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o -shared -o libcton.so
-
-
-libcton.a: $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o
-	$(AR) rvs libcton.a $(OBJ_DIR)/cton.o $(OBJ_DIR)/cton_json.o
+	$(CC) -c $(CFLAGS) $(SRC_DIR)/cton.c -o $(OBJ_DIR)/cton_core.o
 
 .PHONY: clean
 clean:
-	@rm -rf cton.o libcton.so libcton.a cton_json.o $(OBJ_DIR)
+	@rm -rf $(BUILD_DIR)
