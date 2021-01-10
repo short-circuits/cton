@@ -8,13 +8,16 @@ OBJ_DIR=$(BUILD_DIR)/obj
 
 OBJECTS=$(OBJ_DIR)/cton_core.o $(OBJ_DIR)/cton_json.o $(OBJ_DIR)/cton_bmp.o $(OBJ_DIR)/cton_tbon.o
 
-all: $(BUILD_DIR)/libcton.o $(BUILD_DIR)/libcton.so $(BUILD_DIR)/libcton.a $(BUILD_DIR)/test_json
+all: $(BUILD_DIR)/libcton.o $(BUILD_DIR)/libcton.so $(BUILD_DIR)/libcton.a $(BUILD_DIR)/test_json $(BUILD_DIR)/test_bmp
 
 $(BUILD_DIR)/test_json: $(BUILD_DIR)/libcton.o test/json/json_test.c
 	$(CC) $(CFLAGS) -I./ $(BUILD_DIR)/libcton.o test/json/json_test.c -o $(BUILD_DIR)/test_json
 
 $(BUILD_DIR)/test_tbon: $(BUILD_DIR)/libcton.o test/tbon/tbon_test.c
 	$(CC) $(CFLAGS) -I./ $(BUILD_DIR)/libcton.o test/tbon/tbon_test.c -o $(BUILD_DIR)/test_tbon
+
+$(BUILD_DIR)/test_bmp: $(BUILD_DIR)/libcton.o test/bmp/bmp_test.c
+	$(CC) $(CFLAGS) -I./ $(BUILD_DIR)/libcton.o test/bmp/bmp_test.c -o $(BUILD_DIR)/test_bmp
 
 $(BUILD_DIR)/libcton.o: $(OBJECTS)
 	$(LD) -r $(OBJECTS) -o $(BUILD_DIR)/libcton.o
