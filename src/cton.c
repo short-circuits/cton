@@ -2033,7 +2033,13 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
 {
     FILE     *fp;
     size_t    len;
+    cton_type type;
     char     *ptr;
+
+    type = cton_object_gettype(ctx, obj);
+    if (type != CTON_STRING && type != CTON_BINARY) {
+        return -1;
+    }
 
     fp = fopen(path, "wb");
     if (fp == NULL) {
@@ -2042,6 +2048,11 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
 
     len = cton_string_getlen(ctx, obj);
     ptr = cton_string_getptr(ctx, obj);
+
+    if (type == CTON_STRING) {
+        len -= 1; /* Dismiss the ending '\0' */
+    }
+
     fwrite(ptr, len, 1, fp);
     fclose(fp);
 
