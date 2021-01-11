@@ -75,7 +75,7 @@ enum cton_type_e {
     CTON_FLOAT8  = 16,
     CTON_FLOAT16 = 17,
     CTON_FLOAT32 = 18,
-    CTON_FLOAT64 = 19,
+    CTON_FLOAT64 = 19
 };
 
 #define CTON_TYPE_CNT 20
