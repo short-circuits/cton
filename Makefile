@@ -2,7 +2,7 @@ SRC_DIR=src
 CC=cc
 AR=ar
 LD=ld
-CFLAGS=-Wall -Wextra -fPIC -O2 -I$(SRC_DIR)
+CFLAGS=-Wall -Wextra -std=c89 -Wpedantic -fPIC -O2 -I$(SRC_DIR)
 BUILD_DIR=build
 OBJ_DIR=$(BUILD_DIR)/obj
 
