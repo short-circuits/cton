@@ -1936,7 +1936,7 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
         return NULL;
     }
 
-    pack = cton_object_create(buf->ctx, CTON_STRING);
+    pack = cton_object_create(buf->ctx, type);
     if (type == CTON_STRING) {
         /* String type need a space for ending '\0' */
         cton_string_setlen(buf->ctx, pack, buf->index + 1);
