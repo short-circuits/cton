@@ -163,6 +163,7 @@ cton_json_parse_array(cton_ctx *ctx,
 
 	cton_json_skip_whitespace(ctx, json, index, len);
 	if (json[*index] == ']') {
+		*index += 1;
 		return arr;
 	}
 
