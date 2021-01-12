@@ -1311,7 +1311,6 @@ cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
     result = cton_hash_search(h,k);
 
     if (result == NULL) {
-        fprintf(stderr, "I'm here\n");
     	return NULL;
     }
 
