@@ -2,6 +2,7 @@
 help=no
 
 CTON_PREFIX=
+CTON_BUILD_DIR=./build
 
 CTON_DEBUG=NO
 
@@ -42,7 +43,7 @@ do
         --prefix=)                       CTON_PREFIX="!"            ;;
         --prefix=*)                      CTON_PREFIX="$value"       ;;
 
-        --builddir=*)                    CTON_OBJS="$value"         ;;
+        --builddir=*)                    CTON_BUILD_DIR="$value"    ;;
 
         --with-cc=*)                     CC="$value"                ;;
         --with-cpp=*)                    CPP="$value"               ;;
@@ -69,7 +70,7 @@ do
         --with-zlib-asm=*)               ZLIB_ASM="$value"          ;;
 
 
-        --enable-debug)                  CTON_DEBUG=YES             ;;
+        --with-debug)                  CTON_DEBUG=YES             ;;
 
         *)
             echo "$0: error: invalid option \"$option\""
