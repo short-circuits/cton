@@ -324,4 +324,6 @@ cton_obj * cton_parse(cton_ctx *ctx, cton_obj *ton);
 cton_obj * cton_serialize(cton_ctx *ctx, cton_obj *obj);
 cton_obj * cton_deserialize(cton_ctx *ctx, cton_obj *tbon);
 
+/* CTON_MODULE_FUNCS */
+
 #endif /* _CTON_HEADER_ */
