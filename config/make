@@ -9,3 +9,35 @@ CPP =	$CPP
 LINK =	$LINK
 
 END
+
+for cton_src in $CTON_SOURCES
+do
+    cton_obj=`echo $cton_src \
+        | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJ_DIR\1o#g" \
+              -e "s#^\(.*\.\)S\\$#$CTON_OBJ_DIR\1o#g"`
+
+    cat << END                                                >> $CTON_MAKEFILE
+
+$cton_obj:	$cton_src
+	\$(CC)\$(CFLAGS) -o $cton_obj $cton_src
+
+END
+
+done
+
+echo "creating Makefile"
+
+cat << END > Makefile
+
+default:	build
+
+clean:
+	rm -rf Makefile $CTON_BUILD_DIR
+
+build:
+	\$(MAKE) -f $CTON_MAKEFILE
+
+install:
+	\$(MAKE) -f $CTON_MAKEFILE install
+
+END

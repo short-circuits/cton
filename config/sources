@@ -7,6 +7,9 @@ CTON_SOURCES="$CTON_MODULES_C     \
             src/exchange/base64.c \
             src/crypto/sha1.c"
 
+CTON_SOURCES=`find src | grep -e '\.c$'`
+CTON_TEST_SOURCES=`find test | grep -e '\.h$'`
+
 if [ $CTON_CORE = YES ]; then
     feature=CTON_WITH_CORE value=1 . config/utils/define
 fi
@@ -34,12 +37,11 @@ if [ $CTON_CRYPTO = YES ]; then
 fi
 
 
-CTON_MODULE_HEADERS="src/cton_json.h \
-                     src/cton_bmp.h"
+CTON_MODULE_HEADERS=`find src | grep -v 'cton\.h' | grep -e '\.h$'`
 
 for cton_module_header in $CTON_MODULE_HEADERS; do
 	cat $cton_module_header >> $CTON_MODULES_H
 done
 
 sed "/\/\* CTON_MODULE_FUNCS \*\//r $CTON_MODULES_H" \
-    < src/cton.h > $CTON_BUILD_DIR/cton.h
+    < src/core/cton.h > $CTON_BUILD_DIR/cton.h
