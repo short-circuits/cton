@@ -1,0 +1,11 @@
+
+echo "creating $CTON_MAKEFILE"
+
+cat << END                                                     > $CTON_MAKEFILE
+
+CC =	$CC
+CFLAGS = $CFLAGS
+CPP =	$CPP
+LINK =	$LINK
+
+END

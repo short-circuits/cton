@@ -1,0 +1,17 @@
+
+test -d $CTON_BUILD_DIR || mkdir -p $CTON_BUILD_DIR
+test -d $CTON_OBJS || mkdir -p $CTON_OBJS
+
+mkdir -p $CTON_OBJS/src
+
+if [ $CTON_CORE = YES ]; then
+    mkdir -p $CTON_OBJS/src/core
+fi
+
+if [ $CTON_EXCHANGE = YES ]; then
+    mkdir -p $CTON_OBJS/src/exchange
+fi
+
+if [ $CTON_CRYPTO = YES ]; then
+    mkdir -p $CTON_OBJS/src/crypto
+fi
