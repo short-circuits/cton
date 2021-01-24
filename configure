@@ -1,111 +1,118 @@
 #!/bin/sh
 
-CC=${CC:-cc}
+LC_ALL=C
+export LC_ALL
 
-CTON_BUILDDIR=./build
-CTON_MAKEFILE=$CTON_BUILDDIR/Makefile
-CTON_AUTOTEST=$CTON_BUILDDIR/autotest
+. config/options
+. config/init
 
-if [[ ! -d $CTON_BUILDDIR ]]; then
-	mkdir -p $CTON_BUILDDIR
-fi
+. config/os/detect
+. config/cc/detect
 
-if [[ ! -d $CTON_BUILDDIR/objs ]]; then
-	mkdir -p $CTON_BUILDDIR/objs
-fi
+. config/sources
 
-echo "checking for OS ... "
-CTON_SYSTEM=`uname -s 2>/dev/null`
-CTON_RELEASE=`uname -r 2>/dev/null`
-CTON_MACHINE=`uname -m 2>/dev/null`
+. config/make
 
-echo " - $CTON_SYSTEM $CTON_RELEASE $CTON_MACHINE"
+# if [[ ! -d $CTON_BUILDDIR ]]; then
+# 	mkdir -p $CTON_BUILDDIR
+# fi
+
+# if [[ ! -d $CTON_BUILDDIR/objs ]]; then
+# 	mkdir -p $CTON_BUILDDIR/objs
+# fi
+
+# echo "checking for OS ... "
+# CTON_SYSTEM=`uname -s 2>/dev/null`
+# CTON_RELEASE=`uname -r 2>/dev/null`
+# CTON_MACHINE=`uname -m 2>/dev/null`
+
+# echo " - $CTON_SYSTEM $CTON_RELEASE $CTON_MACHINE"
 
 
-echo "checking for C compiler ... "
-if [ "$CC" = cl ]; then
-	CTON_CC=msvc
-	CTON_CC_STRING="Microsoft Visual C++ compiler"
+# echo "checking for C compiler ... "
+# if [ "$CC" = cl ]; then
+# 	CTON_CC=msvc
+# 	CTON_CC_STRING="Microsoft Visual C++ compiler"
 
-elif [ "$CC" = wcl386 ]; then
-	CTON_CC=owc
-	CTON_CC_STRING="Open Watcom C compiler"
+# elif [ "$CC" = wcl386 ]; then
+# 	CTON_CC=owc
+# 	CTON_CC_STRING="Open Watcom C compiler"
 
-elif [ "$CC" = bcc32 ]; then
-	CTON_CC=bcc
-	CTON_CC_STRING="Borland C++ compiler"
+# elif [ "$CC" = bcc32 ]; then
+# 	CTON_CC=bcc
+# 	CTON_CC_STRING="Borland C++ compiler"
 
-elif `$CC -V 2>&1 | grep '^Intel(R) C' >/dev/null 2>&1`; then
-	CTON_CC=icc
-	CTON_CC_STRING="Intel C++ compiler"
+# elif `$CC -V 2>&1 | grep '^Intel(R) C' >/dev/null 2>&1`; then
+# 	CTON_CC=icc
+# 	CTON_CC_STRING="Intel C++ compiler"
 
-elif `$CC -v 2>&1 | grep 'gcc version' >/dev/null 2>&1`; then
-	CTON_CC=gcc
-	CTON_CC_STRING="GNU C compiler"
+# elif `$CC -v 2>&1 | grep 'gcc version' >/dev/null 2>&1`; then
+# 	CTON_CC=gcc
+# 	CTON_CC_STRING="GNU C compiler"
 
-elif `$CC -v 2>&1 | grep 'clang version' >/dev/null 2>&1`; then
-	CTON_CC=clang
-	CTON_CC_STRING="Clang C compiler"
+# elif `$CC -v 2>&1 | grep 'clang version' >/dev/null 2>&1`; then
+# 	CTON_CC=clang
+# 	CTON_CC_STRING="Clang C compiler"
 
-elif `$CC -v 2>&1 | grep 'LLVM version' >/dev/null 2>&1`; then
-	CTON_CC=clang
-	CTON_CC_STRING="Clang C compiler"
+# elif `$CC -v 2>&1 | grep 'LLVM version' >/dev/null 2>&1`; then
+# 	CTON_CC=clang
+# 	CTON_CC_STRING="Clang C compiler"
 
-elif `$CC -V 2>&1 | grep 'Sun C' >/dev/null 2>&1`; then
-	CTON_CC=sunc
-	CTON_CC_STRING="Sun C compiler"
+# elif `$CC -V 2>&1 | grep 'Sun C' >/dev/null 2>&1`; then
+# 	CTON_CC=sunc
+# 	CTON_CC_STRING="Sun C compiler"
 
-elif `$CC -V 2>&1 | grep '^Compaq C' >/dev/null 2>&1`; then
-	CTON_CC=ccc
-	CTON_CC_STRING="Compaq C compiler"
+# elif `$CC -V 2>&1 | grep '^Compaq C' >/dev/null 2>&1`; then
+# 	CTON_CC=ccc
+# 	CTON_CC_STRING="Compaq C compiler"
 
-elif `$CC -V 2>&1 | grep '^aCC: ' >/dev/null 2>&1`; then
-	CTON_CC=acc
-	CTON_CC_STRING="HP aC++ compiler"
+# elif `$CC -V 2>&1 | grep '^aCC: ' >/dev/null 2>&1`; then
+# 	CTON_CC=acc
+# 	CTON_CC_STRING="HP aC++ compiler"
 
-else
-	CTON_CC=unknown
+# else
+# 	CTON_CC=unknown
 
-	echo "Unknow"
+# 	echo "Unknow"
 
-	echo "Cannot find a C compiler, but it was necessary."
-	exit -1
-fi
+# 	echo "Cannot find a C compiler, but it was necessary."
+# 	exit -1
+# fi
 
-echo " - $CTON_CC_STRING"
+# echo " - $CTON_CC_STRING"
 
-echo "checking for make ... "
-if `make --version 2>&1 | grep 'GNU Make' >/dev/null 2>&1`; then
-	CTON_MAKE='GNU Make'
-else
-	CTON_MAKE='UNIX Make'
-fi
-echo " - $CTON_MAKE"
+# echo "checking for make ... "
+# if `make --version 2>&1 | grep 'GNU Make' >/dev/null 2>&1`; then
+# 	CTON_MAKE='GNU Make'
+# else
+# 	CTON_MAKE='UNIX Make'
+# fi
+# echo " - $CTON_MAKE"
 
-cton_cc_args_test() {
-	echo "checking for $CTON_CC support $cton_cc_args"
+# cton_cc_args_test() {
+# 	echo "checking for $CTON_CC support $cton_cc_args"
 
-cat << END > $CTON_AUTOTEST.c
-#include <stdio.h>
-int main(void) {
-	return 0;
-}
-END
+# cat << END > $CTON_AUTOTEST.c
+# #include <stdio.h>
+# int main(void) {
+# 	return 0;
+# }
+# END
 
-	if `$CTON_CC $cton_cc_args $CTON_AUTOTEST.c -o $CTON_AUTOTEST 2>&1 | grep "unknown" >/dev/null 2>&1`; then
-		cton_have=no
-	else
-		cton_have=yes
-		if [[ $necessary == no ]]; then
-			cton_cc_args="$cton_cc_args $cton_args"
-		fi
-	fi
+# 	if `$CTON_CC $cton_cc_args $CTON_AUTOTEST.c -o $CTON_AUTOTEST 2>&1 | grep "unknown" >/dev/null 2>&1`; then
+# 		cton_have=no
+# 	else
+# 		cton_have=yes
+# 		if [[ $necessary == no ]]; then
+# 			cton_cc_args="$cton_cc_args $cton_args"
+# 		fi
+# 	fi
 
-	if [[ $necessary == yes && $cton_have == no ]]; then
-		echo "$CTON_CC does not support $cton_cc_args, but it was necessary."
-		exit -1
-	fi
-}
+# 	if [[ $necessary == yes && $cton_have == no ]]; then
+# 		echo "$CTON_CC does not support $cton_cc_args, but it was necessary."
+# 		exit -1
+# 	fi
+# }
 
 # dwy_macro_test() {
 # 	echo -n "checking for macro $dwy_macro ..."
@@ -203,13 +210,13 @@ END
 # dwy_macro=SO_REUSEADDR
 # dwy_macro_test
 
-necessary=no
-cton_cc_args=('-pipe' '-O2' '-Wall' '-Wextra' '-std=c89' '-Wcomment' '-Werror' '-g')
-for element in "${cton_cc_args[@]}"
-do
-	cton_cc_args=$element
-	cton_cc_args_test
-done
+# necessary=no
+# cton_cc_args=('-pipe' '-O2' '-Wall' '-Wextra' '-std=c89' '-Wcomment' '-Werror' '-g')
+# for element in "${cton_cc_args[@]}"
+# do
+# 	cton_cc_args=$element
+# 	cton_cc_args_test
+# done
 
 
 # echo -n "checking for modules ... "

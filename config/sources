@@ -10,6 +10,10 @@ CTON_SOURCES="$CTON_MODULES_C     \
 CTON_SOURCES=`find src | grep -e '\.c$'`
 CTON_TEST_SOURCES=`find test | grep -e '\.h$'`
 
+CTON_OBJECTS=`echo $cton_src \
+        | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJS\1o#g" \
+              -e "s#^\(.*\.\)S\\$#$CTON_OBJS\1o#g"`
+
 if [ $CTON_CORE = YES ]; then
     feature=CTON_WITH_CORE value=1 . config/utils/define
 fi

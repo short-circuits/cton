@@ -13,8 +13,8 @@ END
 for cton_src in $CTON_SOURCES
 do
     cton_obj=`echo $cton_src \
-        | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJ_DIR\1o#g" \
-              -e "s#^\(.*\.\)S\\$#$CTON_OBJ_DIR\1o#g"`
+        | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJS\1o#g" \
+              -e "s#^\(.*\.\)S\\$#$CTON_OBJS\1o#g"`
 
     cat << END                                                >> $CTON_MAKEFILE
 
