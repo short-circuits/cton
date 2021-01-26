@@ -1,0 +1,13 @@
+
+CTON_CC_INCLUDE=" -I"
+CTON_CC_COMPILE=" -c"
+
+. $CONFIG_DIR/cc/detect
+
+case $CTON_CC_NAME in
+    gcc)
+        . $CONFIG_DIR/cc/gcc
+    ;;
+esac
+
+

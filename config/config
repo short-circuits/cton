@@ -1,0 +1,16 @@
+
+# Parse options
+. $CONFIG_DIR/options
+
+# create basic variables
+. $CONFIG_DIR/init
+
+. $CONFIG_DIR/os/detect
+. $CONFIG_DIR/cc/config
+
+. $CONFIG_DIR/sources
+
+. $CONFIG_DIR/utils/endianness
+. $CONFIG_DIR/headers
+
+. $CONFIG_DIR/make
