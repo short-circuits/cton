@@ -173,6 +173,27 @@ Float number also has sub-classes to specific the bit width, but only 16, 32 and
 
 The type token of a float number can be ommited only if it contains decimal point or exponent. A float without type token will be treated as `f32`
 
+### Summary
+
+* _true_ → **true**
+* _false_ → **false**
+* _bool_ → _true_ | _false_
+* _null_ → **null**
+* _lf_ → **U+000A**
+* _cr_ → **U+000D**
+* _newline_ → _cr(opt)_ _lf_ | _cr_
+* _single-line-comment_ → **#** _any-character-except-newline_ _newline_
+* _multi-line-comment_ → **/\*** _any-character_ **\*/**
+* _comment_ → _single-line-comment_ | _multi-line-comment_
+* _simple-escape-sequence_ → **\\"** | **\\\\\\** | **\\f** | **\\n** | **\\r** | **\\t**
+* _digit_ → **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9**
+* _hexadecimal-digit_ → **0** | **1** | **2** | **3** | **4** | **5** | **6** | **7** | **8** | **9** | **a** | **b** | **c** | **d** | **e** | **f** | **A** | **B** | **C** | **D** | **E** | **F**
+* _hexadecimal-sequence_ →  _hexadecimal-digit_  _hexadecimal-digit_
+* _hexadecimal-escape-sequence_ → **\\x** _hexadecimal-sequence_ | _hexadecimal-escape-sequence_ _hexadecimal-sequence_
+* _word-width-sequence_ → **8** | **16** | **32** | **64**
+* _numeric-type-prefix_ → **i** | **u** | **f**
+* _numeric-type-token_ → _numeric-type-prefix_ _word-width-sequence(opt)_
+
 ## Toaru Bionary Object Notation
 
 TBON (Toaru Bionary Object Notation) is a binary format for TON designed for machines to parse and generate. It contains almost all information from TON format except comments and code formats. TBON is not designed for in-storage search or performace for disk I/O.
