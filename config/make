@@ -4,9 +4,16 @@ echo "creating $CTON_MAKEFILE"
 cat << END                                                     > $CTON_MAKEFILE
 
 CC =	$CC
-CFLAGS = $CFLAGS
+CFLAGS = $CTON_CFLAGS
 CPP =	$CPP
-LINK =	$LINK
+LINK =	$CTON_LD
+
+END
+
+cat << END                                                    >> $CTON_MAKEFILE
+
+$CTON_BUILD_DIR/libcton.o: $CTON_OBJECTS
+	\$(LINK) -r $CTON_OBJECTS -o $CTON_BUILD_DIR/libcton.o
 
 END
 
@@ -19,7 +26,7 @@ do
     cat << END                                                >> $CTON_MAKEFILE
 
 $cton_obj:	$cton_src
-	\$(CC)\$(CFLAGS) -o $cton_obj $cton_src
+	\$(CC)$CTON_CC_COMPILE \$(CFLAGS) -o $cton_obj $CTON_CC_INCLUDE$CTON_BUILD_DIR $cton_src
 
 END
 

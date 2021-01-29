@@ -4,7 +4,7 @@ NGX_GCC_VER=`$CC -v 2>&1 | grep 'gcc version' 2>&1 \
 echo " + gcc version: $NGX_GCC_VER"
 
 feature_name="gcc variadic macros"
-feature_macro_name="NGX_HAVE_GCC_VARIADIC_MACROS"
+feature_macro_name="CTON_HAVE_GCC_VARIADIC_MACROS"
 feature_run=yes
 feature_test_header="#include <stdio.h>
 #define var(dummy, args...)  sprintf(args)"

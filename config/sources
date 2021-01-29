@@ -1,6 +1,5 @@
 
-CTON_SOURCES="$CTON_MODULES_C     \
-            src/core/cton.c       \
+CTON_SOURCES="src/core/cton.c       \
             src/core/tbon.c       \
             src/core/utils.c      \
             src/exchange/json.c   \
@@ -10,9 +9,13 @@ CTON_SOURCES="$CTON_MODULES_C     \
 CTON_SOURCES=`find src | grep -e '\.c$'`
 CTON_TEST_SOURCES=`find test | grep -e '\.h$'`
 
-CTON_OBJECTS=`echo $cton_src \
+CTON_OBJECTS=
+for cton_src in $CTON_SOURCES
+do
+    CTON_OBJECTS="$CTON_OBJECTS `echo $cton_src \
         | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJS\1o#g" \
-              -e "s#^\(.*\.\)S\\$#$CTON_OBJS\1o#g"`
+              -e "s#^\(.*\.\)S\\$#$CTON_OBJS\1o#g"`"
+done
 
 if [ $CTON_CORE = YES ]; then
     feature=CTON_WITH_CORE value=1 . config/utils/define
@@ -41,11 +44,16 @@ if [ $CTON_CRYPTO = YES ]; then
 fi
 
 
+CTON_HEADER_PATCH=$CTON_BUILD_DIR/cton.h.patch
+echo > $CTON_HEADER_PATCH
+
 CTON_MODULE_HEADERS=`find src | grep -v 'cton\.h' | grep -e '\.h$'`
 
 for cton_module_header in $CTON_MODULE_HEADERS; do
-	cat $cton_module_header >> $CTON_MODULES_H
+	cat $cton_module_header >> $CTON_HEADER_PATCH
 done
 
-sed "/\/\* CTON_MODULE_FUNCS \*\//r $CTON_MODULES_H" \
+sed "/\/\* CTON_MODULE_FUNCS \*\//r $CTON_HEADER_PATCH" \
     < src/core/cton.h > $CTON_BUILD_DIR/cton.h
+
+rm $CTON_HEADER_PATCH

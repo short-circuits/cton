@@ -2,13 +2,8 @@
 CTON_OBJS=$CTON_BUILD_DIR/objs/
 
 CTON_MAKEFILE=$CTON_BUILD_DIR/Makefile
-CTON_MODULES_C=$CTON_OBJS/modules.c
-CTON_MODULES_H=$CTON_OBJS/modules.h
 
-CTON_AUTO_HEADERS_H=$CTON_OBJS/auto_headers.h
-CTON_AUTO_CONFIG_H=$CTON_OBJS/auto_config.h
-
-
+CTON_AUTOCONF_H=$CTON_BUILD_DIR/auto_config.h
 CTON_AUTOTEST=$CTON_BUILD_DIR/autotest
 CTON_AUTOCONF_ERR=$CTON_BUILD_DIR/autoconf.err
 
@@ -45,10 +40,7 @@ fi
 
 . config/dir
 
-echo > $CTON_MODULES_H
-
-echo > $CTON_AUTO_HEADERS_H
-echo > $CTON_AUTO_CONFIG_H
+echo > $CTON_AUTOCONF_H
 echo > $CTON_AUTOCONF_ERR
 
 feature=CTON_CONFIGURE value=\"$CTON_CONFIGURE\" . config/utils/define

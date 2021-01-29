@@ -1,5 +1,5 @@
 
-cat << END >> $CTON_AUTO_CONFIG_H
+cat << END >> $CTON_AUTOCONF_H
 
 #ifndef $feature
 #define $feature  $value
