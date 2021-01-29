@@ -1,0 +1,51 @@
+
+CTON_OBJS=$CTON_BUILD_DIR/objs/
+
+CTON_MAKEFILE=$CTON_BUILD_DIR/Makefile
+
+CTON_AUTOCONF_H=$CTON_BUILD_DIR/auto_config.h
+CTON_AUTOTEST=$CTON_BUILD_DIR/autotest
+CTON_AUTOCONF_ERR=$CTON_BUILD_DIR/autoconf.err
+
+CFLAGS=
+
+# check the echo's "-n" option and "\c" capability
+
+if echo "test\c" | grep c >/dev/null; then
+
+    if echo -n test | grep n >/dev/null; then
+        cton_n=
+        cton_c=
+
+    else
+        cton_n=-n
+        cton_c=
+    fi
+
+else
+    cton_n=
+    cton_c='\c'
+fi
+
+
+# create Makefile
+
+# cat << END > Makefile
+
+# default:	build
+
+# clean:
+# 	rm -rf Makefile $CTON_OBJS
+# END
+
+. config/dir
+
+echo > $CTON_AUTOCONF_H
+echo > $CTON_AUTOCONF_ERR
+
+feature=CTON_CONFIGURE value=\"$CTON_CONFIGURE\" . config/utils/define
+
+if [ $CTON_DEBUG = YES ]; then
+    feature=CTON_DEBUG value=1 . config/utils/define
+fi
+

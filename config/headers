@@ -1,0 +1,48 @@
+
+CTON_REQUEST_HEADERS="ctype.h limits.h stdint.h stdio.h stdlib.h string.h"
+
+for CTON_REQUEST_HEADER in $CTON_REQUEST_HEADERS
+do
+	feature_name=$CTON_REQUEST_HEADER
+	feature_test_header="#include <$CTON_REQUEST_HEADER>"
+	. $CONFIG_DIR/utils/feature_test
+
+	if [ $feature_found = no ]; then
+		echo "Header $CTON_REQUEST_HEADER is requested but not found."
+		exit 1;
+	fi
+
+done
+
+
+feature_name="memcpy()"
+feature_macro_name=CTON_HAVE_MEMCPY
+feature_test_header="#include <string.h>"
+feature_test_body="
+    char src[256];
+    char dst[256];
+    memcpy(dst,src,256);
+"
+. $CONFIG_DIR/utils/feature_test
+
+
+feature_name="memset()"
+feature_macro_name=CTON_HAVE_MEMSET
+feature_test_header="#include <string.h>"
+feature_test_body="
+    char dst[256];
+    memset(dst,0,256);
+"
+. $CONFIG_DIR/utils/feature_test
+
+
+feature_name="strncmp()"
+feature_macro_name=CTON_HAVE_STRNCMP
+feature_test_header="#include <string.h>"
+feature_test_body="
+    char src[256];
+    char dst[256];
+    strncmp(dst,src,256);
+"
+. $CONFIG_DIR/utils/feature_test
+

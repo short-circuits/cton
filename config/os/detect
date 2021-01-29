@@ -1,0 +1,22 @@
+
+if test -z "$CTON_PLATFORM"; then
+    echo "checking for OS"
+
+    CTON_SYSTEM=`uname -s 2>/dev/null`
+    CTON_RELEASE=`uname -r 2>/dev/null`
+    CTON_MACHINE=`uname -m 2>/dev/null`
+
+    echo " + $CTON_SYSTEM $CTON_RELEASE $CTON_MACHINE"
+
+    CTON_PLATFORM="$CTON_SYSTEM:$CTON_RELEASE:$CTON_MACHINE";
+
+    case "$CTON_SYSTEM" in
+        MINGW32_* | MINGW64_* | MSYS_*)
+            CTON_PLATFORM=win32
+        ;;
+    esac
+
+else
+    echo "building for $CTON_PLATFORM"
+    CTON_SYSTEM=$CTON_PLATFORM
+fi

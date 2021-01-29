@@ -1,0 +1,136 @@
+
+help=no
+
+CTON_PREFIX=
+CTON_BUILD_DIR=./build
+
+CTON_DEBUG=NO
+
+CC=${CC:-cc}
+CPP=
+CTON_CC_OPT=
+CTON_LD_OPT=
+
+CTON_CORE=YES
+
+CTON_EXCHANGE=YES
+CTON_EXCHANGE_JSON=YES
+CTON_EXCHANGE_BASE64=YES
+CTON_EXCHANGE_ZIP=NO
+
+CTON_CRYPTO=YES
+CTON_CRYPTO_SHA1=YES
+
+
+USE_ZLIB=NO
+ZLIB=NONE
+ZLIB_OPT=
+ZLIB_ASM=NO
+
+opt=
+
+for option
+do
+    opt="$opt `echo $option | sed -e \"s/\(--[^=]*=\)\(.* .*\)/\1'\2'/\"`"
+
+    case "$option" in
+        -*=*) value=`echo "$option" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
+           *) value="" ;;
+    esac
+
+    case "$option" in
+        --help)                          help=yes                   ;;
+        --prefix=)                       CTON_PREFIX="!"            ;;
+        --prefix=*)                      CTON_PREFIX="$value"       ;;
+
+        --builddir=*)                    CTON_BUILD_DIR="$value"    ;;
+
+        --with-cc=*)                     CC="$value"                ;;
+        --with-cpp=*)                    CPP="$value"               ;;
+        --with-cc-opt=*)                 CTON_CC_OPT="$value"       ;;
+        --with-ld-opt=*)                 CTON_LD_OPT="$value"       ;;
+
+        --with-core)                     CTON_CORE=YES              ;;
+        --without-core)                  CTON_CORE=NO               ;;
+
+        --with-exchange)                 CTON_EXCHANGE=YES          ;;
+        --with-exchange-json)            CTON_EXCHANGE_JSON=YES     ;;
+        --with-exchange-base64)          CTON_EXCHANGE_BASE64=YES   ;;
+        --with-exchange-zip)             CTON_EXCHANGE_ZIP=YES      ;;
+        --without-exchange)              CTON_EXCHANGE=NO           ;;
+        --without-exchange-json)         CTON_EXCHANGE_JSON=NO      ;;
+        --without-exchange-base64)       CTON_EXCHANGE_BASE64=NO    ;;
+        --without-exchange-zip)          CTON_EXCHANGE_ZIP=NO       ;;
+
+        --with-crypto)                   CTON_CRYPTO=YES            ;;
+        --without-crypto)                CTON_CRYPTO=NO             ;;
+
+        --with-zlib=*)                   ZLIB="$value"              ;;
+        --with-zlib-opt=*)               ZLIB_OPT="$value"          ;;
+        --with-zlib-asm=*)               ZLIB_ASM="$value"          ;;
+
+
+        --with-debug)                  CTON_DEBUG=YES             ;;
+
+        *)
+            echo "$0: error: invalid option \"$option\""
+            exit 1
+        ;;
+    esac
+done
+
+CTON_CONFIGURE="$opt"
+
+if [ $help = yes ]; then
+
+cat << END
+\`configure' configures cton - to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Configuration:
+  --help                             print this message
+
+Build & Installation Directories:
+  --prefix=PATH                      set installation prefix
+  --builddir=DIR                     set build directory
+
+Compiler Options:
+  --with-cc=PATH                     set C compiler pathname
+  --with-cpp=PATH                    set C preprocessor pathname
+  --with-cc-opt=OPTIONS              set additional C compiler options
+  --with-ld-opt=OPTIONS              set additional linker options
+
+Optional Features:
+  --with-debug                       enable debug logging
+  --with-core              (default) enable CTON core library
+  --with-exchange          (default) enable CTON exchange library 
+  --with-exchange-json     (default) enable json exchange format
+  --with-exchange-base64   (default) enable base64 encoder/decoder
+  --with-exchange-zip                enable zip (LZ77) archiver
+  --with-crypto            (default) enable CTON crypto library
+  --with-crypto-sha1       (default) enable sha1 hash
+
+  --without-core                     disable CTON core library
+  --without-exchange                 disable CTON exchange library 
+  --without-exchange-json            disable json exchange format
+  --without-exchange-base64          disable base64 encoder/decoder
+  --without-exchange-zip   (default) disable zip (LZ77) archiver
+  --without-crypto                   disable CTON crypto library
+  --without-crypto-sha1              disable sha1 hash
+
+Optional Packages:
+  --with-zlib=DIR                    set path to zlib library sources
+  --with-zlib-opt=OPTIONS            set additional build options for zlib
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to Github issue <https://github.com/short-circuits/cton/issues>.
+END
+
+    exit 1
+fi

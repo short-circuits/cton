@@ -1,0 +1,15 @@
+
+CTON_CC_INCLUDE=" -I"
+CTON_CC_COMPILE=" -c"
+CTON_LD=ld
+
+. $CONFIG_DIR/cc/detect
+
+case $CTON_CC_NAME in
+    gcc)
+        . $CONFIG_DIR/cc/gcc
+    ;;
+esac
+
+CTON_CFLAGS=$CTON_CC_OPT
+CTON_LDFLAGS=$CTON_LD_OPT

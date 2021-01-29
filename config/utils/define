@@ -1,0 +1,8 @@
+
+cat << END >> $CTON_AUTOCONF_H
+
+#ifndef $feature
+#define $feature  $value
+#endif
+
+END

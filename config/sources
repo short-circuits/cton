@@ -1,0 +1,59 @@
+
+CTON_SOURCES="src/core/cton.c       \
+            src/core/tbon.c       \
+            src/core/utils.c      \
+            src/exchange/json.c   \
+            src/exchange/base64.c \
+            src/crypto/sha1.c"
+
+CTON_SOURCES=`find src | grep -e '\.c$'`
+CTON_TEST_SOURCES=`find test | grep -e '\.h$'`
+
+CTON_OBJECTS=
+for cton_src in $CTON_SOURCES
+do
+    CTON_OBJECTS="$CTON_OBJECTS `echo $cton_src \
+        | sed -e "s#^\(.*\.\)c\\$#$CTON_OBJS\1o#g" \
+              -e "s#^\(.*\.\)S\\$#$CTON_OBJS\1o#g"`"
+done
+
+if [ $CTON_CORE = YES ]; then
+    feature=CTON_WITH_CORE value=1 . config/utils/define
+fi
+
+if [ $CTON_EXCHANGE = YES ]; then
+    feature=CTON_WITH_EXCHANGE value=1 . config/utils/define
+
+    if [ $CTON_EXCHANGE_JSON = YES ]; then
+        feature=CTON_WITH_EXCHANGE_JSON value=1 . config/utils/define
+    fi
+
+    if [ $CTON_EXCHANGE_BASE64 = YES ]; then
+        feature=CTON_WITH_EXCHANGE_BASE64 value=1 . config/utils/define
+    fi
+    
+fi
+
+if [ $CTON_CRYPTO = YES ]; then
+    feature=CTON_WITH_CRYPTO value=1 . config/utils/define
+
+    if [ $CTON_CRYPTO_SHA1 = YES ]; then
+        feature=CTON_WITH_CRYPTO_SHA1 value=1 . config/utils/define
+    fi
+    
+fi
+
+
+CTON_HEADER_PATCH=$CTON_BUILD_DIR/cton.h.patch
+echo > $CTON_HEADER_PATCH
+
+CTON_MODULE_HEADERS=`find src | grep -v 'cton\.h' | grep -e '\.h$'`
+
+for cton_module_header in $CTON_MODULE_HEADERS; do
+	cat $cton_module_header >> $CTON_HEADER_PATCH
+done
+
+sed "/\/\* CTON_MODULE_FUNCS \*\//r $CTON_HEADER_PATCH" \
+    < src/core/cton.h > $CTON_BUILD_DIR/cton.h
+
+rm $CTON_HEADER_PATCH

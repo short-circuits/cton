@@ -1,5 +1,4 @@
 #include <cton.h>
-#include <cton_bmp.h>
 
 static cton_obj *cton_bmp_read_header(cton_ctx *ctx, cton_obj *bmp);
 static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp);
