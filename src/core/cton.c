@@ -1297,49 +1297,15 @@ static void cton_hash_insert_item(cton_ctx *ctx,
     hash->payload.hash.count += 1;
 }
 
-#if 0
-static cton_obj *cton_hash_rmkey(cton_ctx *ctx, cton_obj *h, cton_obj *k)
-{
-	cton_hash_item *prev;
-	cton_hash_item *current;
-
-	cton_obj *v;
-
-	prev    = NULL;
-	current = h->payload.hash.root;
-
-	while (current != NULL) {
-    	if (cton_util_strcmp(k, current->key) == 0) {
-    		break;
-    	}
-
-    	prev    = current;
-    	current = current->next;
-    }
-
-    if (current == NULL) {
-    	return NULL;
-    }
-
-    if (prev == NULL) {
-    	h->payload.hash.root = current->next;
-    } else {
-    	prev->next = current->next;
-    }
-
-    if (current->next == NULL) {
-    	h->payload.hash.root = prev;
-    }
-
-    v = current->value;
-
-    cton_free(ctx, current->key);
-    cton_free(ctx, current);
-
-	return v;
-}
-#endif
-
+/*
+ * cton_hash_init()
+ *
+ * DESCRIPTION
+ *   CTON用hash表初始化，
+ *
+ * PARAMETER
+ *   obj: 一个CTON哈希表
+ */
 static void cton_hash_init(cton_ctx *ctx, cton_obj *obj)
 {
     (void) ctx;
@@ -1349,6 +1315,16 @@ static void cton_hash_init(cton_ctx *ctx, cton_obj *obj)
     obj->payload.hash.count = 0;
 }
 
+/*
+ * cton_hash_delete()
+ *
+ * DESCRIPTION
+ *	 删除整个hash表，
+ *   但实际上cton_hash_remove_item()套娃，
+ *
+ * PARAMETER
+ *   obj: 一个CTON哈希表
+ */
 static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
 {
     while (obj->payload.hash.root != NULL) {
@@ -1356,6 +1332,20 @@ static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
     }
 }
 
+/*
+ * cton_hash_get()
+ *
+ * DESCRIPTION
+ *	 从hash表里取值.
+ *
+ * PARAMETER
+ *   h: 一个CTON哈希表
+ *   k: 一个CTON对象，是个key
+ * 
+ * RETURN
+ *   一个CTON对象，是key对应的值.
+ *
+ */
 cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
 {
 	cton_hash_item *result;
@@ -1379,6 +1369,19 @@ cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
     return result->value;
 }
 
+/*
+ *  cton_hash_get_s()
+ *
+ * DESCRIPTION
+ *	 从hash表里取值.
+ *
+ * PARAMETER
+ *   h: 一个CTON哈希表
+ *   ks: 一个字符串，是个key
+ * 
+ * RETURN
+ *   成功返回一个CTON对象，是key对应的值，失败返回NULL.
+ */
 cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
 {
     cton_obj *key;
@@ -1398,6 +1401,21 @@ cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
     return val;
 }
 
+/*
+ *  cton_hash_set()
+ *
+ * DESCRIPTION
+ *	 在hash表里设定值.
+ *
+ * PARAMETER
+ *   h: 一个CTON哈希表
+ *   k: 一个CTON对象，是个key
+ *	 v: 一个CTON对象，是key对应的值.
+ * 
+ * RETURN
+ *   成功返回v，失败返回NULL.
+ *
+ */
 cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 {
 	cton_hash_item *pos;
