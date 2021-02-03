@@ -552,7 +552,7 @@ cton_json_stringify_binary(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	cton_obj *base64;
 	int ret;
 
-	base64 = cton_util_encode64(ctx, obj, CTON_BASE64);
+	base64 = cton_base64_encode(ctx, obj, CTON_BASE64);
 	ret = cton_json_stringify_string(ctx, buf, base64);
 
 	cton_object_delete(ctx, base64);

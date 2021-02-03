@@ -81,6 +81,13 @@ done
 
 CTON_CONFIGURE="$opt"
 
+if [ $CTON_EXCHANGE_BASE64 = NO ]; then
+    if [ $CTON_EXCHANGE_BASE64 = NO ]; then
+        echo "json is disabled as it needs base64 to be enabled."
+        CTON_EXCHANGE_JSON=NO
+    fi
+fi
+
 if [ $help = yes ]; then
 
 cat << END
