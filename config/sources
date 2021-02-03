@@ -4,6 +4,7 @@ CTON_SOURCES="src/core/cton.c       \
             src/core/utils.c      \
             src/exchange/json.c   \
             src/exchange/base64.c \
+            src/exchange/bmp.c \
             src/crypto/sha1.c"
 
 CTON_SOURCES=`find src | grep -e '\.c$'`
