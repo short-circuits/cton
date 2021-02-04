@@ -12,6 +12,9 @@ END
 
 cat << END                                                    >> $CTON_MAKEFILE
 
+
+all: $CTON_BUILD_DIR/libcton.o $CTON_BUILD_DIR/libcton.so $CTON_BUILD_DIR/libcton.a
+
 $CTON_BUILD_DIR/libcton.o: $CTON_OBJECTS
 	\$(LINK) -r $CTON_OBJECTS -o $CTON_BUILD_DIR/libcton.o
 
