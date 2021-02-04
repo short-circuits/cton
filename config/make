@@ -7,13 +7,19 @@ CC =	$CC
 CFLAGS = $CTON_CFLAGS
 CPP =	$CPP
 LINK =	$CTON_LD
-
+AR = ar
 END
 
 cat << END                                                    >> $CTON_MAKEFILE
 
 $CTON_BUILD_DIR/libcton.o: $CTON_OBJECTS
 	\$(LINK) -r $CTON_OBJECTS -o $CTON_BUILD_DIR/libcton.o
+
+$CTON_BUILD_DIR/libcton.so: $CTON_OBJECTS
+	\$(CC) $CTON_OBJECTS -shared -o $CTON_BUILD_DIR/libcton.so
+
+$CTON_BUILD_DIR/libcton.a: $CTON_OBJECTS
+	\$(AR) rs $CTON_BUILD_DIR/libcton.a $CTON_OBJECTS
 
 END
 
