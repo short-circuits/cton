@@ -2312,4 +2312,7 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
     return dst_obj;
 }
 
-
+void cton_gc(cton_ctx *ctx)
+{
+    (void) ctx;
+}
