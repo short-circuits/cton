@@ -1,0 +1,19 @@
+name: C compile test
+
+on:
+  push:
+    branches: [ current ]
+  pull_request:
+    branches: [ current ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
