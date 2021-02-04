@@ -12,3 +12,5 @@ feature_test_body="char  buf[30]; buf[0] = '0';
                   var(0, buf, \"%d\", 1);
                   if (buf[0] != '1') return 1"
 . $CONFIG_DIR/utils/feature_test
+
+CTON_CC_OPT='-fPIC'

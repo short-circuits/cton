@@ -297,7 +297,6 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w);
 cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
 
-cton_obj *cton_util_sha1(cton_ctx *ctx, cton_obj *obj);
 
 /* cton tree methods */
 int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj);
