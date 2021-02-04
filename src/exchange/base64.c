@@ -86,7 +86,7 @@ static cton_obj *cton_base64_encode_internal(cton_ctx *ctx,
     return wrapd;
 }
 
-cton_obj *cton_base_encode64(cton_ctx *ctx, cton_obj* obj, cton_base64_std std)
+cton_obj *cton_base64_encode(cton_ctx *ctx, cton_obj* obj, cton_base64_std std)
 {
     static uint8_t basis64_std[] = 
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
