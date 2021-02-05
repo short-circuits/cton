@@ -733,13 +733,6 @@ cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
  * String
  ******************************************************************************/
 
-#define cton_string_type_confirm(ctx, obj, ret) \
-    if (cton_object_gettype(ctx, obj) != CTON_STRING && \
-        cton_object_gettype(ctx, obj) != CTON_BINARY) { \
-        cton_seterr(ctx, CTON_ERROR_TYPE);         \
-        return ret;                                \
-    }
-
 static void cton_string_init(cton_ctx *ctx, cton_obj *str)
 {
     (void) ctx;
