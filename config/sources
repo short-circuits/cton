@@ -2,6 +2,7 @@
 CTON_SOURCES="src/core/cton.c       \
             src/core/tbon.c       \
             src/core/utils.c      \
+            src/core/tree.c      \
             src/exchange/json.c   \
             src/exchange/base64.c \
             src/exchange/bmp.c \
