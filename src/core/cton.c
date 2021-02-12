@@ -2312,7 +2312,104 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
     return dst_obj;
 }
 
+/*******************************************************************************
+ * CTON Garbage Collection
+ ******************************************************************************/
+
+static void
+cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
+static int
+cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r);
+static int
+cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r);
+
+static void
+cton_gc_collect(cton_ctx *ctx);
+
 void cton_gc(cton_ctx *ctx)
 {
     (void) ctx;
+    cton_obj *root;
+    int cnt;
+
+    cnt = 0;
+    root = cton_tree_getroot(ctx);
+
+    if (root != NULL) {
+        cton_gc_mark(ctx, root);
+
+        cnt = cton_gc_collect(ctx);
+    }
+
+    return cnt;
+
+}
+
+static int
+cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r)
+{
+    (void) i;
+    (void) r;
+
+    if (obj != NULL) {
+        cton_gc_mark(ctx, obj);
+    }
+
+    return 0;
+}
+
+static int
+cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r)
+{
+
+    (void) i;
+    (void) r;
+
+    cton_gc_mark(ctx, k);
+    cton_gc_mark(ctx, v);
+    
+    return 0;
+}
+
+
+static void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
+{
+    cton_type type;
+
+    if (obj->ref == 0) {
+        type = cton_object_gettype(ctx, obj);
+
+        if (type == CTON_ARRAY) {
+            cton_array_foreach(ctx, obj, NULL, cton_gc_mark_array);
+        } else if (type == CTON_HASH) {
+            cton_hash_foreach(ctx, obj, NULL, cton_gc_mark_hash);
+        } else {
+            obj->ref = 1;
+        }
+    }
+}
+
+static int cton_gc_collect(cton_ctx *ctx)
+{
+    cton_obj *obj;
+    cton_obj *next;
+    int cnt;
+
+    cnt = 0;
+    obj = ctx->nodes;
+
+    while (obj != NULL) {
+        next = obj->next;
+
+        if (obj->ref == 0) {
+            cton_object_delete(ctx, obj);
+            cnt += 1;
+        } else {
+            obj->ref = 0;
+        }
+
+        obj = next;
+    }
+
+    return cnt;
 }
