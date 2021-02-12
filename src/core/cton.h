@@ -227,6 +227,7 @@ char * cton_strerr(cton_err err);
 #define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
 
 int cton_gc(cton_ctx *ctx);
+void cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);

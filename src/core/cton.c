@@ -2232,8 +2232,6 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
  * CTON Garbage Collection
  ******************************************************************************/
 
-static void
-cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
 static int
 cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r);
 static int
@@ -2252,9 +2250,9 @@ int cton_gc(cton_ctx *ctx)
 
     if (root != NULL) {
         cton_gc_mark(ctx, root);
-
-        cnt = cton_gc_collect(ctx);
     }
+
+    cnt = cton_gc_collect(ctx);
 
     return cnt;
 }
@@ -2286,7 +2284,7 @@ cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r)
 }
 
 
-static void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
+void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
 {
     cton_type type;
 
