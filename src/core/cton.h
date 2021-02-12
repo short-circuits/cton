@@ -137,6 +137,7 @@ struct cton_obj_s {
     struct cton_obj_s *prev;
 
     enum cton_type_e type;   /* CTON type */
+    uint8_t ref;
 };
 
 #endif
@@ -224,6 +225,8 @@ void cton_seterr(cton_ctx *ctx, cton_err err);
 cton_err cton_geterr(cton_ctx *ctx);
 char * cton_strerr(cton_err err);
 #define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
+
+int cton_gc(cton_ctx *ctx);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
