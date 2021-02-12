@@ -246,6 +246,20 @@ The type tag is a single byte defining the contents of the payload of the tag. E
 |  18 | float32           |
 |  19 | float64           |
 
+### Length encoding
+
+Length data encoding using a method like UTF-8:
+
+| Code bits | Length | Byte0      | Byte1      | Byte2      | Byte3      | Byte4      | Byte5      | Byte6 ~    |
+|:---------:|:------:|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+|         7 |      1 | `0xxxxxxx` |            |            |            |            |            |            |
+|        11 |      2 | `110xxxxx` | `10xxxxxx` |            |            |            |            |            |
+|        16 |      3 | `1110xxxx` | `10xxxxxx` | `10xxxxxx` |            |            |            |            |
+|        21 |      4 | `11110xxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` |            |            |            |
+|        26 |      5 | `111110xx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` |            |            |
+|        31 |      6 | `1111110x` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` |            |
+|        64 |     12 | `11111110` | `1000xxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` | `10xxxxxx` |
+
 ### Object
 
 An object stands for a struct with type tags and addtional payload. Type tags is a 8-bit width unsigned data, and payload is determided by type. The data structure of an object can be descripted as below:

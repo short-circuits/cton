@@ -79,6 +79,7 @@ static void cton_serialize_8bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
 static void cton_serialize_16bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
 static void cton_serialize_32bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
 static void cton_serialize_64bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
+static void cton_serialize_vw(cton_ctx *ctx, cton_buf *buf, uint64_t data);
 
 cton_obj *
 cton_serialize(cton_ctx *ctx, cton_obj *obj)
@@ -225,6 +226,65 @@ static void cton_serialize_64bit(cton_ctx *ctx, cton_buf *buf, void *ptr)
 	cton_util_buffer_putchar(buf,  (data & 0x00000000000000FFUL));
 }
 
+static void cton_serialize_vw(cton_ctx *ctx, cton_buf *buf, uint64_t data)
+{
+	(void)ctx;
+
+	if (data <= 0x7F) {
+		/* 7bit, 1 byte */
+		cton_util_buffer_putchar(buf, (data & 0x7F));
+
+	} else if (data <= 0x7FF) {
+		/* 11bit, 2 byte */
+		cton_util_buffer_putchar(buf, ( 0xC0 | (data >> 6) ));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+
+	} else if (data <= 0xFFFF) {
+		/* 3 byte */
+		cton_util_buffer_putchar(buf, ( 0xE0 | (data >> 12) ));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 6) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+
+	} else if (data <= 0x1FFFFF) {
+		/* 4 byte */
+		cton_util_buffer_putchar(buf, ( 0xF0 | (data >> 18) ));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 12) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 6) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+
+	} else if (data <= 0x3FFFFFF) {
+		/* 5 byte */
+		cton_util_buffer_putchar(buf, ( 0xF8 | (data >> 24) ));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 18) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 12) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 6) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+
+	} else if (data <= 0x7FFFFFFF) {
+		/* 6 byte */
+		cton_util_buffer_putchar(buf, ( 0xFC | (data >> 30) ));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 24) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 18) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 12) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 6) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+
+	} else {
+		cton_util_buffer_putchar(buf, 0xFE);
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 60) & 0x0F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 54) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 48) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 42) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 36) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 30) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 24) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 18) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 12) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | ((data >> 6) & 0x3F)));
+		cton_util_buffer_putchar(buf, ( 0x80 | (data & 0x3F) ));
+	}
+}
+
 
 static int cton_serialize_string(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
@@ -232,7 +292,7 @@ static int cton_serialize_string(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	uint8_t  *ptr;
 
 	length = cton_string_getlen(ctx, obj);
-	cton_serialize_64bit(ctx, buf, (void *)&length);
+	cton_serialize_vw(ctx, buf, length);
 
 	ptr = cton_binary_getptr(ctx, obj);
 
@@ -259,7 +319,7 @@ static int cton_serialize_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	uint64_t length;
 
 	length = cton_hash_getlen(ctx, obj);
-	cton_serialize_64bit(ctx, buf, (void *)&length);
+	cton_serialize_vw(ctx, buf, length);
 
 	cton_hash_foreach(ctx, obj, (void *)buf, cton_serialize_hash_item);
 
@@ -294,7 +354,7 @@ static int cton_serialize_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	cton_util_buffer_putchar(buf, id);
 
 	length = cton_array_getlen(ctx, obj);
-	cton_serialize_64bit(ctx, buf, (void *)&length);
+	cton_serialize_vw(ctx, buf, length);
 
 	if (type == CTON_OBJECT) {
 		return cton_array_foreach(ctx,
@@ -348,6 +408,88 @@ static cton_type cton_get_type_from_id(uint8_t id)
 	return CTON_INVALID;
 }
 
+static uint8_t cton_deserialize_vwlen(uint8_t *ptr)
+{
+	if (*ptr <= 0x7F) {
+		/* 7bit, 1 byte */
+		return 1;
+
+	} else if (*ptr <= 0xDF) {
+		/* 11bit, 2 byte */
+		return 2;
+
+	} else if (*ptr <= 0xEF) {
+		/* 3 byte */
+		return 3;
+
+	} else if (*ptr <= 0xF7) {
+		/* 4 byte */
+		return 4;
+
+	} else if (*ptr <= 0xFB) {
+		/* 5 byte */
+		return 5;
+
+	} else if (*ptr <= 0xFD) {
+		/* 6 byte */
+		return 6;
+
+	} else {
+		return 12;
+	}
+}
+
+static uint64_t cton_deserialize_vw(uint8_t *ptr)
+{
+	uint64_t data;
+	uint8_t  tails;
+
+	tails = 0;
+
+	if (*ptr <= 0x7F) {
+		/* 7bit, 1 byte */
+		data = *ptr;
+
+	} else if (*ptr <= 0xDF) {
+		/* 11bit, 2 byte */
+		data = *ptr & 0x1F;
+		tails = 1;
+
+	} else if (*ptr <= 0xEF) {
+		/* 3 byte */
+		data = *ptr & 0x0F;
+		tails = 2;
+
+	} else if (*ptr <= 0xF7) {
+		/* 4 byte */
+		data = *ptr & 0x07;
+		tails = 3;
+
+	} else if (*ptr <= 0xFB) {
+		/* 5 byte */
+		data = *ptr & 0x03;
+		tails = 4;
+
+	} else if (*ptr <= 0xFD) {
+		/* 6 byte */
+		data = *ptr & 0x01;
+		tails = 5;
+
+	} else {
+		ptr ++;
+		data = *ptr & 0x0F;
+		tails = 10;
+	}
+
+	while (tails > 0) {
+		ptr ++;
+		data = ((data << 6) | ((*ptr) & 0x3F));
+		tails --;
+	}
+
+	return data;
+}
+
 static uint64_t cton_deserialize_64bit(uint8_t *ptr)
 {
 	uint64_t data;
@@ -392,13 +534,13 @@ cton_deserialize_string(cton_ctx *ctx,
 	cton_obj *obj;
 	uint8_t  *dst;
 
-	if (*index + 8 >= len) {
+	if (*index + cton_deserialize_vwlen(ptr) >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
 		return NULL;
 	}
 
-	str_len = cton_deserialize_64bit(ptr + *index);
-	*index += 8;
+	str_len = cton_deserialize_vw(ptr + *index);
+	*index += cton_deserialize_vwlen(ptr);
 
 	if (*index + str_len >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
@@ -427,13 +569,13 @@ cton_deserialize_hash(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 	cton_obj *key;
 	cton_obj *value;
 
-	if (*index + 8 >= len) {
+	if (*index + cton_deserialize_vwlen(ptr) >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
 		return NULL;
 	}
 
-	hash_len = cton_deserialize_64bit(ptr + *index);
-	*index += 8;
+	hash_len = cton_deserialize_vw(ptr + *index);
+	*index +=  cton_deserialize_vwlen(ptr);
 
 	hash = cton_object_create(ctx, CTON_HASH);
 	if (hash == NULL) {
@@ -471,7 +613,7 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 
 	int ret;
 
-	if (*index + 8 + 1 >= len) {
+	if (*index +  cton_deserialize_vwlen(ptr) + 1 >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
 		return NULL;
 	}
@@ -479,8 +621,8 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 	type = cton_get_type_from_id(ptr[*index]);
 	*index += 1;
 
-	arr_len = cton_deserialize_64bit(ptr + *index);
-	*index += 8;
+	arr_len = cton_deserialize_vw(ptr + *index);
+	*index +=  cton_deserialize_vwlen(ptr);
 
 	arr = cton_object_create(ctx, CTON_ARRAY);
 	if (arr == NULL) {
