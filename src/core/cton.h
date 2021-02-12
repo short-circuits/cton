@@ -137,6 +137,7 @@ struct cton_obj_s {
     struct cton_obj_s *prev;
 
     enum cton_type_e type;   /* CTON type */
+    uint8_t ref;
 };
 
 #endif
