@@ -2326,7 +2326,7 @@ cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r);
 static void
 cton_gc_collect(cton_ctx *ctx);
 
-void cton_gc(cton_ctx *ctx)
+int cton_gc(cton_ctx *ctx)
 {
     (void) ctx;
     cton_obj *root;
@@ -2342,7 +2342,6 @@ void cton_gc(cton_ctx *ctx)
     }
 
     return cnt;
-
 }
 
 static int
