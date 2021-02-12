@@ -2323,8 +2323,7 @@ cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r);
 static int
 cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r);
 
-static void
-cton_gc_collect(cton_ctx *ctx);
+static int cton_gc_collect(cton_ctx *ctx);
 
 int cton_gc(cton_ctx *ctx)
 {
@@ -2379,8 +2378,10 @@ static void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
         type = cton_object_gettype(ctx, obj);
 
         if (type == CTON_ARRAY) {
+            obj->ref = 1;
             cton_array_foreach(ctx, obj, NULL, cton_gc_mark_array);
         } else if (type == CTON_HASH) {
+            obj->ref = 1;
             cton_hash_foreach(ctx, obj, NULL, cton_gc_mark_hash);
         } else {
             obj->ref = 1;
