@@ -1,10 +1,10 @@
 # C-lang Toaru Object Notation
 _とあるC言語オブジェクトライブラリ・某C语言用对象操作库・Некий объектно библиотека языка Си_
 
-[![BEER-WARE LICENSE](https://img.shields.io/badge/license-BEER--WARE%F0%9F%8D%9B-blue.svg)](https://github.com/yeonzi/cton/blob/current/LICENSE)
-![Top Language](https://img.shields.io/github/languages/top/yeonzi/cton?color=00cc00)
-![Total Lines](https://img.shields.io/tokei/lines/github/yeonzi/cton?color=00cc00)
-
+[![BEER-WARE LICENSE](https://img.shields.io/badge/license-BEER--WARE%F0%9F%8D%9B-blue.svg)](https://github.com/short-circuits/cton/blob/current/LICENSE)
+![Top Language](https://img.shields.io/github/languages/top/short-circuits/cton?color=00cc00)
+![Total Lines](https://img.shields.io/tokei/lines/github/short-circuits/cton?color=00cc00)
+![Github Workflow](https://img.shields.io/github/workflow/status/short-circuits/cton/C%20compile%20test/current)
 
 ### 目次・目录・Оглавление・T.O.C
 
