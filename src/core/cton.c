@@ -1778,6 +1778,27 @@ double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
     return val;
 }
 
+double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val)
+{
+    if (obj->type == CTON_FLOAT8) {
+        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+
+    } else if (obj->type == CTON_FLOAT16) {
+        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+
+    } else if (obj->type == CTON_FLOAT32) {
+        obj->payload.f32 = val;
+
+    } else if (obj->type == CTON_FLOAT64) {
+        obj->payload.f64 = val;
+
+    } else {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+    }
+
+    return val;
+}
+
 
 /*******************************************************************************
  * CTON util functions
