@@ -5,11 +5,15 @@ CTON_LD=ld
 
 . $CONFIG_DIR/cc/detect
 
-case $CTON_CC_NAME in
-    gcc)
-        . $CONFIG_DIR/cc/gcc
-    ;;
-esac
+if test -n "$CTON_CC_OPT"; then
+	CTON_CFLAGS=$CTON_CC_OPT
+else
+	case $CTON_CC_NAME in
+	    gcc)
+	        . $CONFIG_DIR/cc/gcc
+	    ;;
+	esac
+fi
 
 CTON_CFLAGS=$CTON_CC_OPT
 CTON_LDFLAGS=$CTON_LD_OPT
