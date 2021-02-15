@@ -1188,7 +1188,7 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
  *
  ******************************************************************************/
 
-#ifdef CTON_HASH_RBTREE
+#ifndef CTON_HASH_LIST
 
 static void cton_rbtree_left_rotate(cton_rbtree_node_t **root,
     cton_rbtree_node_t *sentinel, cton_rbtree_node_t *node);

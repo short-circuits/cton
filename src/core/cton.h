@@ -42,7 +42,7 @@ typedef void cton_memhook;
 typedef struct cton_obj_s       cton_obj;
 typedef struct cton_string_s    cton_string;
 typedef struct cton_array_s     cton_array;
-#ifndef CTON_HASH_RBTREE
+#ifdef CTON_HASH_LIST
 typedef struct cton_hash_item_s cton_hash_item;
 typedef struct cton_hash_s      cton_hash;
 #endif
@@ -103,7 +103,7 @@ struct cton_array_s {
 };
 
 
-#ifdef CTON_HASH_RBTREE
+#ifndef CTON_HASH_LIST
 
 typedef struct cton_rbtree_node_s cton_rbtree_node_t;
 
