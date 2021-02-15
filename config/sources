@@ -49,7 +49,7 @@ fi
 CTON_HEADER_PATCH=$CTON_BUILD_DIR/cton.h.patch
 echo > $CTON_HEADER_PATCH
 
-CTON_MODULE_HEADERS=`find src | grep -v 'cton\.h' | grep -v 'cton_core\.h' | grep -e '\.h$'`
+CTON_MODULE_HEADERS=`find src | grep -v 'cton' | grep -e '\.h$'`
 
 for cton_module_header in $CTON_MODULE_HEADERS; do
 	cat $cton_module_header >> $CTON_HEADER_PATCH
