@@ -100,6 +100,28 @@ struct cton_array_s {
     enum cton_type_e    sub_type;
 };
 
+
+#ifdef CTON_HASH_RBTREE
+
+typedef struct cton_hash_node_s cton_hash_node_t;
+
+struct cton_hash_node_s {
+    cton_obj            *key;
+    cton_obj            *value;
+    cton_hash_node_t    *left;
+    cton_hash_node_t    *right;
+    cton_hash_node_t    *parent;
+    u_char              color;
+};
+
+struct cton_hash_s {
+    size_t count;
+    cton_hash_node_t *root;
+    cton_hash_node_t *sentinel;
+}
+
+#else
+
 struct cton_hash_item_s {
     cton_obj        *key;
     cton_obj        *value;
@@ -112,8 +134,17 @@ struct cton_hash_s {
     cton_hash_item *last;
 };
 
+#endif
+
 struct cton_obj_s {
     uint64_t  magic;  /* Magic number for debug. */
+
+    /* For object pool */
+    struct cton_obj_s *next;
+    struct cton_obj_s *prev;
+
+    enum cton_type_e type;   /* CTON type */
+    uint8_t ref;
 
     union {
         enum cton_bool_e   b;
@@ -131,13 +162,6 @@ struct cton_obj_s {
         float       f32;
         double      f64;
     } payload;
-
-    /* For object pool */
-    struct cton_obj_s *next;
-    struct cton_obj_s *prev;
-
-    enum cton_type_e type;   /* CTON type */
-    uint8_t ref;
 };
 
 #endif
