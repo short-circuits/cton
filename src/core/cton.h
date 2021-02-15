@@ -42,8 +42,10 @@ typedef void cton_memhook;
 typedef struct cton_obj_s       cton_obj;
 typedef struct cton_string_s    cton_string;
 typedef struct cton_array_s     cton_array;
+#ifndef CTON_HASH_RBTREE
 typedef struct cton_hash_item_s cton_hash_item;
 typedef struct cton_hash_s      cton_hash;
+#endif
 
 #else
 
@@ -103,22 +105,25 @@ struct cton_array_s {
 
 #ifdef CTON_HASH_RBTREE
 
-typedef struct cton_hash_node_s cton_hash_node_t;
+typedef struct cton_rbtree_node_s cton_rbtree_node_t;
 
-struct cton_hash_node_s {
+struct cton_rbtree_node_s {
     cton_obj            *key;
     cton_obj            *value;
-    cton_hash_node_t    *left;
-    cton_hash_node_t    *right;
-    cton_hash_node_t    *parent;
+    cton_rbtree_node_t  *left;
+    cton_rbtree_node_t  *right;
+    cton_rbtree_node_t  *parent;
     u_char              color;
 };
 
-struct cton_hash_s {
+typedef struct cton_rbtree_s cton_hash;
+typedef struct cton_rbtree_s cton_rbtree_t;
+
+struct cton_rbtree_s {
     size_t count;
-    cton_hash_node_t *root;
-    cton_hash_node_t *sentinel;
-}
+    cton_rbtree_node_t *root;
+    cton_rbtree_node_t *sentinel;
+};
 
 #else
 

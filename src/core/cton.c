@@ -1190,8 +1190,525 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
 
 #ifdef CTON_HASH_RBTREE
 
-cton_hash_init
+static void cton_rbtree_left_rotate(cton_rbtree_node_t **root,
+    cton_rbtree_node_t *sentinel, cton_rbtree_node_t *node);
+static void cton_rbtree_right_rotate(cton_rbtree_node_t **root,
+    cton_rbtree_node_t *sentinel, cton_rbtree_node_t *node);
 
+#define cton_rbtree_red(node)               ((node)->color = 1)
+#define cton_rbtree_black(node)             ((node)->color = 0)
+#define cton_rbtree_is_red(node)            ((node)->color)
+#define cton_rbtree_is_black(node)          (!cton_rbtree_is_red(node))
+#define cton_rbtree_copy_color(n1, n2)      (n1->color = n2->color)
+
+static cton_rbtree_node_t cton_rbtree_sentinel = {
+    NULL, NULL, NULL, NULL, NULL, 0
+};
+
+static cton_rbtree_node_t *
+cton_rbtree_min(cton_rbtree_node_t *node, cton_rbtree_node_t *sentinel)
+{
+    while (node->left != sentinel) {
+        node = node->left;
+    }
+
+    return node;
+}
+
+
+void
+cton_rbtree_insert(cton_rbtree_t *tree, cton_rbtree_node_t *node)
+{
+    cton_rbtree_node_t  **root, *temp, *sentinel, **p;
+
+    /* a binary tree insert */
+
+    root = &tree->root;
+    sentinel = tree->sentinel;
+
+    if (*root == sentinel) {
+        node->parent = NULL;
+        node->left = sentinel;
+        node->right = sentinel;
+        cton_rbtree_black(node);
+        *root = node;
+
+        return;
+    }
+
+    temp = *root;
+
+    for ( ;; ) {
+
+        p = cton_util_strcmp(node->key, temp->key) > 0 ? &temp->left : &temp->right;
+
+        if (*p == sentinel) {
+            break;
+        }
+
+        temp = *p;
+    }
+
+    *p = node;
+    node->parent = temp;
+    node->left = sentinel;
+    node->right = sentinel;
+    cton_rbtree_red(node);
+
+    /* re-balance tree */
+
+    while (node != *root && cton_rbtree_is_red(node->parent)) {
+
+        if (node->parent == node->parent->parent->left) {
+            temp = node->parent->parent->right;
+
+            if (cton_rbtree_is_red(temp)) {
+                cton_rbtree_black(node->parent);
+                cton_rbtree_black(temp);
+                cton_rbtree_red(node->parent->parent);
+                node = node->parent->parent;
+
+            } else {
+                if (node == node->parent->right) {
+                    node = node->parent;
+                    cton_rbtree_left_rotate(root, sentinel, node);
+                }
+
+                cton_rbtree_black(node->parent);
+                cton_rbtree_red(node->parent->parent);
+                cton_rbtree_right_rotate(root, sentinel, node->parent->parent);
+            }
+
+        } else {
+            temp = node->parent->parent->left;
+
+            if (cton_rbtree_is_red(temp)) {
+                cton_rbtree_black(node->parent);
+                cton_rbtree_black(temp);
+                cton_rbtree_red(node->parent->parent);
+                node = node->parent->parent;
+
+            } else {
+                if (node == node->parent->left) {
+                    node = node->parent;
+                    cton_rbtree_right_rotate(root, sentinel, node);
+                }
+
+                cton_rbtree_black(node->parent);
+                cton_rbtree_red(node->parent->parent);
+                cton_rbtree_left_rotate(root, sentinel, node->parent->parent);
+            }
+        }
+    }
+
+    cton_rbtree_black(*root);
+}
+
+void
+cton_rbtree_delete(cton_rbtree_t *tree, cton_rbtree_node_t *node)
+{
+    uint8_t           red;
+    cton_rbtree_node_t  **root, *sentinel, *subst, *temp, *w;
+
+    /* a binary tree delete */
+
+    root = &tree->root;
+    sentinel = tree->sentinel;
+
+    if (node->left == sentinel) {
+        temp = node->right;
+        subst = node;
+
+    } else if (node->right == sentinel) {
+        temp = node->left;
+        subst = node;
+
+    } else {
+        subst = cton_rbtree_min(node->right, sentinel);
+        temp = subst->right;
+    }
+
+    if (subst == *root) {
+        *root = temp;
+        cton_rbtree_black(temp);
+
+        /* DEBUG stuff */
+        node->left = NULL;
+        node->right = NULL;
+        node->parent = NULL;
+        node->key = 0;
+
+        return;
+    }
+
+    red = cton_rbtree_is_red(subst);
+
+    if (subst == subst->parent->left) {
+        subst->parent->left = temp;
+
+    } else {
+        subst->parent->right = temp;
+    }
+
+    if (subst == node) {
+
+        temp->parent = subst->parent;
+
+    } else {
+
+        if (subst->parent == node) {
+            temp->parent = subst;
+
+        } else {
+            temp->parent = subst->parent;
+        }
+
+        subst->left = node->left;
+        subst->right = node->right;
+        subst->parent = node->parent;
+        cton_rbtree_copy_color(subst, node);
+
+        if (node == *root) {
+            *root = subst;
+
+        } else {
+            if (node == node->parent->left) {
+                node->parent->left = subst;
+            } else {
+                node->parent->right = subst;
+            }
+        }
+
+        if (subst->left != sentinel) {
+            subst->left->parent = subst;
+        }
+
+        if (subst->right != sentinel) {
+            subst->right->parent = subst;
+        }
+    }
+
+    /* DEBUG stuff */
+    node->left = NULL;
+    node->right = NULL;
+    node->parent = NULL;
+    node->key = 0;
+
+    if (red) {
+        return;
+    }
+
+    /* a delete fixup */
+
+    while (temp != *root && cton_rbtree_is_black(temp)) {
+
+        if (temp == temp->parent->left) {
+            w = temp->parent->right;
+
+            if (cton_rbtree_is_red(w)) {
+                cton_rbtree_black(w);
+                cton_rbtree_red(temp->parent);
+                cton_rbtree_left_rotate(root, sentinel, temp->parent);
+                w = temp->parent->right;
+            }
+
+            if (cton_rbtree_is_black(w->left) && cton_rbtree_is_black(w->right)) {
+                cton_rbtree_red(w);
+                temp = temp->parent;
+
+            } else {
+                if (cton_rbtree_is_black(w->right)) {
+                    cton_rbtree_black(w->left);
+                    cton_rbtree_red(w);
+                    cton_rbtree_right_rotate(root, sentinel, w);
+                    w = temp->parent->right;
+                }
+
+                cton_rbtree_copy_color(w, temp->parent);
+                cton_rbtree_black(temp->parent);
+                cton_rbtree_black(w->right);
+                cton_rbtree_left_rotate(root, sentinel, temp->parent);
+                temp = *root;
+            }
+
+        } else {
+            w = temp->parent->left;
+
+            if (cton_rbtree_is_red(w)) {
+                cton_rbtree_black(w);
+                cton_rbtree_red(temp->parent);
+                cton_rbtree_right_rotate(root, sentinel, temp->parent);
+                w = temp->parent->left;
+            }
+
+            if (cton_rbtree_is_black(w->left) && cton_rbtree_is_black(w->right)) {
+                cton_rbtree_red(w);
+                temp = temp->parent;
+
+            } else {
+                if (cton_rbtree_is_black(w->left)) {
+                    cton_rbtree_black(w->right);
+                    cton_rbtree_red(w);
+                    cton_rbtree_left_rotate(root, sentinel, w);
+                    w = temp->parent->left;
+                }
+
+                cton_rbtree_copy_color(w, temp->parent);
+                cton_rbtree_black(temp->parent);
+                cton_rbtree_black(w->left);
+                cton_rbtree_right_rotate(root, sentinel, temp->parent);
+                temp = *root;
+            }
+        }
+    }
+
+    cton_rbtree_black(temp);
+}
+
+
+static void
+cton_rbtree_left_rotate(cton_rbtree_node_t **root, cton_rbtree_node_t *sentinel,
+    cton_rbtree_node_t *node)
+{
+    cton_rbtree_node_t  *temp;
+
+    temp = node->right;
+    node->right = temp->left;
+
+    if (temp->left != sentinel) {
+        temp->left->parent = node;
+    }
+
+    temp->parent = node->parent;
+
+    if (node == *root) {
+        *root = temp;
+
+    } else if (node == node->parent->left) {
+        node->parent->left = temp;
+
+    } else {
+        node->parent->right = temp;
+    }
+
+    temp->left = node;
+    node->parent = temp;
+}
+
+
+static void
+cton_rbtree_right_rotate(cton_rbtree_node_t **root, cton_rbtree_node_t *sentinel,
+    cton_rbtree_node_t *node)
+{
+    cton_rbtree_node_t  *temp;
+
+    temp = node->left;
+    node->left = temp->right;
+
+    if (temp->right != sentinel) {
+        temp->right->parent = node;
+    }
+
+    temp->parent = node->parent;
+
+    if (node == *root) {
+        *root = temp;
+
+    } else if (node == node->parent->right) {
+        node->parent->right = temp;
+
+    } else {
+        node->parent->left = temp;
+    }
+
+    temp->right = node;
+    node->parent = temp;
+}
+
+static cton_rbtree_node_t *cton_hash_search(cton_obj *h, cton_obj *k)
+{
+    cton_rbtree_node_t *current;
+    int diff;
+
+    current = h->payload.hash.root;
+
+    while (1) {
+        if (current == h->payload.hash.sentinel) {
+            return NULL;
+        }
+
+        diff = cton_util_strcmp(k, current->key);
+
+        if (diff == 0) {
+            break;
+        }
+
+        current = diff > 0 ? current->left : current->right;
+    }
+
+    return current;
+}
+
+static void cton_hash_remove_item(cton_ctx *ctx,
+    cton_obj *hash, cton_rbtree_node_t *item)
+{
+    cton_rbtree_delete(&hash->payload.hash, item);
+
+    cton_free(ctx, item);
+
+    hash->payload.hash.count -= 1;
+}
+
+static void cton_hash_insert_item(cton_ctx *ctx,
+    cton_obj *hash, cton_rbtree_node_t *item)
+{
+    (void) ctx;
+
+    cton_rbtree_insert(&hash->payload.hash, item);
+
+    hash->payload.hash.count += 1;
+}
+
+static void cton_hash_init(cton_ctx *ctx, cton_obj *obj)
+{
+    (void) ctx;
+
+    obj->payload.hash.root = &cton_rbtree_sentinel;
+    obj->payload.hash.sentinel = &cton_rbtree_sentinel;
+    obj->payload.hash.count = 0;
+}
+
+static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
+{
+    while (obj->payload.hash.root != &cton_rbtree_sentinel) {
+        cton_hash_remove_item(ctx, obj, obj->payload.hash.root);
+    }
+}
+
+cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
+{
+    cton_rbtree_node_t *result;
+
+    if (cton_objtype(h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    if (cton_objtype(k) != CTON_STRING) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    result = cton_hash_search(h,k);
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    return result->value;
+}
+
+cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
+{
+    cton_obj *key;
+    cton_obj *val;
+
+    if (cton_objtype(h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    key = cton_util_strcstr(ctx, ks);
+
+    val = cton_hash_get(ctx, h, key);
+
+    cton_object_delete(ctx, key);
+
+    return val;
+}
+
+cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
+{
+    cton_rbtree_node_t *pos;
+    cton_obj *k_ori;
+
+    if (cton_objtype(h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    if (cton_objtype(k) != CTON_STRING) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    if (cton_objtype(v) == CTON_INVALID) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return NULL;
+    }
+
+    pos = cton_hash_search(h,k);
+
+    if (pos != NULL) {
+
+        if (v == NULL) {
+            k_ori = pos->key;
+            cton_hash_remove_item(ctx, h, pos);
+            cton_free(ctx, k_ori);
+            return v;
+        }
+
+        pos->value = v;
+
+    } else {   
+
+        pos = cton_alloc(ctx, sizeof(cton_rbtree_node_t));
+        if (pos == NULL) {
+            cton_seterr(ctx, CTON_ERROR_ALLOC);
+            return NULL;
+        }
+
+        pos->key   = k;
+        pos->value = v;
+
+        cton_hash_insert_item(ctx, h, pos);
+    }
+
+    return v;
+}
+
+size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h)
+{
+    if (cton_objtype(h) != CTON_HASH) {
+        cton_seterr(ctx, CTON_ERROR_TYPE);
+        return 0;
+    }
+
+    return h->payload.hash.count;
+}
+
+void cton_rbtree_foreach(cton_ctx *ctx, cton_rbtree_node_t *node, size_t *index,
+    void *rctx, int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*))
+{
+    if (node != &cton_rbtree_sentinel) {
+        cton_rbtree_foreach(ctx, node->left, index, rctx, func);
+        func(ctx, node->key, node->value, *index, rctx);
+        *index += 1;
+        cton_rbtree_foreach(ctx, node->right, index, rctx, func);
+    }
+}
+
+int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+    int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*))
+{
+    size_t          index;
+
+    index = 0;
+
+    cton_rbtree_foreach(ctx, hash->payload.hash.root, &index, rctx, func);
+
+    return 0;
+}
 
 #else
 
