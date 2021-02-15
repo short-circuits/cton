@@ -20,11 +20,8 @@
  *
  ******************************************************************************/
 
-/* This macro must go before cton.h */
-#define _INTER_LIBCTON_
-
+#include <core/cton_core.h>
 #include <limits.h>
-#include <cton.h>
 
 static void  cton_string_init(cton_ctx *ctx, cton_obj *str);
 static void  cton_string_delete(cton_ctx *ctx, cton_obj *str);
@@ -1191,6 +1188,13 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
  *
  ******************************************************************************/
 
+#ifdef CTON_HASH_RBTREE
+
+cton_hash_init
+
+
+#else
+
 /*
  * cton_hash_search()
  *
@@ -1510,6 +1514,9 @@ int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
 
     return 0;
 }
+
+
+#endif
 
 
 /*******************************************************************************

@@ -4,8 +4,8 @@
  *   CTON can manage data in the form of a tree. This part is the interface used
  * to manage data in this way.
  ******************************************************************************/
-#define _INTER_LIBCTON_
-#include <cton.h>
+
+#include <core/cton_core.h>
 
 /**
  * cton_tree_setroot()

@@ -1,5 +1,5 @@
 #include <ctype.h>
-#include <cton.h>
+#include <core/cton_core.h>
 
 #define TBON_ID_OBJECT  0
 #define TBON_ID_NULL    1

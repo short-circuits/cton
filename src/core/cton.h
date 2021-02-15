@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 
 typedef struct {
     void *      pool;
@@ -37,7 +37,7 @@ typedef void cton_memhook;
  * CTON object types
  */
 
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 
 typedef struct cton_obj_s       cton_obj;
 typedef struct cton_string_s    cton_string;
@@ -85,7 +85,7 @@ enum cton_bool_e {
     CTON_TRUE  = 1
 };
 
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 
 struct cton_string_s {
     size_t   len;
@@ -159,7 +159,7 @@ typedef enum   cton_bool_e      cton_bool;
  * 不同上下文结构体之间应保证线程安全。（避免static变量的使用）
  * 是否要求所有函数都使用上下文结构体作为第一个传入参数？
  ******************************************************************************/
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 
 typedef struct cton_ctx_s       cton_ctx;
 
@@ -195,7 +195,7 @@ enum cton_error_e {
 
 typedef enum cton_error_e       cton_err;
 
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 
 struct cton_ctx_s {
     cton_memhook memhook;
@@ -276,7 +276,7 @@ cton_obj * cton_util_create_str(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 
-#ifdef _INTER_LIBCTON_
+#ifdef _CTON_CORELIB_
 typedef struct cton_buf_s cton_buf;
 struct cton_buf_s {
     cton_ctx *ctx;

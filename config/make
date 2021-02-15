@@ -35,7 +35,7 @@ do
     cat << END                                                >> $CTON_MAKEFILE
 
 $cton_obj:	$cton_src
-	\$(CC)$CTON_CC_COMPILE \$(CFLAGS) -o $cton_obj $CTON_CC_INCLUDE$CTON_BUILD_DIR $cton_src
+	\$(CC)$CTON_CC_COMPILE \$(CFLAGS) -o $cton_obj $cton_src
 
 END
 
