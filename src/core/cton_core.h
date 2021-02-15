@@ -14,4 +14,19 @@
 
 #include <cton.h>
 
+
+/*
+ * cton_objtype(obj)
+ *
+ * DESCRIPTION
+ *   Same as cton_object_gettype(), but only available for internal useage.
+ *
+ * PARAMETER
+ *   obj: The object which you want to get it's type
+ *
+ * RETURN
+ *   The type of given object.
+ */
+#define cton_objtype(obj) ((obj)->type)
+
 #endif /* _CTON_CORELIB_HEADER_ */

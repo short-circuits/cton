@@ -7,6 +7,8 @@
 
 #include <core/cton_core.h>
 
+#define CTON_TREE_SPLIT '.'
+
 /**
  * cton_tree_setroot()
  *   - Set the root object for a cton_tree.
@@ -86,16 +88,64 @@ cton_obj *cton_tree_getroot(cton_ctx *ctx)
  *
  * TODO
  */
-cton_obj *cton_tree_get(cton_ctx *ctx, const char *path)
+cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
 {
-    cton_obj *root;
     cton_obj *obj;
+    cton_obj *str;
+    size_t    index;
+    size_t    num;
 
-    (void) path;
+    if (root == NULL) {
+        return NULL;
+    }
 
-    root = cton_tree_getroot(ctx);
+    if (*path == CTON_TREE_SPLIT) {
+        obj = cton_tree_get(ctx, cton_tree_getroot(ctx), path);
+    }
 
-    obj = root;
+    if (cton_objtype(root) == CTON_HASH) {
+        
+        index = 0;
+        while (path[index] != '\0') {
+            if (path[index] == CTON_TREE_SPLIT) {
+                break;
+            }
+            index += 1;
+        }
+
+        str = cton_object_create(ctx, CTON_STRING);
+
+        cton_string_setlen(ctx, str, index);
+
+        memcpy(cton_string_getptr(ctx, str), path, index - 1);
+
+        obj = cton_hash_get(ctx, root, str);
+
+        cton_object_delete(ctx, str);
+
+    } else if (cton_objtype(root) == CTON_ARRAY) {
+        
+        index = 0;
+        num   = 0;
+        while (path[index] != '\0') {
+            if (path[index] == '.') {
+                break;
+            }
+
+            if (path[index] >= '0' && path[index] <= '9') {
+                num = num * 10;
+                num += path[index];
+            }
+
+            index ++;
+        }
+
+        obj = cton_tree_get(ctx,
+            cton_array_get(ctx, root, num), &path[index + 1]);
+
+    } else {
+        obj = root;
+    }
 
     return obj;
 }

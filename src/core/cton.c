@@ -672,20 +672,6 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
 }
 
 
-/*
- * cton_objtype(obj)
- *
- * DESCRIPTION
- *   Same as cton_object_gettype(), but only available for internal useage.
- *
- * PARAMETER
- *   obj: The object which you want to get it's type
- *
- * RETURN
- *   The type of given object.
- */
-#define cton_objtype(obj) ((obj)->type)
-
 /*******************************************************************************
  * CTON type dependent methods
  *

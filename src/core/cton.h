@@ -87,13 +87,15 @@ enum cton_bool_e {
     CTON_TRUE  = 1
 };
 
-#ifdef _CTON_CORELIB_
 
 struct cton_string_s {
     size_t   len;
     size_t   used;
     uint8_t *ptr;
 };
+
+
+#ifdef _CTON_CORELIB_
 
 struct cton_array_s {
     size_t       len;
@@ -273,6 +275,7 @@ int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
 size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
 char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
 void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
+#define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
 
 /* cton array type specific methods */
 int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);
