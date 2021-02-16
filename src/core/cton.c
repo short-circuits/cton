@@ -548,6 +548,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     obj->type  = type;
     obj->prev  = NULL;
     obj->next  = NULL;
+    obj->ctx   = ctx;
 
     /* Insert object into object pool linked list */
     if (ctx->nodes == NULL) {
@@ -586,7 +587,6 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
 
     if (obj->magic != CTON_STRUCT_MAGIC) {
         /* Not CTON structure */
-        cton_seterr(ctx, CTON_ERROR_INVAL);
         return;
     }
 
@@ -610,11 +610,11 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
     type = obj->type;
     /* Delete context by type specificed hook */
     if (cton_class_hook[type].delete != NULL) {
-        cton_class_hook[type].delete(ctx, obj);
+        cton_class_hook[type].delete(obj->ctx, obj);
     }
 
     /* Free obj structure */
-    cton_free(ctx, obj);
+    cton_free(obj->ctx, obj);
 }
 
 /*
@@ -632,7 +632,7 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
 cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
 {
     if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_OBJECT) {
-        cton_seterr(ctx, CTON_ERROR_INVAL);
+        cton_seterr(obj->ctx, CTON_ERROR_INVAL);
         return CTON_INVALID;
     }
 
@@ -656,7 +656,7 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
 
     if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_INVAL);
+        cton_seterr(obj->ctx, CTON_ERROR_INVAL);
         return NULL;
     }
 
@@ -668,7 +668,7 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
         return &obj->payload;
     }
 
-    return cton_class_hook[obj->type].getptr(ctx, obj);
+    return cton_class_hook[obj->type].getptr(obj->ctx, obj);
 }
 
 
