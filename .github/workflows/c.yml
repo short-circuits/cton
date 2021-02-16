@@ -2,7 +2,7 @@ name: C compile test
 
 on:
   push:
-    branches: [ current ]
+    branches: [ current, develop, wip ]
   pull_request:
     branches: [ current ]
 
