@@ -1,5 +1,5 @@
 
-CTON_REQUEST_HEADERS="ctype.h limits.h stdint.h stdio.h stdlib.h string.h"
+CTON_REQUEST_HEADERS="ctype.h limits.h stdint.h stdio.h stdlib.h string.h inttypes.h stddef.h"
 
 for CTON_REQUEST_HEADER in $CTON_REQUEST_HEADERS
 do

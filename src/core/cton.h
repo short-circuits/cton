@@ -15,48 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _CTON_CORELIB_
-
-typedef struct {
-    void *      pool;
-    void *    (*palloc)(void *pool, size_t size);
-    void *    (*prealloc)(void *pool, void *ptr, size_t size);
-    void      (*pfree)(void *pool, void *ptr);
-    void      (*pdestroy)(void *pool);
-} cton_memhook;
-
-extern cton_memhook cton_std_hook;
-
-#else
-
-typedef void cton_memhook;
-
-#endif
-
-/*
- * CTON object types
- */
-
-#ifdef _CTON_CORELIB_
-
-typedef struct cton_obj_s       cton_obj;
-typedef struct cton_string_s    cton_string;
-typedef struct cton_array_s     cton_array;
-#ifdef CTON_HASH_LIST
-typedef struct cton_hash_item_s cton_hash_item;
-typedef struct cton_hash_s      cton_hash;
-#endif
-
-#else
-
-typedef void cton_obj;
-typedef void cton_string;
-typedef void cton_array;
-typedef void cton_hash_item;
-typedef void cton_hash;
-
-#endif
-
 enum cton_type_e {
     CTON_INVALID = 0,
     CTON_OBJECT  = 1,
@@ -87,15 +45,83 @@ enum cton_bool_e {
     CTON_TRUE  = 1
 };
 
+enum cton_error_e {
+    CTON_OK            = 0,
+    CTON_ERROR_INVAL,         /* Invalid CTON object */
+    CTON_ERROR_ALLOC,         /* Memory allocation failed
+                                 (NULL was returnd from alloc) */
+    CTON_ERROR_CREATE,        /* Tring to create objcet with invalid type
+                                 (Only: cton_object_create() ) */
+    CTON_ERROR_TYPE,          /* Type specific method received object
+                                 with wrong type */
+    CTON_ERROR_INVSUBTYPE,    /* Tring to set array by invalid element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_RSTSUBTYPE,    /* Tring to reset array element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_IMPLEM,
+    CTON_ERROR_OVF,
+    CTON_ERROR_REPLACE,
+    CTON_ERROR_SUBTYPE,
+    CTON_ERROR_INDEX,
+    CTON_ERROR_INPUT,
+    CTON_ERROR_BROKEN,        /* Data is not complele (more data except) */
+    CTON_ERROR_SYNTAX,        /* Syntax error while parsing data */
+    CTON_ERROR_UNKNOWN = 127  /* Unknown error */
+};
+
+typedef enum cton_type_e      cton_type;
+typedef enum cton_bool_e      cton_bool;
+typedef enum cton_error_e     cton_err;
+
+
+#ifndef _CTON_CORELIB_
+
+typedef void cton_memhook;
+typedef void cton_obj;
+typedef void cton_string;
+typedef void cton_array;
+typedef void cton_hash_item;
+typedef void cton_hash;
+typedef void cton_buf;
+typedef void cton_ctx;
+
+#else
+
+typedef struct {
+    void *      pool;
+    void *    (*palloc)(void *pool, size_t size);
+    void *    (*prealloc)(void *pool, void *ptr, size_t size);
+    void      (*pfree)(void *pool, void *ptr);
+    void      (*pdestroy)(void *pool);
+} cton_memhook;
+
+extern cton_memhook cton_std_hook;
+
+
+typedef struct cton_obj_s       cton_obj;
+typedef struct cton_string_s    cton_string;
+typedef struct cton_array_s     cton_array;
+#ifdef CTON_HASH_LIST
+typedef struct cton_hash_item_s cton_hash_item;
+typedef struct cton_hash_s      cton_hash;
+#endif
+typedef struct cton_ctx_s       cton_ctx;
+
+
+
+typedef struct cton_buf_s cton_buf;
+struct cton_buf_s {
+    cton_ctx *ctx;
+    cton_obj *arr;
+    cton_obj *container;
+    size_t   index;
+};
 
 struct cton_string_s {
     size_t   len;
     size_t   used;
     uint8_t *ptr;
 };
-
-
-#ifdef _CTON_CORELIB_
 
 struct cton_array_s {
     size_t       len;
@@ -153,6 +179,8 @@ struct cton_obj_s {
     enum cton_type_e type;   /* CTON type */
     uint8_t ref;
 
+    struct cton_ctx_s *ctx;
+
     union {
         enum cton_bool_e   b;
         cton_string str;
@@ -170,63 +198,6 @@ struct cton_obj_s {
         double      f64;
     } payload;
 };
-
-#endif
-
-typedef enum   cton_type_e      cton_type;
-typedef enum   cton_bool_e      cton_bool;
-
-#define CTON_STRUCT_MAGIC 0x4E4F5443
-
-
-
-
-/*******************************************************************************
- * CTON context types
- * 用来保存内存池结构体，对应的错误指，节点池，以及全局参数。
- * 同一个上下文结构体不保证写线程安全。
- * TODO 是否保留一个内存池的互斥锁接口，通过锁住整个上下文的方式保证线程安全？
- * 
- * 不同上下文结构体之间应保证线程安全。（避免static变量的使用）
- * 是否要求所有函数都使用上下文结构体作为第一个传入参数？
- ******************************************************************************/
-#ifdef _CTON_CORELIB_
-
-typedef struct cton_ctx_s       cton_ctx;
-
-#else
-
-typedef void cton_ctx;
-
-#endif
-
-enum cton_error_e {
-    CTON_OK            = 0,
-    CTON_ERROR_INVAL,         /* Invalid CTON object */
-    CTON_ERROR_ALLOC,         /* Memory allocation failed
-                                 (NULL was returnd from alloc) */
-    CTON_ERROR_CREATE,        /* Tring to create objcet with invalid type
-                                 (Only: cton_object_create() ) */
-    CTON_ERROR_TYPE,          /* Type specific method received object
-                                 with wrong type */
-    CTON_ERROR_INVSUBTYPE,    /* Tring to set array by invalid element type
-                                 (Only: cton_array_settype() ) */
-    CTON_ERROR_RSTSUBTYPE,    /* Tring to reset array element type
-                                 (Only: cton_array_settype() ) */
-    CTON_ERROR_IMPLEM,
-    CTON_ERROR_OVF,
-    CTON_ERROR_REPLACE,
-    CTON_ERROR_SUBTYPE,
-    CTON_ERROR_INDEX,
-    CTON_ERROR_INPUT,
-    CTON_ERROR_BROKEN,        /* Data is not complele (more data except) */
-    CTON_ERROR_SYNTAX,        /* Syntax error while parsing data */
-    CTON_ERROR_UNKNOWN = 127  /* Unknown error */
-};
-
-typedef enum cton_error_e       cton_err;
-
-#ifdef _CTON_CORELIB_
 
 struct cton_ctx_s {
     cton_memhook memhook;
@@ -308,17 +279,6 @@ cton_obj * cton_util_create_str(cton_ctx *ctx,
     const char *str, char end, char quote);
 cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
 
-#ifdef _CTON_CORELIB_
-typedef struct cton_buf_s cton_buf;
-struct cton_buf_s {
-    cton_ctx *ctx;
-    cton_obj *arr;
-    cton_obj *container;
-    size_t   index;
-};
-#else
-typedef void cton_buf;
-#endif
 
 cton_buf *cton_util_buffer_create(cton_ctx *ctx);
 void cton_util_buffer_destroy(cton_buf *buf);
