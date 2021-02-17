@@ -586,14 +586,7 @@ void * cton_object_getvalue(cton_obj *obj)
 
 int cton_bool_set(cton_obj *obj, cton_bool val)
 {
-    int ret;
-
-    if (cton_objtype(obj) != CTON_BOOL) {
-        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
-        return -1;
-    }
-
-    ret = 0;
+    int ret = 0;
 
     if (val == CTON_TRUE) {
         
@@ -662,12 +655,6 @@ static void cton_string_delete(cton_obj *str)
  */
 void * cton_binary_getptr(cton_obj *obj)
 {
-    if (cton_objtype(obj) != CTON_STRING &&
-        cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
     return (void *)obj->payload.str.ptr;
 }
 
@@ -689,27 +676,20 @@ char * cton_string_getptr(cton_obj *obj)
  * RETURN
  *   The data pointer of the string object.
  */
-size_t cton_string_getlen(cton_obj *obj)
+size_t cton_binary_getlen(cton_obj *obj)
 {
-    if (cton_objtype(obj) != CTON_STRING &&
-        cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
-        return 0;
-    }
-
     return obj->payload.str.used;
 }
 
-int cton_string_setlen(cton_obj *obj, size_t len)
+size_t cton_string_getlen(cton_obj *obj)
+{
+    return cton_binary_getlen(obj) - 1;
+}
+
+int cton_binary_setlen(cton_obj *obj, size_t len)
 {
     size_t aligned;
     void * new_ptr;
-
-    if (cton_objtype(obj) != CTON_STRING &&
-        cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
-        return 0;
-    }
 
     if (obj->payload.str.len == 0) {
         obj->payload.str.ptr = cton_alloc(obj->ctx, len);
@@ -738,6 +718,10 @@ int cton_string_setlen(cton_obj *obj, size_t len)
     return len;
 }
 
+int cton_string_setlen(cton_obj *obj, size_t len)
+{
+    return cton_binary_setlen(obj, len + 1);
+}
 
 /*******************************************************************************
  * CTON type dependent methods
@@ -808,11 +792,6 @@ static void * cton_array_getptr(cton_obj *arr)
  */
 int cton_array_settype(cton_obj *arr, cton_type type)
 {
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return -1;
-    }
-
     if (arr->payload.arr.sub_type != CTON_INVALID) {
         /* Element type is already set */
         cton_seterr(arr->ctx, CTON_ERROR_RSTSUBTYPE);
@@ -832,11 +811,6 @@ int cton_array_settype(cton_obj *arr, cton_type type)
 
 cton_type cton_array_gettype(cton_obj *arr)
 {
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return CTON_INVALID;
-    }
-
     return arr->payload.arr.sub_type;
 }
 
@@ -858,11 +832,6 @@ cton_type cton_array_gettype(cton_obj *arr)
  */
 size_t cton_array_getlen(cton_obj *arr)
 {
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return 0;
-    }
-
     return arr->payload.arr.used;
 }
 
@@ -902,11 +871,6 @@ size_t cton_array_setlen(cton_obj *arr, size_t len)
 {
     size_t index;
     cton_obj **ptr;
-
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return 0;
-    }
 
     if (cton_array_gettype(arr) == CTON_INVALID) {
         cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
@@ -978,11 +942,6 @@ size_t cton_array_setlen(cton_obj *arr, size_t len)
  */
 cton_obj * cton_array_get(cton_obj *arr, size_t index)
 {
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-    
     if (cton_array_getlen(arr) <= index) {
         cton_seterr(arr->ctx, CTON_ERROR_INDEX);
         return NULL;
@@ -1012,11 +971,6 @@ cton_obj * cton_array_get(cton_obj *arr, size_t index)
  */
 int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index)
 {
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return -1;
-    }
-
     if (cton_array_gettype(arr) != CTON_OBJECT && \
         cton_array_gettype(arr) != cton_objtype(obj)) {
         cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
@@ -1039,11 +993,6 @@ int cton_array_foreach(cton_obj *arr, void *rctx,
     size_t index;
     int    ret;
     cton_obj **ptr;
-
-    if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
-        return -1;
-    }
 
     ret = 0;
     len = cton_array_getlen(arr);
@@ -1475,11 +1424,6 @@ cton_obj * cton_hash_get(cton_obj *h, cton_obj *k)
 {
     cton_rbtree_node_t *result;
 
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
     if (cton_objtype(k) != CTON_STRING) {
         cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
@@ -1499,11 +1443,6 @@ cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
     cton_obj *key;
     cton_obj *val;
 
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
     key = cton_util_strcstr(h->ctx, ks);
 
     val = cton_hash_get(h, key);
@@ -1517,11 +1456,6 @@ cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 {
     cton_rbtree_node_t *pos;
     cton_obj *k_ori;
-
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
 
     if (cton_objtype(k) != CTON_STRING) {
         cton_seterr(h->ctx, CTON_ERROR_TYPE);
@@ -1565,11 +1499,6 @@ cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 
 size_t cton_hash_getlen(cton_obj *h)
 {
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return 0;
-    }
-
     return h->payload.hash.count;
 }
 
@@ -1762,11 +1691,6 @@ cton_obj * cton_hash_get(cton_obj *h, cton_obj *k)
 {
 	cton_hash_item *result;
 
-	if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
     if (cton_objtype(k) != CTON_STRING) {
         cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
@@ -1799,11 +1723,6 @@ cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
     cton_obj *key;
     cton_obj *val;
 
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
-
     key = cton_util_strcstr(h->ctx, ks);
 
     val = cton_hash_get(h, key);
@@ -1832,11 +1751,6 @@ cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 {
 	cton_hash_item *pos;
 	cton_obj *k_ori;
-
-	if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return NULL;
-    }
 
     if (cton_objtype(k) != CTON_STRING) {
         cton_seterr(h->ctx, CTON_ERROR_TYPE);
@@ -1882,11 +1796,6 @@ cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 
 size_t cton_hash_getlen(cton_obj *h)
 {
-    if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(h->ctx, CTON_ERROR_TYPE);
-        return 0;;
-    }
-
     return h->payload.hash.count;
 }
 
