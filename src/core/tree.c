@@ -41,7 +41,7 @@ int cton_tree_setroot(cton_ctx *ctx, cton_obj *obj)
 
 #if 1 /* Is this part necessary? */
 
-    type = cton_object_gettype(ctx, obj);
+    type = cton_objtype(obj);
 
     if (cton_geterr(ctx) != CTON_OK) {
         return -1;
@@ -115,13 +115,13 @@ cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
 
         str = cton_object_create(ctx, CTON_STRING);
 
-        cton_string_setlen(ctx, str, index);
+        cton_string_setlen(str, index);
 
-        memcpy(cton_string_getptr(ctx, str), path, index - 1);
+        memcpy(cton_string_getptr(str), path, index - 1);
 
-        obj = cton_hash_get(ctx, root, str);
+        obj = cton_hash_get(root, str);
 
-        cton_object_delete(ctx, str);
+        cton_object_delete(str);
 
     } else if (cton_objtype(root) == CTON_ARRAY) {
         
@@ -141,7 +141,7 @@ cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
         }
 
         obj = cton_tree_get(ctx,
-            cton_array_get(ctx, root, num), &path[index + 1]);
+            cton_array_get(root, num), &path[index + 1]);
 
     } else {
         obj = root;

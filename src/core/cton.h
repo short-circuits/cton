@@ -233,46 +233,46 @@ void cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
+void cton_object_delete(cton_obj *obj);
+cton_type cton_object_gettype(cton_obj *obj);
+void * cton_object_getvalue(cton_obj *obj);
 
 /* cton bool type specific methods */
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
+int cton_bool_set(cton_obj *obj, cton_bool val);
+cton_bool cton_bool_get(cton_obj *obj);
 
 /* cton string type specific methods */
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
+int cton_string_setlen(cton_obj *obj, size_t len);
+size_t cton_string_getlen(cton_obj *obj);
+char * cton_string_getptr(cton_obj *obj);
+void * cton_binary_getptr(cton_obj *obj);
 #define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
 
 /* cton array type specific methods */
-int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);
-cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
-int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
-int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+int cton_array_settype(cton_obj *arr, cton_type type);
+cton_type cton_array_gettype(cton_obj *arr);
+size_t cton_array_setlen(cton_obj *arr, size_t len);
+size_t cton_array_getlen(cton_obj *arr);
+int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index);
+cton_obj * cton_array_get(cton_obj *arr, size_t index);
+int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
 /* cton hash type specific methods */
-cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
-cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
-cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks);
-size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h);
-int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v);
+cton_obj * cton_hash_get(cton_obj *h, cton_obj *k);
+cton_obj * cton_hash_get_s(cton_obj *h, const char *ks);
+size_t cton_hash_getlen(cton_obj *h);
+int cton_hash_foreach(cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
 /* cton numeric types specific methods */
-int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val);
-int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj);
-uint64_t cton_numeric_setuint(cton_ctx *ctx, cton_obj *obj, uint64_t val);
-uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
-double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val);
-double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
+int64_t cton_numeric_setint(cton_obj *obj, int64_t val);
+int64_t cton_numeric_getint(cton_obj *obj);
+uint64_t cton_numeric_setuint(cton_obj *obj, uint64_t val);
+uint64_t cton_numeric_getuint(cton_obj *obj);
+double cton_numeric_setfloat(cton_obj *obj, double val);
+double cton_numeric_getfloat(cton_obj *obj);
 
 /* cton_util.c */
 cton_obj * cton_util_create_str(cton_ctx *ctx,

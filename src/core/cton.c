@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 #include <core/cton_core.h>
+#include <core/cton_llib.h>
 #include <limits.h>
 
 static void  cton_string_init(cton_ctx *ctx, cton_obj *str);
@@ -56,102 +57,6 @@ static void * cton_float8_getptr(cton_ctx *ctx, cton_obj *obj);
 static void * cton_float16_getptr(cton_ctx *ctx, cton_obj *obj);
 static void * cton_float32_getptr(cton_ctx *ctx, cton_obj *obj);
 static void * cton_float64_getptr(cton_ctx *ctx, cton_obj *obj);
-
-
-/*******************************************************************************
- * CTON Low level functions
- *
- *   These functions is used by cton as low level functions. some of them is
- * supposed to be offered by standard library, but for compatibily, we create
- * an abstruct of these functions.
- * 
- ******************************************************************************/
-
-/*
- * cton_llib_memcpy()
- *
- * DESCRIPTION
- *   挂名CTON的memcpy套娃，
- *   从src开始复制n个字符到dst.
- *
- * PARAMETER
- *   dst: 被粘贴的内存起始位置
- *   src: 复制源的内存起始位置
- *   n: 长度（字节数）
- *
- * RETURN
- *   void *dst.
-*/
-static void * cton_llib_memcpy(void *dst, const void *src, size_t n)
-{
-    return memcpy(dst, src, n);
-}
-
-/*
- * cton_llib_memset()
- *
- * DESCRIPTION
- *   挂名CTON的memset套娃，
- *   从b开始的len个字符替换成c.
- *
- * PARAMETER
- *   b: 被粘贴的内存起始位置
- *   c: 一个整数，会被转换成unsigned char
- *   len: 长度（字节数）
- *
- * RETURN
- *   void *b.
- */
-static void * cton_llib_memset(void *b, int c, size_t len)
-{
-    return memset(b, c, len);
-}
-
-/*
- * cton_llib_strncmp()
- *
- * DESCRIPTION
- *   挂名CTON的strncmp套娃，
- *   s1和s2前n个字符进行字符串比较
- *
- * PARAMETER
- *   s1: 一个字符串
- *   s2: 另一个字符串
- *   n: 需要比较的长度（字节数）
- *
- * RETURN
- *  当s1<s2时，返回一个负数；
- *	当s1=s2时，返回0；
- *	当s1>s2时，返回一个正数。
- */
-static int cton_llib_strncmp(const char *s1, const char *s2, size_t n)
-{
-    return strncmp(s1, s2, n);
-}
-
-/*
- * cton_llib_align()
- *
- * DESCRIPTION
- *   好像是对齐用的东西，
- *   返回需要的空间大小数值
- *
- * PARAMETER
- *   size: 至少需要的空间大小
- *   align: 空间大小为这个参数的整数倍
- *
- * RETURN
- *  返回的数值不小于size，且能被align整除
- */
-static size_t cton_llib_align(size_t size, size_t align)
-{
-    size_t remain;
-    size_t aligned;
-
-    remain = size % align;
-    aligned = size ^ remain;
-    return remain > 0 ? aligned + align : aligned ;
-}
 
 
 /*******************************************************************************
@@ -548,6 +453,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     obj->type  = type;
     obj->prev  = NULL;
     obj->next  = NULL;
+    obj->ctx   = ctx;
 
     /* Insert object into object pool linked list */
     if (ctx->nodes == NULL) {
@@ -579,14 +485,13 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
  *   ctx: The cton context
  *   obj: The object that will be deleted.
  */
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
+void cton_object_delete(cton_obj *obj)
 {
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
     cton_type type;
 
     if (obj->magic != CTON_STRUCT_MAGIC) {
         /* Not CTON structure */
-        cton_seterr(ctx, CTON_ERROR_INVAL);
         return;
     }
 
@@ -599,22 +504,22 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
         obj->prev->next = obj->next;
     }
 
-    if (ctx->nodes == obj) {
-        ctx->nodes = obj->next;
+    if (obj->ctx->nodes == obj) {
+        obj->ctx->nodes = obj->next;
     }
 
-    if (ctx->nodes_last == obj) {
-        ctx->nodes_last = obj->prev;
+    if (obj->ctx->nodes_last == obj) {
+        obj->ctx->nodes_last = obj->prev;
     }
 
     type = obj->type;
     /* Delete context by type specificed hook */
     if (cton_class_hook[type].delete != NULL) {
-        cton_class_hook[type].delete(ctx, obj);
+        cton_class_hook[type].delete(obj->ctx, obj);
     }
 
     /* Free obj structure */
-    cton_free(ctx, obj);
+    cton_free(obj->ctx, obj);
 }
 
 /*
@@ -629,10 +534,10 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The type of give object or invalid type for NULL ptr.
  */
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
+cton_type cton_object_gettype(cton_obj *obj)
 {
     if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_OBJECT) {
-        cton_seterr(ctx, CTON_ERROR_INVAL);
+        cton_seterr(obj->ctx, CTON_ERROR_INVAL);
         return CTON_INVALID;
     }
 
@@ -651,12 +556,12 @@ cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The payload pointer of give object or NULL for NULL ptr.
  */
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
+void * cton_object_getvalue(cton_obj *obj)
 {
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
 
     if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_INVAL);
+        cton_seterr(obj->ctx, CTON_ERROR_INVAL);
         return NULL;
     }
 
@@ -668,7 +573,7 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
         return &obj->payload;
     }
 
-    return cton_class_hook[obj->type].getptr(ctx, obj);
+    return cton_class_hook[obj->type].getptr(obj->ctx, obj);
 }
 
 
@@ -679,12 +584,12 @@ void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
  *         Bool
  ******************************************************************************/
 
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
+int cton_bool_set(cton_obj *obj, cton_bool val)
 {
     int ret;
 
     if (cton_objtype(obj) != CTON_BOOL) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
@@ -712,10 +617,10 @@ int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
     return ret;
 }
 
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
+cton_bool cton_bool_get(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_BOOL) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return CTON_FALSE;
     }
 
@@ -756,20 +661,20 @@ static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
  * RETURN
  *   The data pointer of the string object.
  */
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
+void * cton_binary_getptr(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     return (void *)obj->payload.str.ptr;
 }
 
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
+char * cton_string_getptr(cton_obj *obj)
 {
-    return cton_binary_getptr(ctx, obj);
+    return cton_binary_getptr(obj);
 }
 
 /*
@@ -785,30 +690,30 @@ char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The data pointer of the string object.
  */
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj)
+size_t cton_string_getlen(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
     return obj->payload.str.used;
 }
 
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
+int cton_string_setlen(cton_obj *obj, size_t len)
 {
     size_t aligned;
     void * new_ptr;
 
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
     if (obj->payload.str.len == 0) {
-        obj->payload.str.ptr = cton_alloc(ctx, len);
+        obj->payload.str.ptr = cton_alloc(obj->ctx, len);
         if (obj->payload.str.ptr == NULL) {
             return -1;
         }
@@ -820,7 +725,7 @@ int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
 
     } else {
         aligned = cton_llib_align(len, 128);
-        new_ptr = cton_realloc(ctx, \
+        new_ptr = cton_realloc(obj->ctx, \
             obj->payload.str.ptr, obj->payload.str.len, aligned);
         if (new_ptr == NULL) {
             return -1;
@@ -904,21 +809,21 @@ static void * cton_array_getptr(cton_ctx *ctx, cton_obj *arr)
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  *
  */
-int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type)
+int cton_array_settype(cton_obj *arr, cton_type type)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
     if (arr->payload.arr.sub_type != CTON_INVALID) {
         /* Element type is already set */
-        cton_seterr(ctx, CTON_ERROR_RSTSUBTYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_RSTSUBTYPE);
         return -1;
     }
 
     if (type >= CTON_TYPE_CNT || type == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_INVSUBTYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_INVSUBTYPE);
         return -1;
     }
 
@@ -928,10 +833,10 @@ int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type)
 }
 
 
-cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr)
+cton_type cton_array_gettype(cton_obj *arr)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return CTON_INVALID;
     }
 
@@ -954,10 +859,10 @@ cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr)
  * ERRORS
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  */
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr)
+size_t cton_array_getlen(cton_obj *arr)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
@@ -996,24 +901,24 @@ size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr)
  *   CTON_ERROR_SUBTYPE: Sub-type is not assigned.
  *   CTON_ERROR_ALLOC: memory hook returns NULL pointer.
  */
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
+size_t cton_array_setlen(cton_obj *arr, size_t len)
 {
     size_t index;
     cton_obj **ptr;
 
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
-    if (cton_array_gettype(ctx, arr) == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_SUBTYPE);
+    if (cton_array_gettype(arr) == CTON_INVALID) {
+        cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
         return 0;
     }
 
     if (arr->payload.arr.ptr == NULL) {
         /* Space have not been allocated yet */
-        ptr  = cton_alloc(ctx, len * sizeof(cton_obj *));
+        ptr  = cton_alloc(arr->ctx, len * sizeof(cton_obj *));
 
         if ( ptr == NULL ) {
             return 0;
@@ -1030,7 +935,7 @@ size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
 
     } else if (arr->payload.arr.len < len) {
 
-        ptr = cton_realloc(ctx,
+        ptr = cton_realloc(arr->ctx,
             arr->payload.arr.ptr, arr->payload.arr.len * sizeof(cton_obj *),
             len * sizeof(cton_obj *));
 
@@ -1074,15 +979,15 @@ size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  *   CTON_ERROR_INDEX: The requested index is out of the range.
  */
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index)
+cton_obj * cton_array_get(cton_obj *arr, size_t index)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
     
-    if (cton_array_getlen(ctx, arr) <= index) {
-        cton_seterr(ctx, CTON_ERROR_INDEX);
+    if (cton_array_getlen(arr) <= index) {
+        cton_seterr(arr->ctx, CTON_ERROR_INDEX);
         return NULL;
     }
 
@@ -1108,21 +1013,21 @@ cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index)
  *   CTON_ERROR_SUBTYPE: Given object is not match the type condition of array.
  *   CTON_ERROR_INDEX: The requested index is out of the range.
  */
-int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index)
+int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
-    if (cton_array_gettype(ctx, arr) != CTON_OBJECT && \
-        cton_array_gettype(ctx, arr) != cton_objtype(obj)) {
-        cton_seterr(ctx, CTON_ERROR_SUBTYPE);
+    if (cton_array_gettype(arr) != CTON_OBJECT && \
+        cton_array_gettype(arr) != cton_objtype(obj)) {
+        cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
         return -1;
     }
 
-    if (cton_array_getlen(ctx, arr) <= index) {
-        cton_seterr(ctx, CTON_ERROR_INDEX);
+    if (cton_array_getlen(arr) <= index) {
+        cton_seterr(arr->ctx, CTON_ERROR_INDEX);
         return -1;
     }
 
@@ -1130,7 +1035,7 @@ int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index)
     return 0;
 }
 
-int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*))
 {
     size_t len;
@@ -1139,16 +1044,16 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
     cton_obj **ptr;
 
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
     ret = 0;
-    len = cton_array_getlen(ctx, arr);
-    ptr = cton_array_getptr(ctx, arr);
+    len = cton_array_getlen(arr);
+    ptr = cton_array_getptr(arr->ctx, arr);
 
     for (index = 0; index < len; index ++) {
-        ret = func(ctx, ptr[index], index, rctx);
+        ret = func(arr->ctx, ptr[index], index, rctx);
 
         if (ret != 0) {
             break;
@@ -1571,17 +1476,17 @@ static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
     }
 }
 
-cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
+cton_obj * cton_hash_get(cton_obj *h, cton_obj *k)
 {
     cton_rbtree_node_t *result;
 
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(k) != CTON_STRING) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
@@ -1594,42 +1499,42 @@ cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
     return result->value;
 }
 
-cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
+cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
 {
     cton_obj *key;
     cton_obj *val;
 
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
-    key = cton_util_strcstr(ctx, ks);
+    key = cton_util_strcstr(h->ctx, ks);
 
-    val = cton_hash_get(ctx, h, key);
+    val = cton_hash_get(h, key);
 
-    cton_object_delete(ctx, key);
+    cton_object_delete(key);
 
     return val;
 }
 
-cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
+cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 {
     cton_rbtree_node_t *pos;
     cton_obj *k_ori;
 
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(k) != CTON_STRING) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(v) == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
@@ -1639,8 +1544,8 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
         if (v == NULL) {
             k_ori = pos->key;
-            cton_hash_remove_item(ctx, h, pos);
-            cton_free(ctx, k_ori);
+            cton_hash_remove_item(h->ctx, h, pos);
+            cton_free(h->ctx, k_ori);
             return v;
         }
 
@@ -1648,25 +1553,25 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
     } else {   
 
-        pos = cton_alloc(ctx, sizeof(cton_rbtree_node_t));
+        pos = cton_alloc(h->ctx, sizeof(cton_rbtree_node_t));
         if (pos == NULL) {
-            cton_seterr(ctx, CTON_ERROR_ALLOC);
+            cton_seterr(h->ctx, CTON_ERROR_ALLOC);
             return NULL;
         }
 
         pos->key   = k;
         pos->value = v;
 
-        cton_hash_insert_item(ctx, h, pos);
+        cton_hash_insert_item(h->ctx, h, pos);
     }
 
     return v;
 }
 
-size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h)
+size_t cton_hash_getlen(cton_obj *h)
 {
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
@@ -1684,14 +1589,14 @@ void cton_rbtree_foreach(cton_ctx *ctx, cton_rbtree_node_t *node, size_t *index,
     }
 }
 
-int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+int cton_hash_foreach(cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*))
 {
-    size_t          index;
+    size_t index;
 
     index = 0;
 
-    cton_rbtree_foreach(ctx, hash->payload.hash.root, &index, rctx, func);
+    cton_rbtree_foreach(hash->ctx, hash->payload.hash.root, &index, rctx, func);
 
     return 0;
 }
@@ -1860,17 +1765,17 @@ static void cton_hash_delete(cton_ctx *ctx, cton_obj *obj)
  *   一个CTON对象，是key对应的值.
  *
  */
-cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
+cton_obj * cton_hash_get(cton_obj *h, cton_obj *k)
 {
 	cton_hash_item *result;
 
 	if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(k) != CTON_STRING) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
@@ -1896,21 +1801,21 @@ cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k)
  * RETURN
  *   成功返回一个CTON对象，是key对应的值，失败返回NULL.
  */
-cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
+cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
 {
     cton_obj *key;
     cton_obj *val;
 
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
-    key = cton_util_strcstr(ctx, ks);
+    key = cton_util_strcstr(h->ctx, ks);
 
-    val = cton_hash_get(ctx, h, key);
+    val = cton_hash_get(h, key);
 
-    cton_object_delete(ctx, key);
+    cton_object_delete(h->ctx, key);
 
     return val;
 }
@@ -1930,23 +1835,23 @@ cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
  *   成功返回v，失败返回NULL.
  *
  */
-cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
+cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
 {
 	cton_hash_item *pos;
 	cton_obj *k_ori;
 
 	if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(k) != CTON_STRING) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     if (cton_objtype(v) == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
@@ -1956,8 +1861,8 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
         if (v == NULL) {
             k_ori = pos->key;
-            cton_hash_remove_item(ctx, h, pos);
-            cton_free(ctx, k_ori);
+            cton_hash_remove_item(h->ctx, h, pos);
+            cton_free(h->ctx, k_ori);
             return v;
         }
 
@@ -1965,9 +1870,9 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
 
     } else {   
 
-    	pos = cton_alloc(ctx, sizeof(cton_hash_item));
+    	pos = cton_alloc(h->ctx, sizeof(cton_hash_item));
     	if (pos == NULL) {
-    		cton_seterr(ctx, CTON_ERROR_ALLOC);
+    		cton_seterr(h->ctx, CTON_ERROR_ALLOC);
     		return NULL;
     	}
 
@@ -1975,17 +1880,17 @@ cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v)
     	pos->value = v;
     	pos->next  = NULL;
 
-        cton_hash_insert_item(ctx, h, pos);
+        cton_hash_insert_item(h->ctx, h, pos);
     }
 
 	return v;
 }
 
 
-size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h)
+size_t cton_hash_getlen(cton_obj *h)
 {
     if (cton_objtype(h) != CTON_HASH) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(h->ctx, CTON_ERROR_TYPE);
         return 0;;
     }
 
@@ -1993,7 +1898,7 @@ size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h)
 }
 
 
-int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+int cton_hash_foreach(cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*))
 {
     cton_hash_item *now;
@@ -2008,7 +1913,7 @@ int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
         /* Prevent error when `now` is removed by user */
         next = now->next; 
 
-        func(ctx, now->key, now->value, index, rctx);
+        func(h->ctx, now->key, now->value, index, rctx);
 
         now = next;
         index += 1;
@@ -2189,7 +2094,7 @@ static void * cton_float64_getptr(cton_ctx *ctx, cton_obj *obj)
     return &obj->payload.f64;
 }
 
-int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj)
+int64_t cton_numeric_getint(cton_obj *obj)
 {
     int64_t val = 0;
 
@@ -2206,29 +2111,29 @@ int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.i64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val)
+int64_t cton_numeric_setint(cton_obj *obj, int64_t val)
 {
     if (obj->type == CTON_INT8) {
         if (val > INT8_MAX || val < INT8_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i8 = (int8_t)val;
 
     } else if (obj->type == CTON_INT16) {
         if (val > INT16_MAX || val < INT16_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i16 = (int16_t)val;
 
     } else if (obj->type == CTON_INT32) {
         if (val > INT32_MAX || val < INT32_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i32 = (int32_t)val;
 
@@ -2236,13 +2141,13 @@ int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val)
         obj->payload.i64 = (int64_t)val;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj)
+uint64_t cton_numeric_getuint(cton_obj *obj)
 {
     uint64_t val = 0;
 
@@ -2259,21 +2164,21 @@ uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.u64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
+double cton_numeric_getfloat(cton_obj *obj)
 {
     double val = 0.0;
 
     if (obj->type == CTON_FLOAT8) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT16) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT32) {
         val = obj->payload.f32;
@@ -2282,19 +2187,19 @@ double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.f64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val)
+double cton_numeric_setfloat(cton_obj *obj, double val)
 {
     if (obj->type == CTON_FLOAT8) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT16) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT32) {
         obj->payload.f32 = val;
@@ -2303,7 +2208,7 @@ double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val)
         obj->payload.f64 = val;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
@@ -2383,9 +2288,9 @@ cton_obj * cton_util_create_str(cton_ctx *ctx,
 
     obj = cton_object_create(ctx, CTON_STRING);
 
-    cton_string_setlen(ctx, obj, index + 1);
+    cton_string_setlen(obj, index + 1);
 
-    ptr = cton_string_getptr(ctx, obj);
+    ptr = cton_string_getptr(obj);
 
     cton_llib_memcpy(ptr, str, index);
 
@@ -2409,9 +2314,9 @@ cton_buf *cton_util_buffer_create(cton_ctx *ctx)
     cton_obj *container;
 
     container = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, container, sizeof(cton_buf));
+    cton_string_setlen(container, sizeof(cton_buf));
 
-    buf = cton_binary_getptr(ctx, container);
+    buf = cton_binary_getptr(container);
 
     buf->container = container;
     buf->ctx = ctx;
@@ -2419,8 +2324,8 @@ cton_buf *cton_util_buffer_create(cton_ctx *ctx)
 
     buf->arr = cton_object_create(ctx, CTON_ARRAY);
 
-    cton_array_settype(ctx, buf->arr, CTON_STRING);
-    cton_array_setlen(ctx, buf->arr, 0);
+    cton_array_settype(buf->arr, CTON_STRING);
+    cton_array_setlen(buf->arr, 0);
 
     return buf;
 }
@@ -2430,15 +2335,15 @@ cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
 {
     (void) i;
     (void) c;
-    cton_object_delete(ctx, obj);
+    cton_object_delete(obj);
     return 0;
 }
 
 void cton_util_buffer_destroy(cton_buf *buf)
 {
-    cton_array_foreach(buf->ctx, buf->arr, NULL, cton_util_buffer_destroy_arr);
-    cton_object_delete(buf->ctx, buf->arr);
-    cton_object_delete(buf->ctx, buf->container);
+    cton_array_foreach(buf->arr, NULL, cton_util_buffer_destroy_arr);
+    cton_object_delete(buf->arr);
+    cton_object_delete(buf->container);
 }
 
 size_t cton_util_buffer_getlen(cton_buf *buf)
@@ -2466,23 +2371,23 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
     pack = cton_object_create(buf->ctx, type);
     if (type == CTON_STRING) {
         /* String type need a space for ending '\0' */
-        cton_string_setlen(buf->ctx, pack, buf->index + 1);
+        cton_string_setlen(pack, buf->index + 1);
 
     } else {
-        cton_string_setlen(buf->ctx, pack, buf->index);
+        cton_string_setlen(pack, buf->index);
 
     }
 
 
-    o_ptr = cton_string_getptr(buf->ctx, pack);
+    o_ptr = cton_string_getptr(pack);
 
     buf_len = CTON_BUFFER_PAGESIZE;
-    buf_cnt = cton_array_getlen(buf->ctx, buf->arr);
+    buf_cnt = cton_array_getlen(buf->arr);
 
     for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
-        buf_seg = cton_array_get(buf->ctx, buf->arr, buf_index);
+        buf_seg = cton_array_get(buf->arr, buf_index);
 
-        buf_ptr = cton_string_getptr(buf->ctx, buf_seg);
+        buf_ptr = cton_string_getptr(buf_seg);
 
         if (buf_index == buf_cnt - 1) {
             buf_len = buf->index % CTON_BUFFER_PAGESIZE;
@@ -2508,21 +2413,21 @@ int cton_util_buffer_putchar(cton_buf *buf, int c)
     cton_obj *str;
     char     *ptr;
 
-    array_len = cton_array_getlen(buf->ctx, buf->arr);
+    array_len = cton_array_getlen(buf->arr);
 
     if (buf->index % CTON_BUFFER_PAGESIZE == 0) {
         /* expand buffer first */
-        array_len = cton_array_getlen(buf->ctx, buf->arr);
+        array_len = cton_array_getlen(buf->arr);
         array_len += 1;
-        cton_array_setlen(buf->ctx, buf->arr, array_len);
+        cton_array_setlen(buf->arr, array_len);
 
         str = cton_object_create(buf->ctx, CTON_STRING);
-        cton_string_setlen(buf->ctx, str, CTON_BUFFER_PAGESIZE);
-        cton_array_set(buf->ctx, buf->arr, str, array_len - 1);
+        cton_string_setlen(str, CTON_BUFFER_PAGESIZE);
+        cton_array_set(buf->arr, str, array_len - 1);
     }
 
-    str = cton_array_get(buf->ctx, buf->arr, array_len - 1);
-    ptr = cton_binary_getptr(buf->ctx, str);
+    str = cton_array_get(buf->arr, array_len - 1);
+    ptr = cton_binary_getptr(str);
     ptr[buf->index % CTON_BUFFER_PAGESIZE] = c;
     buf->index += 1;
 
@@ -2546,9 +2451,9 @@ cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
     fseek(fp, 0, SEEK_SET);
 
     data = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, data, len);
+    cton_string_setlen(data, len);
 
-    ptr = cton_string_getptr(ctx, data);
+    ptr = cton_string_getptr(data);
     fread(ptr, len, 1, fp);
     fclose(fp);
 
@@ -2572,8 +2477,8 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
         return -1;
     }
 
-    len = cton_string_getlen(ctx, obj);
-    ptr = cton_string_getptr(ctx, obj);
+    len = cton_string_getlen(obj);
+    ptr = cton_string_getptr(obj);
 
     if (type == CTON_STRING) {
         len -= 1; /* Dismiss the ending '\0' */
@@ -2601,13 +2506,13 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
     uint8_t ch;
 
     lines = cton_object_create(ctx, CTON_ARRAY);
-    cton_array_settype(ctx, lines, CTON_STRING);
+    cton_array_settype(lines, CTON_STRING);
 
     arr_index = 0;
-    cton_array_setlen(ctx, lines, arr_index);
+    cton_array_setlen(lines, arr_index);
 
-    src = (uint8_t *)cton_string_getptr(ctx, src_obj);
-    src_len = cton_string_getlen(ctx, src_obj);
+    src = (uint8_t *)cton_string_getptr(src_obj);
+    src_len = cton_string_getlen(src_obj);
     src_index = 0;
 
     while (src_index < src_len) {
@@ -2624,16 +2529,16 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
         }
 
         line = cton_object_create(ctx, CTON_STRING);
-        cton_string_setlen(ctx, line, line_length + 1);
-        dst = (uint8_t *)cton_string_getptr(ctx, line);
+        cton_string_setlen(line, line_length + 1);
+        dst = (uint8_t *)cton_string_getptr(line);
 
         for (dst_index = 0; dst_index < line_length; dst_index ++) {
             dst[dst_index] = src[src_index + dst_index];
         }
 
         dst[line_length] = '\0';
-        cton_array_setlen(ctx, lines, arr_index + 1);
-        cton_array_set(ctx, lines, line, arr_index);
+        cton_array_setlen(lines, arr_index + 1);
+        cton_array_set(lines, line, arr_index);
 
         src_index += line_length;
 
@@ -2669,7 +2574,7 @@ cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
         return NULL;
     }
 
-    src_len = cton_string_getlen(ctx, src);
+    src_len = cton_string_getlen(src);
 
     wrap_cnt = src_len / col;
 
@@ -2680,10 +2585,10 @@ cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
     }
 
     dst = cton_object_create(ctx, CTON_STRING);
-    cton_string_setlen(ctx, dst, dst_len);
+    cton_string_setlen(dst, dst_len);
 
-    s = cton_string_getptr(ctx, src);
-    d = cton_string_getptr(ctx, dst);
+    s = cton_string_getptr(src);
+    d = cton_string_getptr(dst);
     dst_index = 0;
 
     if (w == '\0') {
@@ -2741,11 +2646,11 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
     }
 
     dst_obj = cton_object_create(ctx, CTON_STRING);
-    cton_string_setlen(ctx, dst_obj, cton_string_getlen(ctx, obj) * 2 + 1);
+    cton_string_setlen(dst_obj, cton_string_getlen(obj) * 2 + 1);
 
-    len = cton_string_getlen(ctx, obj);
-    src = cton_binary_getptr(ctx, obj);
-    dst = cton_binary_getptr(ctx, dst_obj);
+    len = cton_string_getlen(obj);
+    src = cton_binary_getptr(obj);
+    dst = cton_binary_getptr(dst_obj);
 
     while (len > 0) {
         *dst++ = basis16[((*src) & 0xF0) >> 4];
@@ -2824,10 +2729,10 @@ void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
 
         if (type == CTON_ARRAY) {
             obj->ref = 1;
-            cton_array_foreach(ctx, obj, NULL, cton_gc_mark_array);
+            cton_array_foreach(obj, NULL, cton_gc_mark_array);
         } else if (type == CTON_HASH) {
             obj->ref = 1;
-            cton_hash_foreach(ctx, obj, NULL, cton_gc_mark_hash);
+            cton_hash_foreach(obj, NULL, cton_gc_mark_hash);
         } else {
             obj->ref = 1;
         }
@@ -2847,7 +2752,7 @@ static int cton_gc_collect(cton_ctx *ctx)
         next = obj->next;
 
         if (obj->ref == 0) {
-            cton_object_delete(ctx, obj);
+            cton_object_delete(obj);
             cnt += 1;
         } else {
             obj->ref = 0;
