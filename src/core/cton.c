@@ -809,21 +809,21 @@ static void * cton_array_getptr(cton_ctx *ctx, cton_obj *arr)
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  *
  */
-int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type)
+int cton_array_settype(cton_obj *arr, cton_type type)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
     if (arr->payload.arr.sub_type != CTON_INVALID) {
         /* Element type is already set */
-        cton_seterr(ctx, CTON_ERROR_RSTSUBTYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_RSTSUBTYPE);
         return -1;
     }
 
     if (type >= CTON_TYPE_CNT || type == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_INVSUBTYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_INVSUBTYPE);
         return -1;
     }
 
@@ -833,10 +833,10 @@ int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type)
 }
 
 
-cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr)
+cton_type cton_array_gettype(cton_obj *arr)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return CTON_INVALID;
     }
 
@@ -859,10 +859,10 @@ cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr)
  * ERRORS
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  */
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr)
+size_t cton_array_getlen(cton_obj *arr)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
@@ -901,24 +901,24 @@ size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr)
  *   CTON_ERROR_SUBTYPE: Sub-type is not assigned.
  *   CTON_ERROR_ALLOC: memory hook returns NULL pointer.
  */
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
+size_t cton_array_setlen(cton_obj *arr, size_t len)
 {
     size_t index;
     cton_obj **ptr;
 
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
-    if (cton_array_gettype(ctx, arr) == CTON_INVALID) {
-        cton_seterr(ctx, CTON_ERROR_SUBTYPE);
+    if (cton_array_gettype(arr) == CTON_INVALID) {
+        cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
         return 0;
     }
 
     if (arr->payload.arr.ptr == NULL) {
         /* Space have not been allocated yet */
-        ptr  = cton_alloc(ctx, len * sizeof(cton_obj *));
+        ptr  = cton_alloc(arr->ctx, len * sizeof(cton_obj *));
 
         if ( ptr == NULL ) {
             return 0;
@@ -935,7 +935,7 @@ size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
 
     } else if (arr->payload.arr.len < len) {
 
-        ptr = cton_realloc(ctx,
+        ptr = cton_realloc(arr->ctx,
             arr->payload.arr.ptr, arr->payload.arr.len * sizeof(cton_obj *),
             len * sizeof(cton_obj *));
 
@@ -979,15 +979,15 @@ size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len)
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  *   CTON_ERROR_INDEX: The requested index is out of the range.
  */
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index)
+cton_obj * cton_array_get(cton_obj *arr, size_t index)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
     
-    if (cton_array_getlen(ctx, arr) <= index) {
-        cton_seterr(ctx, CTON_ERROR_INDEX);
+    if (cton_array_getlen(arr) <= index) {
+        cton_seterr(arr->ctx, CTON_ERROR_INDEX);
         return NULL;
     }
 
@@ -1013,21 +1013,21 @@ cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index)
  *   CTON_ERROR_SUBTYPE: Given object is not match the type condition of array.
  *   CTON_ERROR_INDEX: The requested index is out of the range.
  */
-int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index)
+int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index)
 {
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
-    if (cton_array_gettype(ctx, arr) != CTON_OBJECT && \
-        cton_array_gettype(ctx, arr) != cton_objtype(obj)) {
-        cton_seterr(ctx, CTON_ERROR_SUBTYPE);
+    if (cton_array_gettype(arr) != CTON_OBJECT && \
+        cton_array_gettype(arr) != cton_objtype(obj)) {
+        cton_seterr(arr->ctx, CTON_ERROR_SUBTYPE);
         return -1;
     }
 
-    if (cton_array_getlen(ctx, arr) <= index) {
-        cton_seterr(ctx, CTON_ERROR_INDEX);
+    if (cton_array_getlen(arr) <= index) {
+        cton_seterr(arr->ctx, CTON_ERROR_INDEX);
         return -1;
     }
 
@@ -1035,7 +1035,7 @@ int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index)
     return 0;
 }
 
-int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*))
 {
     size_t len;
@@ -1044,16 +1044,16 @@ int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
     cton_obj **ptr;
 
     if (cton_objtype(arr) != CTON_ARRAY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(arr->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
     ret = 0;
-    len = cton_array_getlen(ctx, arr);
-    ptr = cton_array_getptr(ctx, arr);
+    len = cton_array_getlen(arr);
+    ptr = cton_array_getptr(arr->ctx, arr);
 
     for (index = 0; index < len; index ++) {
-        ret = func(ctx, ptr[index], index, rctx);
+        ret = func(arr->ctx, ptr[index], index, rctx);
 
         if (ret != 0) {
             break;
@@ -2324,8 +2324,8 @@ cton_buf *cton_util_buffer_create(cton_ctx *ctx)
 
     buf->arr = cton_object_create(ctx, CTON_ARRAY);
 
-    cton_array_settype(ctx, buf->arr, CTON_STRING);
-    cton_array_setlen(ctx, buf->arr, 0);
+    cton_array_settype(buf->arr, CTON_STRING);
+    cton_array_setlen(buf->arr, 0);
 
     return buf;
 }
@@ -2341,7 +2341,7 @@ cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
 
 void cton_util_buffer_destroy(cton_buf *buf)
 {
-    cton_array_foreach(buf->ctx, buf->arr, NULL, cton_util_buffer_destroy_arr);
+    cton_array_foreach(buf->arr, NULL, cton_util_buffer_destroy_arr);
     cton_object_delete(buf->arr);
     cton_object_delete(buf->container);
 }
@@ -2382,10 +2382,10 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
     o_ptr = cton_string_getptr(pack);
 
     buf_len = CTON_BUFFER_PAGESIZE;
-    buf_cnt = cton_array_getlen(buf->ctx, buf->arr);
+    buf_cnt = cton_array_getlen(buf->arr);
 
     for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
-        buf_seg = cton_array_get(buf->ctx, buf->arr, buf_index);
+        buf_seg = cton_array_get(buf->arr, buf_index);
 
         buf_ptr = cton_string_getptr(buf_seg);
 
@@ -2413,20 +2413,20 @@ int cton_util_buffer_putchar(cton_buf *buf, int c)
     cton_obj *str;
     char     *ptr;
 
-    array_len = cton_array_getlen(buf->ctx, buf->arr);
+    array_len = cton_array_getlen(buf->arr);
 
     if (buf->index % CTON_BUFFER_PAGESIZE == 0) {
         /* expand buffer first */
-        array_len = cton_array_getlen(buf->ctx, buf->arr);
+        array_len = cton_array_getlen(buf->arr);
         array_len += 1;
-        cton_array_setlen(buf->ctx, buf->arr, array_len);
+        cton_array_setlen(buf->arr, array_len);
 
         str = cton_object_create(buf->ctx, CTON_STRING);
         cton_string_setlen(str, CTON_BUFFER_PAGESIZE);
-        cton_array_set(buf->ctx, buf->arr, str, array_len - 1);
+        cton_array_set(buf->arr, str, array_len - 1);
     }
 
-    str = cton_array_get(buf->ctx, buf->arr, array_len - 1);
+    str = cton_array_get(buf->arr, array_len - 1);
     ptr = cton_binary_getptr(str);
     ptr[buf->index % CTON_BUFFER_PAGESIZE] = c;
     buf->index += 1;
@@ -2506,10 +2506,10 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
     uint8_t ch;
 
     lines = cton_object_create(ctx, CTON_ARRAY);
-    cton_array_settype(ctx, lines, CTON_STRING);
+    cton_array_settype(lines, CTON_STRING);
 
     arr_index = 0;
-    cton_array_setlen(ctx, lines, arr_index);
+    cton_array_setlen(lines, arr_index);
 
     src = (uint8_t *)cton_string_getptr(src_obj);
     src_len = cton_string_getlen(src_obj);
@@ -2537,8 +2537,8 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
         }
 
         dst[line_length] = '\0';
-        cton_array_setlen(ctx, lines, arr_index + 1);
-        cton_array_set(ctx, lines, line, arr_index);
+        cton_array_setlen(lines, arr_index + 1);
+        cton_array_set(lines, line, arr_index);
 
         src_index += line_length;
 
@@ -2729,7 +2729,7 @@ void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
 
         if (type == CTON_ARRAY) {
             obj->ref = 1;
-            cton_array_foreach(ctx, obj, NULL, cton_gc_mark_array);
+            cton_array_foreach(obj, NULL, cton_gc_mark_array);
         } else if (type == CTON_HASH) {
             obj->ref = 1;
             cton_hash_foreach(ctx, obj, NULL, cton_gc_mark_hash);

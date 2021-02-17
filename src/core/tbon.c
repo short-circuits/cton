@@ -349,19 +349,19 @@ static int cton_serialize_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	uint64_t length;
 	uint8_t id;
 
-	type = cton_array_gettype(ctx, obj);
+	type = cton_array_gettype(obj);
 	id = cton_getid(type);
 	cton_util_buffer_putchar(buf, id);
 
-	length = cton_array_getlen(ctx, obj);
+	length = cton_array_getlen(obj);
 	cton_serialize_vw(ctx, buf, length);
 
 	if (type == CTON_OBJECT) {
-		return cton_array_foreach(ctx,
-				obj, (void *)buf, cton_serialize_array_object);
+		return cton_array_foreach(obj,
+			(void *)buf, cton_serialize_array_object);
 	} else {
-		return cton_array_foreach(ctx,
-					obj, (void *)buf, cton_serialize_array_item);
+		return cton_array_foreach(obj,
+			(void *)buf, cton_serialize_array_item);
 	}
 
 	return -1;
@@ -628,21 +628,21 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 	if (arr == NULL) {
 		return NULL;
 	}
-	cton_array_settype(ctx, arr, type);
-	cton_array_setlen(ctx, arr, arr_len);
+	cton_array_settype(arr, type);
+	cton_array_setlen(arr, arr_len);
 
 	if (type == CTON_OBJECT) {
 
 		for (arr_index = 0; arr_index < arr_len; arr_index += 1) {
 			obj = cton_deserialize_object(ctx, index, ptr, len);
-			ret = cton_array_set(ctx, arr, obj, arr_index);
+			ret = cton_array_set(arr, obj, arr_index);
 		}
 
 	} else {
 
 		for (arr_index = 0; arr_index < arr_len; arr_index += 1) {
 			obj = cton_deserialize_value(ctx, index, ptr, type, len);
-			cton_array_set(ctx, arr, obj, arr_index);
+			cton_array_set(arr, obj, arr_index);
 		}
 
 	}

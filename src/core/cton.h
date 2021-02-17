@@ -249,13 +249,13 @@ void * cton_binary_getptr(cton_obj *obj);
 #define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
 
 /* cton array type specific methods */
-int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);
-cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
-int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
-int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+int cton_array_settype(cton_obj *arr, cton_type type);
+cton_type cton_array_gettype(cton_obj *arr);
+size_t cton_array_setlen(cton_obj *arr, size_t len);
+size_t cton_array_getlen(cton_obj *arr);
+int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index);
+cton_obj * cton_array_get(cton_obj *arr, size_t index);
+int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
 /* cton hash type specific methods */

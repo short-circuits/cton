@@ -156,10 +156,10 @@ cton_json_parse_array(cton_ctx *ctx,
 	*index += 1;
 
 	arr = cton_object_create(ctx, CTON_ARRAY);
-	cton_array_settype(ctx, arr, CTON_OBJECT);
+	cton_array_settype(arr, CTON_OBJECT);
 
 	cnt = 0;
-	cton_array_setlen(ctx, arr, cnt);
+	cton_array_setlen(arr, cnt);
 
 	cton_json_skip_whitespace(ctx, json, index, len);
 	if (json[*index] == ']') {
@@ -170,8 +170,8 @@ cton_json_parse_array(cton_ctx *ctx,
 	while (*index < len) {
 		cnt ++;
 		obj = cton_json_parse_value(ctx, json, index, len);
-		cton_array_setlen(ctx, arr, cnt);
-		cton_array_set(ctx, arr, obj, cnt - 1);
+		cton_array_setlen(arr, cnt);
+		cton_array_set(arr, obj, cnt - 1);
 
 		if (json[*index] == ']') {
 			break;
@@ -581,9 +581,9 @@ cton_json_stringify_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 
 	cton_util_buffer_putchar(buf, '[');
 
-	len = cton_array_getlen(ctx, obj);
+	len = cton_array_getlen(obj);
 
-	cton_array_foreach(ctx, obj, (void *)buf, cton_json_stringify_array_item);
+	cton_array_foreach(obj, (void *)buf, cton_json_stringify_array_item);
 
 	cton_util_buffer_putchar(buf, ']');
 

@@ -141,7 +141,7 @@ cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
         }
 
         obj = cton_tree_get(ctx,
-            cton_array_get(ctx, root, num), &path[index + 1]);
+            cton_array_get(root, num), &path[index + 1]);
 
     } else {
         obj = root;
