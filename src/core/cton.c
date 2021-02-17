@@ -1732,7 +1732,7 @@ cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
 
     val = cton_hash_get(h, key);
 
-    cton_object_delete(h->ctx, key);
+    cton_object_delete(key);
 
     return val;
 }
@@ -1820,7 +1820,7 @@ int cton_hash_foreach(cton_obj *hash, void *rctx,
         /* Prevent error when `now` is removed by user */
         next = now->next; 
 
-        func(h->ctx, now->key, now->value, index, rctx);
+        func(hash->ctx, now->key, now->value, index, rctx);
 
         now = next;
         index += 1;
