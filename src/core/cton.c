@@ -576,6 +576,11 @@ void * cton_object_getvalue(cton_obj *obj)
     return cton_class_hook[obj->type].getptr(obj);
 }
 
+cton_ctx * cton_object_getctx(cton_obj *obj)
+{
+    return obj->ctx;
+}
+
 
 /*******************************************************************************
  * CTON type dependent methods
