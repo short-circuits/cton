@@ -1588,6 +1588,22 @@ cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v)
     return v;
 }
 
+cton_obj * cton_hash_sset(cton_obj *h, const char *ks, cton_obj *v)
+{
+    cton_obj *key;
+    cton_obj *ret;
+
+    key = cton_string_create(h->ctx, cton_llib_strlen(ks), ks);
+
+    ret = cton_hash_set(h, key, v);
+
+    if (ret == NULL) {
+        cton_object_delete(ret);
+    }
+
+    return ret;
+}
+
 size_t cton_hash_getlen(cton_obj *h)
 {
     return h->payload.hash.count;
