@@ -115,9 +115,9 @@ cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
 
         str = cton_object_create(ctx, CTON_STRING);
 
-        cton_string_setlen(ctx, str, index);
+        cton_string_setlen(str, index);
 
-        memcpy(cton_string_getptr(ctx, str), path, index - 1);
+        memcpy(cton_string_getptr(str), path, index - 1);
 
         obj = cton_hash_get(ctx, root, str);
 

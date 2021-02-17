@@ -661,20 +661,20 @@ static void cton_string_delete(cton_ctx *ctx, cton_obj *str)
  * RETURN
  *   The data pointer of the string object.
  */
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj)
+void * cton_binary_getptr(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return NULL;
     }
 
     return (void *)obj->payload.str.ptr;
 }
 
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
+char * cton_string_getptr(cton_obj *obj)
 {
-    return cton_binary_getptr(ctx, obj);
+    return cton_binary_getptr(obj);
 }
 
 /*
@@ -690,30 +690,30 @@ char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The data pointer of the string object.
  */
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj)
+size_t cton_string_getlen(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
     return obj->payload.str.used;
 }
 
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
+int cton_string_setlen(cton_obj *obj, size_t len)
 {
     size_t aligned;
     void * new_ptr;
 
     if (cton_objtype(obj) != CTON_STRING &&
         cton_objtype(obj) != CTON_BINARY) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return 0;
     }
 
     if (obj->payload.str.len == 0) {
-        obj->payload.str.ptr = cton_alloc(ctx, len);
+        obj->payload.str.ptr = cton_alloc(obj->ctx, len);
         if (obj->payload.str.ptr == NULL) {
             return -1;
         }
@@ -725,7 +725,7 @@ int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len)
 
     } else {
         aligned = cton_llib_align(len, 128);
-        new_ptr = cton_realloc(ctx, \
+        new_ptr = cton_realloc(obj->ctx, \
             obj->payload.str.ptr, obj->payload.str.len, aligned);
         if (new_ptr == NULL) {
             return -1;
@@ -2288,9 +2288,9 @@ cton_obj * cton_util_create_str(cton_ctx *ctx,
 
     obj = cton_object_create(ctx, CTON_STRING);
 
-    cton_string_setlen(ctx, obj, index + 1);
+    cton_string_setlen(obj, index + 1);
 
-    ptr = cton_string_getptr(ctx, obj);
+    ptr = cton_string_getptr(obj);
 
     cton_llib_memcpy(ptr, str, index);
 
@@ -2314,9 +2314,9 @@ cton_buf *cton_util_buffer_create(cton_ctx *ctx)
     cton_obj *container;
 
     container = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, container, sizeof(cton_buf));
+    cton_string_setlen(container, sizeof(cton_buf));
 
-    buf = cton_binary_getptr(ctx, container);
+    buf = cton_binary_getptr(container);
 
     buf->container = container;
     buf->ctx = ctx;
@@ -2371,15 +2371,15 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
     pack = cton_object_create(buf->ctx, type);
     if (type == CTON_STRING) {
         /* String type need a space for ending '\0' */
-        cton_string_setlen(buf->ctx, pack, buf->index + 1);
+        cton_string_setlen(pack, buf->index + 1);
 
     } else {
-        cton_string_setlen(buf->ctx, pack, buf->index);
+        cton_string_setlen(pack, buf->index);
 
     }
 
 
-    o_ptr = cton_string_getptr(buf->ctx, pack);
+    o_ptr = cton_string_getptr(pack);
 
     buf_len = CTON_BUFFER_PAGESIZE;
     buf_cnt = cton_array_getlen(buf->ctx, buf->arr);
@@ -2387,7 +2387,7 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
     for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
         buf_seg = cton_array_get(buf->ctx, buf->arr, buf_index);
 
-        buf_ptr = cton_string_getptr(buf->ctx, buf_seg);
+        buf_ptr = cton_string_getptr(buf_seg);
 
         if (buf_index == buf_cnt - 1) {
             buf_len = buf->index % CTON_BUFFER_PAGESIZE;
@@ -2422,12 +2422,12 @@ int cton_util_buffer_putchar(cton_buf *buf, int c)
         cton_array_setlen(buf->ctx, buf->arr, array_len);
 
         str = cton_object_create(buf->ctx, CTON_STRING);
-        cton_string_setlen(buf->ctx, str, CTON_BUFFER_PAGESIZE);
+        cton_string_setlen(str, CTON_BUFFER_PAGESIZE);
         cton_array_set(buf->ctx, buf->arr, str, array_len - 1);
     }
 
     str = cton_array_get(buf->ctx, buf->arr, array_len - 1);
-    ptr = cton_binary_getptr(buf->ctx, str);
+    ptr = cton_binary_getptr(str);
     ptr[buf->index % CTON_BUFFER_PAGESIZE] = c;
     buf->index += 1;
 
@@ -2451,9 +2451,9 @@ cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
     fseek(fp, 0, SEEK_SET);
 
     data = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, data, len);
+    cton_string_setlen(data, len);
 
-    ptr = cton_string_getptr(ctx, data);
+    ptr = cton_string_getptr(data);
     fread(ptr, len, 1, fp);
     fclose(fp);
 
@@ -2477,8 +2477,8 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
         return -1;
     }
 
-    len = cton_string_getlen(ctx, obj);
-    ptr = cton_string_getptr(ctx, obj);
+    len = cton_string_getlen(obj);
+    ptr = cton_string_getptr(obj);
 
     if (type == CTON_STRING) {
         len -= 1; /* Dismiss the ending '\0' */
@@ -2511,8 +2511,8 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
     arr_index = 0;
     cton_array_setlen(ctx, lines, arr_index);
 
-    src = (uint8_t *)cton_string_getptr(ctx, src_obj);
-    src_len = cton_string_getlen(ctx, src_obj);
+    src = (uint8_t *)cton_string_getptr(src_obj);
+    src_len = cton_string_getlen(src_obj);
     src_index = 0;
 
     while (src_index < src_len) {
@@ -2529,8 +2529,8 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
         }
 
         line = cton_object_create(ctx, CTON_STRING);
-        cton_string_setlen(ctx, line, line_length + 1);
-        dst = (uint8_t *)cton_string_getptr(ctx, line);
+        cton_string_setlen(line, line_length + 1);
+        dst = (uint8_t *)cton_string_getptr(line);
 
         for (dst_index = 0; dst_index < line_length; dst_index ++) {
             dst[dst_index] = src[src_index + dst_index];
@@ -2574,7 +2574,7 @@ cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
         return NULL;
     }
 
-    src_len = cton_string_getlen(ctx, src);
+    src_len = cton_string_getlen(src);
 
     wrap_cnt = src_len / col;
 
@@ -2585,10 +2585,10 @@ cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w)
     }
 
     dst = cton_object_create(ctx, CTON_STRING);
-    cton_string_setlen(ctx, dst, dst_len);
+    cton_string_setlen(dst, dst_len);
 
-    s = cton_string_getptr(ctx, src);
-    d = cton_string_getptr(ctx, dst);
+    s = cton_string_getptr(src);
+    d = cton_string_getptr(dst);
     dst_index = 0;
 
     if (w == '\0') {
@@ -2646,11 +2646,11 @@ cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option)
     }
 
     dst_obj = cton_object_create(ctx, CTON_STRING);
-    cton_string_setlen(ctx, dst_obj, cton_string_getlen(ctx, obj) * 2 + 1);
+    cton_string_setlen(dst_obj, cton_string_getlen(obj) * 2 + 1);
 
-    len = cton_string_getlen(ctx, obj);
-    src = cton_binary_getptr(ctx, obj);
-    dst = cton_binary_getptr(ctx, dst_obj);
+    len = cton_string_getlen(obj);
+    src = cton_binary_getptr(obj);
+    dst = cton_binary_getptr(dst_obj);
 
     while (len > 0) {
         *dst++ = basis16[((*src) & 0xF0) >> 4];

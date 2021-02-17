@@ -26,7 +26,7 @@ cton_obj *cton_json_parse(cton_ctx *ctx, cton_obj *json)
 
 	index = 0;
 	obj = cton_json_parse_value(ctx, 
-		(char *)cton_string_getptr(ctx, json), &index, cton_string_getlen(ctx, json));
+		(char *)cton_string_getptr(json), &index, cton_string_getlen(json));
 
 	return obj;
 }
@@ -237,9 +237,9 @@ cton_json_parse_string(cton_ctx *ctx,
 	}
 
 	obj = cton_object_create(ctx, CTON_STRING);
-	cton_string_setlen(ctx, obj, str_len + 1);
+	cton_string_setlen(obj, str_len + 1);
 
-	dst = (char *)cton_string_getptr(ctx, obj);
+	dst = (char *)cton_string_getptr(obj);
 	str_index = 0;
 	dst_index = 0;
 
@@ -512,8 +512,8 @@ static int cton_json_stringify_string(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 
 	cton_util_buffer_putchar(buf, '\"');
 
-	len = cton_string_getlen(ctx, obj);
-	ptr = (char *)cton_string_getptr(ctx, obj);
+	len = cton_string_getlen(obj);
+	ptr = (char *)cton_string_getptr(obj);
 
 	len --;
 

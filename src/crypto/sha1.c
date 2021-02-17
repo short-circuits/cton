@@ -44,16 +44,16 @@ cton_obj * cton_digest_sha1(cton_ctx *ctx, cton_obj *obj)
     }
 
     sha1 = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, sha1, 20);
+    cton_string_setlen(sha1, 20);
 
     sha1ctx = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, sha1ctx, sizeof(cton_sha1_ctx));
-    sha1ctx_ptr = cton_binary_getptr(ctx, sha1ctx);
+    cton_string_setlen(sha1ctx, sizeof(cton_sha1_ctx));
+    sha1ctx_ptr = cton_binary_getptr(sha1ctx);
 
     cton_digest_sha1_init(sha1ctx_ptr);
     cton_digest_sha1_update(sha1ctx_ptr,
-        cton_string_getptr(ctx, obj), cton_string_getlen(ctx, obj));
-    cton_digest_sha1_final(sha1ctx_ptr, cton_binary_getptr(ctx, sha1));
+        cton_string_getptr(obj), cton_string_getlen(obj));
+    cton_digest_sha1_final(sha1ctx_ptr, cton_binary_getptr(sha1));
 
     cton_object_delete(sha1ctx);
 

@@ -17,7 +17,7 @@ static cton_obj *cton_base64_encode_internal(cton_ctx *ctx,
     uint8_t *s;
     uint8_t *d;
 
-    src_len = cton_string_getlen(ctx, src);
+    src_len = cton_string_getlen(src);
     dst_len = (src_len / 3) * 4;
 
     /* Get length with padding character */
@@ -34,15 +34,15 @@ static cton_obj *cton_base64_encode_internal(cton_ctx *ctx,
         return NULL;
     }
 
-    cton_string_setlen(ctx, dst, dst_len + 1);
+    cton_string_setlen(dst, dst_len + 1);
     if (cton_geterr(ctx) != CTON_OK) {
         cton_object_delete(dst);
         return NULL;
     }
 
 
-    s = (uint8_t *)cton_string_getptr(ctx, src);
-    d = (uint8_t *)cton_string_getptr(ctx, dst);
+    s = (uint8_t *)cton_string_getptr(src);
+    d = (uint8_t *)cton_string_getptr(dst);
 
     while (src_len > 3) {
 
@@ -184,8 +184,8 @@ cton_obj * cton_base64_decode(cton_ctx *ctx, cton_obj* obj)
         return NULL;
     }
 
-    s = (uint8_t *)cton_string_getptr(ctx, obj);
-    src_len = cton_string_getlen(ctx, obj);
+    s = (uint8_t *)cton_string_getptr(obj);
+    src_len = cton_string_getlen(obj);
     code_len = 0;
 
     for (src_index = 0; src_index < src_len; src_index ++) {
@@ -210,8 +210,8 @@ cton_obj * cton_base64_decode(cton_ctx *ctx, cton_obj* obj)
     }
 
     dst = cton_object_create(ctx, CTON_BINARY);
-    cton_string_setlen(ctx, dst, dst_len);
-    d = cton_binary_getptr(ctx, dst);
+    cton_string_setlen(dst, dst_len);
+    d = cton_binary_getptr(dst);
 
     dst_index = 0;
     code_index = 0;

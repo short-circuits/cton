@@ -12,7 +12,7 @@ cton_obj *cton_bmp_parse(cton_ctx *ctx, cton_obj *bmp)
 
 	size_t len;
 
-	len = cton_string_getlen(ctx, bmp);
+	len = cton_string_getlen(bmp);
 
 	result = cton_object_create(ctx, CTON_HASH);
 
@@ -48,13 +48,13 @@ static cton_obj *cton_bmp_read_header(cton_ctx *ctx, cton_obj *bmp)
 	uint8_t *dst;
 
 	result = cton_object_create(ctx, CTON_HASH);
-	src    = cton_binary_getptr(ctx, bmp);
+	src    = cton_binary_getptr(bmp);
 
 
 	bmp_data = cton_object_create(ctx, CTON_STRING);
-	cton_string_setlen(ctx, bmp_data, 3);
+	cton_string_setlen(bmp_data, 3);
 
-	dst = cton_binary_getptr(ctx, bmp_data);
+	dst = cton_binary_getptr(bmp_data);
 	dst[0] = src[0];
 	dst[1] = src[1];
 	dst[2] = 0;
@@ -96,7 +96,7 @@ static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp)
 	uint8_t *dst;
 
 	result = cton_object_create(ctx, CTON_HASH);
-	src    = cton_binary_getptr(ctx, bmp);
+	src    = cton_binary_getptr(bmp);
 
 	index = 14;
                                

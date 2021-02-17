@@ -291,10 +291,10 @@ static int cton_serialize_string(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	uint64_t length;
 	uint8_t  *ptr;
 
-	length = cton_string_getlen(ctx, obj);
+	length = cton_string_getlen(obj);
 	cton_serialize_vw(ctx, buf, length);
 
-	ptr = cton_binary_getptr(ctx, obj);
+	ptr = cton_binary_getptr(obj);
 
 	while (length > 0) {
 		cton_util_buffer_putchar(buf, *ptr);
@@ -548,8 +548,8 @@ cton_deserialize_string(cton_ctx *ctx,
 	}
 
 	obj = cton_object_create(ctx, type);
-	cton_string_setlen(ctx, obj, str_len);
-	dst = cton_binary_getptr(ctx, obj);
+	cton_string_setlen(obj, str_len);
+	dst = cton_binary_getptr(obj);
 
 	while (str_len > 0) {
 		*dst++ = ptr[*index];
@@ -767,13 +767,13 @@ cton_obj *cton_deserialize(cton_ctx *ctx, cton_obj *tbon)
 	size_t len;
 	size_t index;
 
-	len = cton_string_getlen(ctx, tbon);
+	len = cton_string_getlen(tbon);
 	if (len <= sizeof("TBON01")) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
 		return NULL;
 	}
 
-	ptr = cton_binary_getptr(ctx, tbon);
+	ptr = cton_binary_getptr(tbon);
 
 	if (ptr[0] != 'T' || ptr[1] != 'B' || ptr[2] != 'O' || ptr[3] != 'N') {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);

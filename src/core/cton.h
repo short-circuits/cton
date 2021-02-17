@@ -242,10 +242,10 @@ int cton_bool_set(cton_obj *obj, cton_bool val);
 cton_bool cton_bool_get(cton_obj *obj);
 
 /* cton string type specific methods */
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
+int cton_string_setlen(cton_obj *obj, size_t len);
+size_t cton_string_getlen(cton_obj *obj);
+char * cton_string_getptr(cton_obj *obj);
+void * cton_binary_getptr(cton_obj *obj);
 #define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
 
 /* cton array type specific methods */
