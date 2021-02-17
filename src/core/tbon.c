@@ -717,9 +717,9 @@ static cton_obj * cton_deserialize_value(cton_ctx *ctx,
 		case CTON_BOOL:
 			obj = cton_object_create(ctx, CTON_BOOL);
 			if (ptr[*index] == TBON_ID_TRUE) {
-				cton_bool_set(ctx, obj, CTON_TRUE);
+				cton_bool_set(obj, CTON_TRUE);
 			} else {
-				cton_bool_set(ctx, obj, CTON_FALSE);
+				cton_bool_set(obj, CTON_FALSE);
 			}
 			*index += 1;
 			break;

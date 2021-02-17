@@ -584,12 +584,12 @@ void * cton_object_getvalue(cton_obj *obj)
  *         Bool
  ******************************************************************************/
 
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
+int cton_bool_set(cton_obj *obj, cton_bool val)
 {
     int ret;
 
     if (cton_objtype(obj) != CTON_BOOL) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return -1;
     }
 
@@ -617,10 +617,10 @@ int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val)
     return ret;
 }
 
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj)
+cton_bool cton_bool_get(cton_obj *obj)
 {
     if (cton_objtype(obj) != CTON_BOOL) {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
         return CTON_FALSE;
     }
 

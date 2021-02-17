@@ -238,8 +238,8 @@ cton_type cton_object_gettype(cton_obj *obj);
 void * cton_object_getvalue(cton_obj *obj);
 
 /* cton bool type specific methods */
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
+int cton_bool_set(cton_obj *obj, cton_bool val);
+cton_bool cton_bool_get(cton_obj *obj);
 
 /* cton string type specific methods */
 int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);

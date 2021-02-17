@@ -62,12 +62,12 @@ static cton_obj * cton_json_parse_value(cton_ctx *ctx,
 
 	} else if (strncmp(&json[*index], "true", 4) == 0) {
 		obj = cton_object_create(ctx, CTON_BOOL);
-		cton_bool_set(ctx, obj, CTON_TRUE);
+		cton_bool_set(obj, CTON_TRUE);
 		*index += 4;
 
 	} else if (strncmp(&json[*index], "false", 5) == 0) {
 		obj = cton_object_create(ctx, CTON_BOOL);
-		cton_bool_set(ctx, obj, CTON_FALSE);
+		cton_bool_set(obj, CTON_FALSE);
 		*index += 5;
 
 	} else if (strncmp(&json[*index], "null", 4) == 0) {
