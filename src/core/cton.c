@@ -58,6 +58,20 @@ static void * cton_float16_getptr(cton_obj *obj);
 static void * cton_float32_getptr(cton_obj *obj);
 static void * cton_float64_getptr(cton_obj *obj);
 
+static int cton_bool_cmp(cton_obj *a, cton_obj *b);
+static int cton_binary_cmp(cton_obj *a, cton_obj *b);
+static int cton_string_cmp(cton_obj *a, cton_obj *b);
+static int cton_int8_cmp(cton_obj *a, cton_obj *b);
+static int cton_int16_cmp(cton_obj *a, cton_obj *b);
+static int cton_int32_cmp(cton_obj *a, cton_obj *b);
+static int cton_int64_cmp(cton_obj *a, cton_obj *b);
+static int cton_uint8_cmp(cton_obj *a, cton_obj *b);
+static int cton_uint16_cmp(cton_obj *a, cton_obj *b);
+static int cton_uint32_cmp(cton_obj *a, cton_obj *b);
+static int cton_uint64_cmp(cton_obj *a, cton_obj *b);
+static int cton_float32_cmp(cton_obj *a, cton_obj *b);
+static int cton_float64_cmp(cton_obj *a, cton_obj *b);
+
 
 /*******************************************************************************
  * CTON memory hook
@@ -362,51 +376,52 @@ typedef struct {
     void      (*init)(cton_obj *obj);
     void      (*delete)(cton_obj *obj);
     void *    (*getptr)(cton_obj *obj);
+    int       (*cmp)(cton_obj *a, cton_obj *b);
 } cton_class_hook_s;
 
 cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
     {
-        CTON_INVALID, NULL, NULL, NULL
+        CTON_INVALID, NULL, NULL, NULL, NULL
     },{
-        CTON_OBJECT, NULL, NULL, NULL
+        CTON_OBJECT, NULL, NULL, NULL, NULL
     },{
-        CTON_NULL, NULL, NULL, NULL
+        CTON_NULL, NULL, NULL, NULL, NULL
     },{
-        CTON_BOOL, NULL, NULL, NULL
+        CTON_BOOL, NULL, NULL, NULL, cton_bool_cmp
     },{
         CTON_BINARY, cton_string_init, cton_string_delete,
-        (void *(*)(cton_obj *))cton_string_getptr
+        (void *(*)(cton_obj *))cton_string_getptr, cton_binary_cmp
     },{
         CTON_STRING, cton_string_init, cton_string_delete,
-        (void *(*)(cton_obj *))cton_string_getptr
+        (void *(*)(cton_obj *))cton_string_getptr, cton_string_cmp
     },{
-        CTON_ARRAY, cton_array_init, cton_array_delete, cton_array_getptr
+        CTON_ARRAY, cton_array_init, cton_array_delete, cton_array_getptr, NULL
     },{
-        CTON_HASH, cton_hash_init, cton_hash_delete, NULL
+        CTON_HASH, cton_hash_init, cton_hash_delete, NULL, NULL
     },{
-        CTON_INT8, cton_int8_init, NULL, cton_int8_getptr
+        CTON_INT8, cton_int8_init, NULL, cton_int8_getptr, cton_int8_cmp
     },{
-        CTON_INT16, cton_int16_init, NULL, cton_int16_getptr
+        CTON_INT16, cton_int16_init, NULL, cton_int16_getptr, cton_int16_cmp
     },{
-        CTON_INT32, cton_int32_init, NULL, cton_int32_getptr
+        CTON_INT32, cton_int32_init, NULL, cton_int32_getptr, cton_int32_cmp
     },{
-        CTON_INT64, cton_int64_init, NULL, cton_int64_getptr
+        CTON_INT64, cton_int64_init, NULL, cton_int64_getptr, cton_int64_cmp
     },{
-        CTON_UINT8, cton_uint8_init, NULL, cton_uint8_getptr
+        CTON_UINT8, cton_uint8_init, NULL, cton_uint8_getptr, cton_uint8_cmp
     },{
-        CTON_UINT16, cton_uint16_init, NULL, cton_uint16_getptr
+        CTON_UINT16, cton_uint16_init, NULL, cton_uint16_getptr, cton_uint16_cmp
     },{
-        CTON_UINT32, cton_uint32_init, NULL, cton_uint32_getptr
+        CTON_UINT32, cton_uint32_init, NULL, cton_uint32_getptr, cton_uint32_cmp
     },{
-        CTON_UINT64, cton_uint64_init, NULL, cton_uint64_getptr
+        CTON_UINT64, cton_uint64_init, NULL, cton_uint64_getptr, cton_uint64_cmp
     },{
-        CTON_FLOAT8, cton_float8_init, NULL, cton_float8_getptr
+        CTON_FLOAT8, cton_float8_init, NULL, cton_float8_getptr, NULL
     },{
-        CTON_FLOAT16, cton_float16_init, NULL, cton_float16_getptr
+        CTON_FLOAT16, cton_float16_init, NULL, cton_float16_getptr, NULL
     },{
-        CTON_FLOAT32, cton_float32_init, NULL, cton_float32_getptr
+        CTON_FLOAT32, cton_float32_init, NULL, cton_float32_getptr, cton_float32_cmp
     },{
-        CTON_FLOAT64, cton_float64_init, NULL, cton_float64_getptr
+        CTON_FLOAT64, cton_float64_init, NULL, cton_float64_getptr, cton_float64_cmp
     }
 };
 
@@ -582,12 +597,31 @@ cton_ctx * cton_object_getctx(cton_obj *obj)
 }
 
 
+int cton_object_cmp(cton_obj *a, cton_obj *b)
+{
+    if (cton_objtype(a) != cton_objtype(b)) {
+        return (cton_objtype(a) - cton_objtype(b));
+    }
+
+    if (cton_class_hook[cton_objtype(a)].cmp == NULL) {
+        return a - b;
+    }
+
+    return cton_class_hook[cton_objtype(a)].cmp(a, b);
+}
+
+
 /*******************************************************************************
  * CTON type dependent methods
  *
  *******************************************************************************
  *         Bool
  ******************************************************************************/
+
+static int cton_bool_cmp(cton_obj *a, cton_obj *b)
+{
+    return cton_bool_get(a) - cton_bool_get(b);
+}
 
 int cton_bool_set(cton_obj *obj, cton_bool val)
 {
@@ -727,6 +761,42 @@ int cton_string_setlen(cton_obj *obj, size_t len)
 {
     return cton_binary_setlen(obj, len + 1);
 }
+
+static int cton_binary_cmp(cton_obj *a, cton_obj *b)
+{
+    size_t len_a;
+    size_t len_b;
+    size_t len_cmp;
+
+    volatile int ret;
+
+    len_a = a->payload.str.used;
+    len_b = b->payload.str.used;
+
+    len_cmp = len_a < len_b ? len_a : len_b;
+
+    ret = 0;
+    ret = cton_llib_strncmp((char *)a->payload.str.ptr, 
+                  (char *)b->payload.str.ptr, len_cmp);
+
+    if (ret != 0) {
+        return ret;
+    }
+
+    if (len_a == len_b) {
+        return 0;
+    } else if (len_a < len_b) {
+        return b->payload.str.ptr[len_cmp];
+    } else {
+        return a->payload.str.ptr[len_cmp];
+    }
+}
+
+static int cton_string_cmp(cton_obj *a, cton_obj *b)
+{
+    return cton_binary_cmp(a, b);
+}
+
 
 /*******************************************************************************
  * CTON type dependent methods
@@ -1976,6 +2046,59 @@ static void * cton_float64_getptr(cton_obj *obj)
 {
     return &obj->payload.f64;
 }
+
+
+static int cton_int8_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.i8 - b->payload.i8;
+}
+
+static int cton_int16_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.i16 - b->payload.i16;
+}
+
+static int cton_int32_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.i32 - b->payload.i32;
+}
+
+static int cton_int64_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.i64 - b->payload.i64;
+}
+
+static int cton_uint8_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.u8 - b->payload.u8;
+}
+
+static int cton_uint16_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.u16 - b->payload.u16;
+}
+
+static int cton_uint32_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.u32 - b->payload.u32;
+}
+
+static int cton_uint64_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.u64 - b->payload.u64;
+}
+
+static int cton_float32_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.f32 - b->payload.f32;
+}
+
+static int cton_float64_cmp(cton_obj *a, cton_obj *b)
+{
+    return a->payload.f64 - b->payload.f64;
+}
+
+
 
 int64_t cton_numeric_getint(cton_obj *obj)
 {
