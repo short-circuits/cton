@@ -319,7 +319,7 @@ static cton_obj * cton_json_parse_hash(cton_ctx *ctx,
 
 		value = cton_json_parse_value(ctx, json, &parse_index, len);
 
-		cton_hash_set(ctx, hash, key, value);
+		cton_hash_set(hash, key, value);
 
 		if (json[parse_index] == '}') {
 			break;
@@ -610,7 +610,7 @@ static int cton_json_stringify_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 
 	cton_util_buffer_putchar(buf, '{');
 
-	cton_hash_foreach(ctx, obj, (void *)buf, cton_json_stringify_hash_item);
+	cton_hash_foreach(obj, (void *)buf, cton_json_stringify_hash_item);
 
 	cton_util_buffer_putchar(buf, '}');
 

@@ -318,10 +318,10 @@ static int cton_serialize_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
 	uint64_t length;
 
-	length = cton_hash_getlen(ctx, obj);
+	length = cton_hash_getlen(obj);
 	cton_serialize_vw(ctx, buf, length);
 
-	cton_hash_foreach(ctx, obj, (void *)buf, cton_serialize_hash_item);
+	cton_hash_foreach(obj, (void *)buf, cton_serialize_hash_item);
 
 	return 0;
 }
@@ -594,7 +594,7 @@ cton_deserialize_hash(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 			return hash;
 		}
 
-		cton_hash_set(ctx, hash, key, value);
+		cton_hash_set(hash, key, value);
 		hash_len -= 1;
 	}
 

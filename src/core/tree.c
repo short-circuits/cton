@@ -119,7 +119,7 @@ cton_obj *cton_tree_get(cton_ctx *ctx, cton_obj *root, const char *path)
 
         memcpy(cton_string_getptr(str), path, index - 1);
 
-        obj = cton_hash_get(ctx, root, str);
+        obj = cton_hash_get(root, str);
 
         cton_object_delete(str);
 
