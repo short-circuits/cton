@@ -46,3 +46,11 @@ feature_test_body="
 "
 . $CONFIG_DIR/utils/feature_test
 
+feature_name="strlen()"
+feature_macro_name=CTON_HAVE_STRNCMP
+feature_test_header="#include <string.h>"
+feature_test_body="
+    strncmp("hogehoge");
+"
+. $CONFIG_DIR/utils/feature_test
+
