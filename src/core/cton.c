@@ -797,6 +797,22 @@ static int cton_string_cmp(cton_obj *a, cton_obj *b)
     return cton_binary_cmp(a, b);
 }
 
+cton_obj * cton_string_create(cton_ctx *ctx, size_t len, const char *str)
+{
+    cton_obj *obj;
+    char     *ptr;
+
+    obj = cton_object_create(ctx, CTON_STRING);
+
+    cton_string_setlen(obj, len);
+
+    ptr = cton_string_getptr(obj);
+
+    cton_llib_memcpy(ptr, str, len);
+
+    return obj;
+}
+
 
 /*******************************************************************************
  * CTON type dependent methods
@@ -1518,7 +1534,7 @@ cton_obj * cton_hash_get_s(cton_obj *h, const char *ks)
     cton_obj *key;
     cton_obj *val;
 
-    key = cton_util_strcstr(h->ctx, ks);
+    key = cton_string_create(h->ctx, cton_llib_strlen(ks), ks);
 
     val = cton_hash_get(h, key);
 
@@ -2225,42 +2241,6 @@ double cton_numeric_setfloat(cton_obj *obj, double val)
  * CTON util functions
  * 
  ******************************************************************************/
-
-
-cton_obj * cton_util_create_str(cton_ctx *ctx,
-    const char *str, char end, char quote)
-{
-    cton_obj *obj;
-    char     *ptr;
-    size_t    index;
-
-    for (index = 0; ; index ++) {
-        if (str[index] == end) {
-            if (index == 0) {
-                break;
-            } else if (str[index - 1] != quote) {
-                break;
-            }
-        }
-    }
-
-    obj = cton_object_create(ctx, CTON_STRING);
-
-    cton_string_setlen(obj, index + 1);
-
-    ptr = cton_string_getptr(obj);
-
-    cton_llib_memcpy(ptr, str, index);
-
-    ptr[index] = 0;
-
-    return obj;
-}
-
-cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr)
-{
-    return cton_util_create_str(ctx, cstr, '\0', '\\');
-}
 
 
 #define CTON_BUFFER_PAGESIZE 4096
