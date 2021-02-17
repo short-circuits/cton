@@ -287,7 +287,6 @@ size_t cton_util_buffer_getlen(cton_buf *buf);
 cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
 int cton_util_buffer_putchar(cton_buf *buf, int c);
 
-int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);

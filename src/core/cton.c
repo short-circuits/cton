@@ -1152,7 +1152,7 @@ cton_rbtree_insert(cton_rbtree_t *tree, cton_rbtree_node_t *node)
 
     for ( ;; ) {
 
-        p = cton_util_strcmp(node->key, temp->key) > 0 ? &temp->left : &temp->right;
+        p = cton_object_cmp(node->key, temp->key) > 0 ? &temp->left : &temp->right;
 
         if (*p == sentinel) {
             break;
@@ -1449,7 +1449,7 @@ static cton_rbtree_node_t *cton_hash_search(cton_obj *h, cton_obj *k)
             return NULL;
         }
 
-        diff = cton_util_strcmp(k, current->key);
+        diff = cton_object_cmp(k, current->key);
 
         if (diff == 0) {
             break;
@@ -2225,54 +2225,6 @@ double cton_numeric_setfloat(cton_obj *obj, double val)
  * CTON util functions
  * 
  ******************************************************************************/
-
-
-/*
- * cton_util_strcmp()
- *
- * DESCRIPTION
- *   CTON用比较字符串，
- *   先当作一般字符串进行strncmp比较，如果两个字符串相等，则比较空间大小.
- *
- * PARAMETER
- *   s1: 一个CTON结构
- *   s2: 另一个CTON结构
- *
- * RETURN
- *   与strcmp定义一致（如果不等则返回非零值）.
- *
- * ERRORS
- *   好像没有这种东西.
- */
-int cton_util_strcmp(cton_obj *s1, cton_obj *s2)
-{
-    size_t len_s1;
-    size_t len_s2;
-    size_t len_cmp;
-
-    volatile int ret;
-
-    len_s1 = s1->payload.str.used;
-    len_s2 = s2->payload.str.used;
-
-    len_cmp = len_s1 < len_s2 ? len_s1 : len_s2;
-
-    ret = 0;
-    ret = cton_llib_strncmp((char *)s1->payload.str.ptr, 
-                  (char *)s2->payload.str.ptr, len_cmp - 1);
-
-    if (ret != 0) {
-        return ret;
-    }
-
-    if (len_s1 == len_s2) {
-        return 0;
-    } else if (len_s1 < len_s2) {
-        return s2->payload.str.ptr[len_cmp];
-    } else {
-        return s1->payload.str.ptr[len_cmp];
-    }
-}
 
 
 cton_obj * cton_util_create_str(cton_ctx *ctx,
