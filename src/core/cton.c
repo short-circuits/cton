@@ -2211,6 +2211,7 @@ cton_buf *cton_util_buffer_create(cton_ctx *ctx)
 static int 
 cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
 {
+    (void) ctx;
     (void) i;
     (void) c;
     cton_object_delete(obj);
@@ -2344,6 +2345,8 @@ int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path)
     size_t    len;
     cton_type type;
     char     *ptr;
+
+    (void) ctx;
 
     type = cton_objtype(obj);
     if (type != CTON_STRING && type != CTON_BINARY) {
@@ -2563,7 +2566,7 @@ int cton_gc(cton_ctx *ctx)
     root = cton_tree_getroot(ctx);
 
     if (root != NULL) {
-        cton_gc_mark(ctx, root);
+        cton_gc_mark(root);
     }
 
     cnt = cton_gc_collect(ctx);
@@ -2574,11 +2577,12 @@ int cton_gc(cton_ctx *ctx)
 static int
 cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r)
 {
+    (void) ctx;
     (void) i;
     (void) r;
 
     if (obj != NULL) {
-        cton_gc_mark(ctx, obj);
+        cton_gc_mark(obj);
     }
 
     return 0;
@@ -2587,18 +2591,18 @@ cton_gc_mark_array(cton_ctx *ctx, cton_obj *obj, size_t i, void* r)
 static int
 cton_gc_mark_hash(cton_ctx *ctx, cton_obj *k, cton_obj *v, size_t i, void* r)
 {
-
+    (void) ctx;
     (void) i;
     (void) r;
 
-    cton_gc_mark(ctx, k);
-    cton_gc_mark(ctx, v);
+    cton_gc_mark(k);
+    cton_gc_mark(v);
     
     return 0;
 }
 
 
-void cton_gc_mark(cton_ctx *ctx, cton_obj *obj)
+void cton_gc_mark(cton_obj *obj)
 {
     cton_type type;
 

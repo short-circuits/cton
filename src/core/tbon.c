@@ -611,8 +611,6 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 	cton_obj *arr;
 	cton_obj *obj;
 
-	int ret;
-
 	if (*index +  cton_deserialize_vwlen(ptr) + 1 >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
 		return NULL;
@@ -635,7 +633,7 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 
 		for (arr_index = 0; arr_index < arr_len; arr_index += 1) {
 			obj = cton_deserialize_object(ctx, index, ptr, len);
-			ret = cton_array_set(arr, obj, arr_index);
+			cton_array_set(arr, obj, arr_index);
 		}
 
 	} else {
@@ -739,9 +737,7 @@ static cton_obj * cton_deserialize_value(cton_ctx *ctx,
 static cton_obj *
 cton_deserialize_object(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 {
-	cton_obj *obj;
 	cton_type type;
-	obj = NULL;
 
 	if (*index >= len) {
 		cton_seterr(ctx, CTON_ERROR_BROKEN);
