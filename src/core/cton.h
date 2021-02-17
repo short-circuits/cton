@@ -267,12 +267,12 @@ int cton_hash_foreach(cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
 /* cton numeric types specific methods */
-int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val);
-int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj);
-uint64_t cton_numeric_setuint(cton_ctx *ctx, cton_obj *obj, uint64_t val);
-uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
-double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val);
-double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
+int64_t cton_numeric_setint(cton_obj *obj, int64_t val);
+int64_t cton_numeric_getint(cton_obj *obj);
+uint64_t cton_numeric_setuint(cton_obj *obj, uint64_t val);
+uint64_t cton_numeric_getuint(cton_obj *obj);
+double cton_numeric_setfloat(cton_obj *obj, double val);
+double cton_numeric_getfloat(cton_obj *obj);
 
 /* cton_util.c */
 cton_obj * cton_util_create_str(cton_ctx *ctx,

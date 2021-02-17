@@ -2094,7 +2094,7 @@ static void * cton_float64_getptr(cton_ctx *ctx, cton_obj *obj)
     return &obj->payload.f64;
 }
 
-int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj)
+int64_t cton_numeric_getint(cton_obj *obj)
 {
     int64_t val = 0;
 
@@ -2111,29 +2111,29 @@ int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.i64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val)
+int64_t cton_numeric_setint(cton_obj *obj, int64_t val)
 {
     if (obj->type == CTON_INT8) {
         if (val > INT8_MAX || val < INT8_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i8 = (int8_t)val;
 
     } else if (obj->type == CTON_INT16) {
         if (val > INT16_MAX || val < INT16_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i16 = (int16_t)val;
 
     } else if (obj->type == CTON_INT32) {
         if (val > INT32_MAX || val < INT32_MIN) {
-            cton_seterr(ctx, CTON_ERROR_OVF);
+            cton_seterr(obj->ctx, CTON_ERROR_OVF);
         }
         obj->payload.i32 = (int32_t)val;
 
@@ -2141,13 +2141,13 @@ int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val)
         obj->payload.i64 = (int64_t)val;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj)
+uint64_t cton_numeric_getuint(cton_obj *obj)
 {
     uint64_t val = 0;
 
@@ -2164,21 +2164,21 @@ uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.u64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
+double cton_numeric_getfloat(cton_obj *obj)
 {
     double val = 0.0;
 
     if (obj->type == CTON_FLOAT8) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT16) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT32) {
         val = obj->payload.f32;
@@ -2187,19 +2187,19 @@ double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj)
         val = obj->payload.f64;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
 }
 
-double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val)
+double cton_numeric_setfloat(cton_obj *obj, double val)
 {
     if (obj->type == CTON_FLOAT8) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT16) {
-        cton_seterr(ctx, CTON_ERROR_IMPLEM);
+        cton_seterr(obj->ctx, CTON_ERROR_IMPLEM);
 
     } else if (obj->type == CTON_FLOAT32) {
         obj->payload.f32 = val;
@@ -2208,7 +2208,7 @@ double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val)
         obj->payload.f64 = val;
 
     } else {
-        cton_seterr(ctx, CTON_ERROR_TYPE);
+        cton_seterr(obj->ctx, CTON_ERROR_TYPE);
     }
 
     return val;
