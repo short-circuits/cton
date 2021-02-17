@@ -63,22 +63,22 @@ static cton_obj *cton_bmp_read_header(cton_ctx *ctx, cton_obj *bmp)
 
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[2]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[2]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "bfSize"), bmp_data);
 
 
 	bmp_data = cton_object_create(ctx, CTON_INT16);
-	*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[6]);
+	*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[6]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "bfReserved1"), bmp_data);
 
 
 	bmp_data = cton_object_create(ctx, CTON_INT16);
-	*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[8]);
+	*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[8]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "bfReserved2"), bmp_data);
 
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[10]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[10]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "bfOffBits"), bmp_data);
 
 	return result;
@@ -103,7 +103,7 @@ static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp)
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
 	size = CTON_GET_INT32(&src[index]);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = size;
+	*(int32_t *)cton_object_getvalue(bmp_data) = size;
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "biSize"), bmp_data);
 	index += 4;
 
@@ -111,22 +111,22 @@ static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp)
 		/* BITMAPCOREHEADER */
 
 		bmp_data = cton_object_create(ctx, CTON_INT16);
-		*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+		*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 		cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Width"), bmp_data);
 		index += 2;
 
 		bmp_data = cton_object_create(ctx, CTON_INT16);
-		*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+		*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 		cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Height"), bmp_data);
 		index += 2;
 
 		bmp_data = cton_object_create(ctx, CTON_INT16);
-		*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+		*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 		cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Planes"), bmp_data);
 		index += 2;
 
 		bmp_data = cton_object_create(ctx, CTON_INT16);
-		*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+		*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 		cton_hash_set(ctx, result, cton_util_strcstr(ctx, "BitCount"), bmp_data);
 		index += 2;
 
@@ -135,79 +135,79 @@ static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp)
 	}   /* BITMAPCOREHEADER */
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Width"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Height"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT16);
-	*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+	*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Planes"), bmp_data);
 	index += 2;
 
 	bmp_data = cton_object_create(ctx, CTON_INT16);
-	*(int16_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT16(&src[index]);
+	*(int16_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT16(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "BitCount"), bmp_data);
 	index += 2;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Compression"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "SizeImage"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "XPelsPerMeter"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "YPelsPerMeter"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "ClrUsed"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "ClrImportant"), bmp_data);
 	index += 4;
 
 	if (size == 40) { return result; }
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "RedMask"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "GreenMask"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "BlueMask"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "AlphaMask"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "CSType"), bmp_data);
 	index += 4;
 
@@ -216,39 +216,39 @@ static cton_obj *cton_bmp_read_dib(cton_ctx *ctx, cton_obj *bmp)
 	index += 36;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "GammaRed"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "GammaGreen"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "GammaBlue"), bmp_data);
 	index += 4;
 
 	if (size == 108) { return result; }
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Intent"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "ProfileData"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "ProfileSize"), bmp_data);
 	index += 4;
 
 	bmp_data = cton_object_create(ctx, CTON_INT32);
-	*(int32_t *)cton_object_getvalue(ctx, bmp_data) = CTON_GET_INT32(&src[index]);
+	*(int32_t *)cton_object_getvalue(bmp_data) = CTON_GET_INT32(&src[index]);
 	cton_hash_set(ctx, result, cton_util_strcstr(ctx, "Reserved"), bmp_data);
 	index += 4;
 
@@ -270,17 +270,17 @@ static cton_obj *cton_bmp_read_ciexyztriple(cton_ctx *ctx, uint8_t *ptr)
 		ciexyz = cton_object_create(ctx, CTON_HASH);
 
 		data = cton_object_create(ctx, CTON_INT32);
-		*(int32_t *)cton_object_getvalue(ctx, data) = CTON_GET_INT32(ptr);
+		*(int32_t *)cton_object_getvalue(data) = CTON_GET_INT32(ptr);
 		cton_hash_set(ctx, ciexyz, cton_util_strcstr(ctx, "ciexyzX"), data);
 		ptr += 4;
 
 		data = cton_object_create(ctx, CTON_INT32);
-		*(int32_t *)cton_object_getvalue(ctx, data) = CTON_GET_INT32(ptr);
+		*(int32_t *)cton_object_getvalue(data) = CTON_GET_INT32(ptr);
 		cton_hash_set(ctx, ciexyz, cton_util_strcstr(ctx, "ciexyzY"), data);
 		ptr += 4;
 
 		data = cton_object_create(ctx, CTON_INT32);
-		*(int32_t *)cton_object_getvalue(ctx, data) = CTON_GET_INT32(ptr);
+		*(int32_t *)cton_object_getvalue(data) = CTON_GET_INT32(ptr);
 		cton_hash_set(ctx, ciexyz, cton_util_strcstr(ctx, "ciexyzZ"), data);
 		ptr += 4;
 

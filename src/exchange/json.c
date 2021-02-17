@@ -135,7 +135,7 @@ loop_end:
 	/* JSON treated all of the number as signed float64 */
 	num = cton_object_create(ctx, CTON_FLOAT64);
 
-	*(double *)cton_object_getvalue(ctx, num) = number;
+	*(double *)cton_object_getvalue(num) = number;
 	return num;
 }
 
@@ -417,7 +417,7 @@ static int cton_json_stringify_obj(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
 	cton_bool *b;
 
-	switch (cton_object_gettype(ctx, obj)) {
+	switch (cton_object_gettype(obj)) {
 
 		case CTON_NULL:
 			cton_util_buffer_putchar(buf, 'n');
@@ -427,7 +427,7 @@ static int cton_json_stringify_obj(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 			break;
 
 		case CTON_BOOL:
-			b = (cton_bool *)cton_object_getvalue(ctx, obj);
+			b = (cton_bool *)cton_object_getvalue(obj);
 
 			if (*b == CTON_TRUE) {
 				cton_util_buffer_putchar(buf, 't');
@@ -475,9 +475,9 @@ static int cton_json_stringify_number(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 
 	int ch_index;
 
-	ptr = cton_object_getvalue(ctx, obj);
+	ptr = cton_object_getvalue(obj);
 
-	switch (cton_object_gettype(ctx, obj)) {
+	switch (cton_object_gettype(obj)) {
 		case CTON_INT8: sprintf(itoa_buf, "%hhd", *(int8_t *)ptr); break;
 		case CTON_INT16: sprintf(itoa_buf, "%hd", *(int16_t *)ptr); break;
 		case CTON_INT32: sprintf(itoa_buf, "%d", *(int32_t *)ptr); break;
@@ -555,7 +555,7 @@ cton_json_stringify_binary(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	base64 = cton_base64_encode(ctx, obj, CTON_BASE64);
 	ret = cton_json_stringify_string(ctx, buf, base64);
 
-	cton_object_delete(ctx, base64);
+	cton_object_delete(base64);
 
 	return ret;
 }

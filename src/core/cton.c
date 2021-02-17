@@ -485,7 +485,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
  *   ctx: The cton context
  *   obj: The object that will be deleted.
  */
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
+void cton_object_delete(cton_obj *obj)
 {
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
     cton_type type;
@@ -504,12 +504,12 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
         obj->prev->next = obj->next;
     }
 
-    if (ctx->nodes == obj) {
-        ctx->nodes = obj->next;
+    if (obj->ctx->nodes == obj) {
+        obj->ctx->nodes = obj->next;
     }
 
-    if (ctx->nodes_last == obj) {
-        ctx->nodes_last = obj->prev;
+    if (obj->ctx->nodes_last == obj) {
+        obj->ctx->nodes_last = obj->prev;
     }
 
     type = obj->type;
@@ -534,7 +534,7 @@ void cton_object_delete(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The type of give object or invalid type for NULL ptr.
  */
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
+cton_type cton_object_gettype(cton_obj *obj)
 {
     if (obj->type >= CTON_TYPE_CNT || obj->type == CTON_OBJECT) {
         cton_seterr(obj->ctx, CTON_ERROR_INVAL);
@@ -556,7 +556,7 @@ cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj)
  * RETURN
  *   The payload pointer of give object or NULL for NULL ptr.
  */
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj)
+void * cton_object_getvalue(cton_obj *obj)
 {
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
 
@@ -1513,7 +1513,7 @@ cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks)
 
     val = cton_hash_get(ctx, h, key);
 
-    cton_object_delete(ctx, key);
+    cton_object_delete(key);
 
     return val;
 }
@@ -2335,15 +2335,15 @@ cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
 {
     (void) i;
     (void) c;
-    cton_object_delete(ctx, obj);
+    cton_object_delete(obj);
     return 0;
 }
 
 void cton_util_buffer_destroy(cton_buf *buf)
 {
     cton_array_foreach(buf->ctx, buf->arr, NULL, cton_util_buffer_destroy_arr);
-    cton_object_delete(buf->ctx, buf->arr);
-    cton_object_delete(buf->ctx, buf->container);
+    cton_object_delete(buf->arr);
+    cton_object_delete(buf->container);
 }
 
 size_t cton_util_buffer_getlen(cton_buf *buf)
@@ -2752,7 +2752,7 @@ static int cton_gc_collect(cton_ctx *ctx)
         next = obj->next;
 
         if (obj->ref == 0) {
-            cton_object_delete(ctx, obj);
+            cton_object_delete(obj);
             cnt += 1;
         } else {
             obj->ref = 0;

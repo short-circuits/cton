@@ -37,8 +37,8 @@ cton_obj * cton_digest_sha1(cton_ctx *ctx, cton_obj *obj)
 
     cton_sha1_ctx *sha1ctx_ptr;
 
-    if (cton_object_gettype(ctx, obj) != CTON_STRING &&
-        cton_object_gettype(ctx, obj) != CTON_BINARY) {
+    if (cton_object_gettype(obj) != CTON_STRING &&
+        cton_object_gettype(obj) != CTON_BINARY) {
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return NULL;
     }
@@ -55,7 +55,7 @@ cton_obj * cton_digest_sha1(cton_ctx *ctx, cton_obj *obj)
         cton_string_getptr(ctx, obj), cton_string_getlen(ctx, obj));
     cton_digest_sha1_final(sha1ctx_ptr, cton_binary_getptr(ctx, sha1));
 
-    cton_object_delete(ctx, sha1ctx);
+    cton_object_delete(sha1ctx);
 
     return sha1;
 }

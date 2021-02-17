@@ -233,9 +233,9 @@ void cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
+void cton_object_delete(cton_obj *obj);
+cton_type cton_object_gettype(cton_obj *obj);
+void * cton_object_getvalue(cton_obj *obj);
 
 /* cton bool type specific methods */
 int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);

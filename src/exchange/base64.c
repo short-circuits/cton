@@ -36,7 +36,7 @@ static cton_obj *cton_base64_encode_internal(cton_ctx *ctx,
 
     cton_string_setlen(ctx, dst, dst_len + 1);
     if (cton_geterr(ctx) != CTON_OK) {
-        cton_object_delete(ctx, dst);
+        cton_object_delete(dst);
         return NULL;
     }
 
@@ -78,7 +78,7 @@ static cton_obj *cton_base64_encode_internal(cton_ctx *ctx,
 
     if (wrap != 0) {
         wrapd = cton_util_linewrap(ctx, dst, wrap, 0);
-        cton_object_delete(ctx, dst);
+        cton_object_delete(dst);
     } else {
         wrapd = dst;
     }
@@ -179,7 +179,7 @@ cton_obj * cton_base64_decode(cton_ctx *ctx, cton_obj* obj)
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
     };
 
-    if (cton_object_gettype(ctx, obj) != CTON_STRING) {
+    if (cton_object_gettype(obj) != CTON_STRING) {
         cton_seterr(ctx, CTON_ERROR_TYPE);
         return NULL;
     }
