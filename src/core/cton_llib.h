@@ -79,6 +79,11 @@ static int cton_llib_strncmp(const char *s1, const char *s2, size_t n)
     return strncmp(s1, s2, n);
 }
 
+static size_t cton_llib_strlen(const char *s)
+{
+    return strlen(s);
+}
+
 /*
  * cton_llib_align()
  *

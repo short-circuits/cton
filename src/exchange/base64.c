@@ -103,31 +103,24 @@ cton_obj *cton_base64_encode(cton_ctx *ctx, cton_obj* obj, cton_base64_std std)
     padding = '=';
     wrap    = 0;
 
-    switch (std) {
+    if (std == CTON_BASE64_RFC1421) {
+        wrap = 64;
+    }
 
-        case CTON_BASE64_RFC1421:
-            wrap = 64;
-            break;
+    if (std == CTON_BASE64_RFC2045 || std == CTON_BASE64_RFC4880) {
+        wrap = 76;
+    }
 
-        case CTON_BASE64_RFC2045:
-        case CTON_BASE64_RFC4880:
-            wrap = 76;
-            break;
+    if (std == CTON_BASE64_RFC2152 || std == CTON_BASE64_RFC3501) {
+        padding = 0;
+    }
 
-        case CTON_BASE64_RFC3501:
-            basis64 = basis64_imap;
-        case CTON_BASE64_RFC2152:
-            padding = 0;
-            break;
+    if (std == CTON_BASE64_RFC3501) {
+        basis64 = basis64_imap;
+    }
 
-        case CTON_BASE64URL:
-        case CTON_BASE64_RFC4868S5:
-            basis64 = basis64_url;
-        case CTON_BASE64:
-        case CTON_BASE64_RFC3548:
-        case CTON_BASE64_RFC4868S4:
-        default:
-            /* Do nothing */;
+    if (std == CTON_BASE64URL || std == CTON_BASE64_RFC4868S5) {
+        basis64 = basis64_url;
     }
 
     return cton_base64_encode_internal(ctx, obj, basis64, padding, wrap);

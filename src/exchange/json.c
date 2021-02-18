@@ -365,24 +365,6 @@ static size_t cton_json_skip_whitespace(cton_ctx *ctx,
  * JSON stringify
  ******************************************************************************/
 
-#if 0
-struct cton_json_ctx_s {
-	cton_ctx *ctx;
-	cton_obj *jctx;
-	cton_obj *buf;
-	size_t    index;
-};
-
-typedef struct cton_json_ctx_s cton_json_ctx;
-
-#define CTON_JSON_BUFPAGE 4096
-
-static cton_json_ctx *cton_json_stringify_create_ctx(cton_ctx *ctx);
-static void cton_json_stringify_destroy_ctx(cton_json_ctx *jctx);
-static int cton_json_stringify_bufputchar(cton_json_ctx *jctx, int c);
-static cton_obj *cton_json_stringify_buf2str(cton_json_ctx *jctx);
-#endif
-
 static int
 cton_json_stringify_obj(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int
@@ -396,7 +378,28 @@ cton_json_stringify_binary(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int
 cton_json_stringify_number(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 
-cton_obj * cton_json_stringify(cton_ctx *ctx, cton_obj *obj)
+
+/*
+ * cton_json_stringify()
+ *
+ * DESCRIPTION
+ *   Stringify an CTON Object into JSON format
+ *   This process may lost some type information, as JSON does not covery all
+ * types that CTON has offered. In general, all numeric object will be treated
+ * as float64 type, and binary object will be stringify by base64 encoding.
+ * Array will losts it sub-type information, and will be treated as object array
+ *
+ * PARAMETER
+ *   ctx: A cton context that will holds stringified string, this object was not
+ *        force to be the same with obj parameter.
+ *   obj: The object to be stringify
+ *
+ * RETURN
+ *   A CTON String object that holds stringified JSON.
+ *
+ */
+cton_obj *
+cton_json_stringify(cton_ctx *ctx, cton_obj *obj)
 {
 	cton_buf *buf;
 	cton_obj *output;
@@ -475,6 +478,8 @@ static int cton_json_stringify_number(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 
 	int ch_index;
 
+	(void) ctx;
+
 	ptr = cton_object_getvalue(obj);
 
 	switch (cton_object_gettype(obj)) {
@@ -509,6 +514,8 @@ static int cton_json_stringify_string(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 	char *ptr;
 	size_t len;
 	size_t index;
+
+	(void) ctx;
 
 	cton_util_buffer_putchar(buf, '\"');
 
@@ -564,7 +571,7 @@ static int
 cton_json_stringify_array_item(cton_ctx *ctx,
 	cton_obj *arr_item, size_t index, void *buf)
 {
-
+	(void) ctx;
 	if (index != 0) {
 		cton_util_buffer_putchar(buf, ',');
 	}
@@ -577,11 +584,9 @@ cton_json_stringify_array_item(cton_ctx *ctx,
 static int
 cton_json_stringify_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
-	size_t len;
+	(void) ctx;
 
 	cton_util_buffer_putchar(buf, '[');
-
-	len = cton_array_getlen(obj);
 
 	cton_array_foreach(obj, (void *)buf, cton_json_stringify_array_item);
 
@@ -593,6 +598,8 @@ cton_json_stringify_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 static int cton_json_stringify_hash_item(cton_ctx *ctx,
 	cton_obj *key, cton_obj *value, size_t index, void *buf)
 {
+	(void) ctx;
+
 	if (index > 0) {
 		cton_util_buffer_putchar(buf, ',');
 	}
@@ -607,7 +614,8 @@ static int cton_json_stringify_hash_item(cton_ctx *ctx,
 
 static int cton_json_stringify_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
-
+	(void) ctx;
+	
 	cton_util_buffer_putchar(buf, '{');
 
 	cton_hash_foreach(obj, (void *)buf, cton_json_stringify_hash_item);

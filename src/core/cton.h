@@ -229,13 +229,14 @@ char * cton_strerr(cton_err err);
 #define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
 
 int cton_gc(cton_ctx *ctx);
-void cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
+void cton_gc_mark(cton_obj *obj);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
 void cton_object_delete(cton_obj *obj);
 cton_type cton_object_gettype(cton_obj *obj);
 void * cton_object_getvalue(cton_obj *obj);
+cton_ctx *cton_object_getctx(cton_obj *obj);
 
 /* cton bool type specific methods */
 int cton_bool_set(cton_obj *obj, cton_bool val);
@@ -245,8 +246,12 @@ cton_bool cton_bool_get(cton_obj *obj);
 int cton_string_setlen(cton_obj *obj, size_t len);
 size_t cton_string_getlen(cton_obj *obj);
 char * cton_string_getptr(cton_obj *obj);
+
+int cton_binary_setlen(cton_obj *obj, size_t len);
+size_t cton_binary_getlen(cton_obj *obj);
 void * cton_binary_getptr(cton_obj *obj);
-#define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
+cton_obj * cton_string_create(cton_ctx *ctx, size_t len, const char *str);
+#define cton_string(ctx, str) (cton_string_create((ctx), sizeof(str), (str)))
 
 /* cton array type specific methods */
 int cton_array_settype(cton_obj *arr, cton_type type);
@@ -275,18 +280,12 @@ double cton_numeric_setfloat(cton_obj *obj, double val);
 double cton_numeric_getfloat(cton_obj *obj);
 
 /* cton_util.c */
-cton_obj * cton_util_create_str(cton_ctx *ctx,
-    const char *str, char end, char quote);
-cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
-
-
 cton_buf *cton_util_buffer_create(cton_ctx *ctx);
 void cton_util_buffer_destroy(cton_buf *buf);
 size_t cton_util_buffer_getlen(cton_buf *buf);
 cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
 int cton_util_buffer_putchar(cton_buf *buf, int c);
 
-int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
