@@ -266,6 +266,7 @@ int cton_array_foreach(cton_obj *arr, void *rctx,
 /* cton hash type specific methods */
 cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_obj *h, cton_obj *k);
+cton_obj * cton_hash_sget(cton_obj *h, const char *ks);
 cton_obj * cton_hash_get_s(cton_obj *h, const char *ks);
 size_t cton_hash_getlen(cton_obj *h);
 int cton_hash_foreach(cton_obj *hash, void *rctx,
@@ -287,7 +288,7 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
 int cton_util_buffer_putchar(cton_buf *buf, int c);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
-int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+int cton_util_writefile(cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w);
 cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
