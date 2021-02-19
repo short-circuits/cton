@@ -1453,6 +1453,36 @@ cton_rbtree_right_rotate(cton_rbtree_node_t **root, cton_rbtree_node_t *sentinel
     node->parent = temp;
 }
 
+static cton_rbtree_node_t *cton_hash_ssearch(cton_obj *h, const char *k)
+{
+    cton_rbtree_node_t *current;
+    int diff;
+
+    current = h->payload.hash.root;
+
+    while (1) {
+        if (current == h->payload.hash.sentinel) {
+            return NULL;
+        }
+
+        if (cton_objtype(current->key) != CTON_STRING) {
+            diff = CTON_STRING - cton_objtype(current->key);
+        } else {
+            diff = cton_llib_strncmp(k,
+                cton_string_getptr(current->key),
+                cton_string_getlen(current->key));
+        }
+
+        if (diff == 0) {
+            break;
+        }
+
+        current = diff > 0 ? current->left : current->right;
+    }
+
+    return current;
+}
+
 static cton_rbtree_node_t *cton_hash_search(cton_obj *h, cton_obj *k)
 {
     cton_rbtree_node_t *current;
@@ -1521,6 +1551,19 @@ cton_obj * cton_hash_get(cton_obj *h, cton_obj *k)
     }
 
     result = cton_hash_search(h,k);
+
+    if (result == NULL) {
+        return NULL;
+    }
+
+    return result->value;
+}
+
+cton_obj * cton_hash_sget(cton_obj *h, const char *k)
+{
+    cton_rbtree_node_t *result;
+
+    result = cton_hash_ssearch(h,k);
 
     if (result == NULL) {
         return NULL;
