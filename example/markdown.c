@@ -1,12 +1,13 @@
 #include <cton.h>
 #include <string.h>
+#include <assert.h>
 
-cton_obj *cton_array_push(cton_ctx *ctx, cton_obj *arr, cton_obj *obj)
+cton_obj *cton_array_push(cton_obj *arr, cton_obj *obj)
 {
 	size_t len;
-	len = cton_array_getlen(ctx, arr);
-	cton_array_setlen(ctx, arr, len + 1);
-	cton_array_set(ctx, arr, obj, len + 1);
+	len = cton_array_getlen(arr);
+	cton_array_setlen(arr, len + 1);
+	cton_array_set(arr, obj, len + 1);
 	return arr;
 }
 
@@ -19,10 +20,10 @@ int markdown_line2ast_callback(cton_ctx *ctx, cton_obj *obj, size_t index, void 
 
 	item = cton_object_create(ctx, CTON_HASH);
 	
-	cton_hash_set(ctx, item, cton_util_strcstr(ctx, "class"), cton_util_strcstr(ctx, "par"));
-	cton_hash_set(ctx, item, cton_util_strcstr(ctx, "raw"), obj);
+	cton_hash_set(item, cton_string(ctx, "class"), cton_string(ctx, "par"));
+	cton_hash_set(item, cton_string(ctx, "raw"), obj);
 
-	cton_array_set(ctx, ast, item, index);
+	cton_array_set(ast, item, index);
 
 	return 0;
 }
@@ -32,10 +33,10 @@ cton_obj *markdown_line2ast(cton_ctx *ctx, cton_obj *md)
 	cton_obj *ast;
 
 	ast = cton_object_create(ctx, CTON_ARRAY);
-	cton_array_settype(ctx, ast, CTON_HASH);
-	cton_array_setlen(ctx, ast, cton_array_getlen(ctx, md));
+	cton_array_settype(ast, CTON_HASH);
+	cton_array_setlen(ast, cton_array_getlen(md));
 
-	cton_array_foreach(ctx, md, ast, markdown_line2ast_callback);
+	cton_array_foreach(md, ast, markdown_line2ast_callback);
 
 	return ast;
 }
@@ -54,13 +55,13 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 	(void) line_no;
 	(void) rctx;
 
-	content = cton_hash_get_s(ctx, ast_item, "raw");
-	len = cton_string_getlen(ctx, content);
-	ch  = cton_string_getptr(ctx, content);
+	content = cton_hash_sget(ast_item, "raw");
+	len = cton_string_getlen(content);
+	ch  = cton_string_getptr(content);
 
 	/* Detect space line */
 	if (len <= sizeof("")) {
-		cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "class"), cton_util_strcstr(ctx, "newline"));
+		cton_hash_set(ast_item, cton_string(ctx, "class"), cton_string(ctx, "newline"));
 		return 0;
 	}
 
@@ -80,8 +81,8 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 	}
 
 	data = cton_object_create(ctx, CTON_FLOAT64);
-	*(double*)cton_object_getvalue(ctx, data) = (double)indent;
-	cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "indent"), data);
+	*(double*)cton_object_getvalue(data) = (double)indent;
+	cton_hash_set(ast_item, cton_string(ctx, "indent"), data);
 
 	if (indent < 4) {
 
@@ -103,14 +104,14 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 
 			if ((level >= 3) && (len - index == 1)) {
 				switch (mark) {
-					case '_': data = cton_util_strcstr(ctx, "_"); break;
-					case '-': data = cton_util_strcstr(ctx, "-"); break;
-					case '*': data = cton_util_strcstr(ctx, "*"); break;
-					case '=': data = cton_util_strcstr(ctx, "="); break;
-					default: data = cton_util_strcstr(ctx, "-");
+					case '_': data = cton_string(ctx, "_"); break;
+					case '-': data = cton_string(ctx, "-"); break;
+					case '*': data = cton_string(ctx, "*"); break;
+					case '=': data = cton_string(ctx, "="); break;
+					default: data = cton_string(ctx, "-");
 				}
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "class"), cton_util_strcstr(ctx, "bar"));
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "bar_style"), data);
+				cton_hash_set(ast_item, cton_string(ctx, "class"), cton_string(ctx, "bar"));
+				cton_hash_set(ast_item, cton_string(ctx, "bar_style"), data);
 				return 0;
 			}
 		}
@@ -134,11 +135,11 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 			}
 
 			if (level > 0) {
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "class"), cton_util_strcstr(ctx, "header"));
+				cton_hash_set(ast_item, cton_string(ctx, "class"), cton_string(ctx, "header"));
 
 				data = cton_object_create(ctx, CTON_FLOAT64);
-				*(double*)cton_object_getvalue(ctx, data) = (double)level;
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "level"), data);
+				*(double*)cton_object_getvalue(data) = (double)level;
+				cton_hash_set(ast_item, cton_string(ctx, "level"), data);
 			}
 
 		} else if (ch[index] == '>') {
@@ -160,11 +161,11 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 			}
 
 			if (level > 0) {
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "class"), cton_util_strcstr(ctx, "quote"));
+				cton_hash_set(ast_item, cton_string(ctx, "class"), cton_string(ctx, "quote"));
 
 				data = cton_object_create(ctx, CTON_FLOAT64);
-				*(double*)cton_object_getvalue(ctx, data) = (double)level;
-				cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "level"), data);
+				*(double*)cton_object_getvalue(data) = (double)level;
+				cton_hash_set(ast_item, cton_string(ctx, "level"), data);
 			}
 
 		}
@@ -173,9 +174,9 @@ int markdown_detect_blocks(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, vo
 
 
 	data = cton_object_create(ctx, CTON_STRING);
-	cton_string_setlen(ctx, data, len - index);
-	memcpy(cton_string_getptr(ctx, data), &ch[index], len - index);
-	cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "text"), data);
+	cton_string_setlen(data, len - index);
+	memcpy(cton_string_getptr(data), &ch[index], len - index);
+	cton_hash_set(ast_item, cton_string(ctx, "text"), data);
 
 	return 0;
 }
@@ -196,24 +197,24 @@ int markdown_detect_inlines(cton_ctx *ctx, cton_obj *ast_item, size_t line_no, v
 	(void) line_no;
 	(void) rctx;
 
-	content = cton_hash_get_s(ctx, ast_item, "text");
+	content = cton_hash_sget(ast_item, "text");
 
 	if (content == NULL) {
 		return 0;
 	}
 
-	len = cton_string_getlen(ctx, content);
-	ch  = cton_string_getptr(ctx, content);
+	len = cton_string_getlen(content);
+	ch  = cton_string_getptr(content);
 
 	tokens = cton_object_create(ctx, CTON_ARRAY);
-	cton_array_settype(ctx, tokens, CTON_OBJECT);
+	cton_array_settype(tokens, CTON_OBJECT);
 
 	index = 0;
 	while (index < len) {
 		index += 1;
 	}
 
-	cton_hash_set(ctx, ast_item, cton_util_strcstr(ctx, "sub"), tokens);
+	cton_hash_set(ast_item, cton_string(ctx, "sub"), tokens);
 	
 	return 0;
 }
@@ -225,10 +226,10 @@ cton_obj *markdown_parse(cton_ctx *ctx, cton_obj *md)
 
 	lines = cton_util_linesplit(ctx, md);
 	ast   = markdown_line2ast(ctx, lines);
-	cton_object_delete(ctx, lines);
+	cton_object_delete(lines);
 
-	cton_array_foreach(ctx, ast, NULL, markdown_detect_blocks);
-	cton_array_foreach(ctx, ast, NULL, markdown_detect_inlines);
+	cton_array_foreach(ast, NULL, markdown_detect_blocks);
+	cton_array_foreach(ast, NULL, markdown_detect_inlines);
 
 	return ast;
 }
@@ -245,12 +246,13 @@ int main(int argc, const char **argv)
 	ctx = cton_init(NULL);
 
 	markdown = cton_util_readfile(ctx, argv[1]);
+	assert(markdown != NULL);
 
 	parsed = markdown_parse(ctx, markdown);
 
 	json = cton_json_stringify(ctx, parsed);
 
-	cton_util_writefile(ctx, json, argv[2]);
+	cton_util_writefile(json, argv[2]);
 
 	return 0;
 }
