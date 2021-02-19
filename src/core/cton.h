@@ -288,7 +288,7 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
 int cton_util_buffer_putchar(cton_buf *buf, int c);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
-int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+int cton_util_writefile(cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w);
 cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
