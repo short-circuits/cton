@@ -246,6 +246,10 @@ cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj)
 
         src_index += line_length;
 
+        if (src_index == src_len) {
+            break;
+        }
+
         if (src[src_index] == '\r') {
             if ((src_index + 1 < src_len) && src[src_index + 1] == '\n') {
                 src_index += 1;
