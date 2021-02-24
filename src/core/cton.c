@@ -335,7 +335,8 @@ cton_init(cton_memhook *hook)
  *   1. This function is not finished yet.
  *   2. This function may ignore the hash object, this is considered as a bug.
  */
-int cton_destory(cton_ctx *ctx)
+int
+cton_destory(cton_ctx *ctx)
 {
     /** TODO: Finish this function please */
     cton_pdestroy(ctx);
@@ -352,7 +353,8 @@ int cton_destory(cton_ctx *ctx)
  *   err: The error that happened.
  *   
  */
-void cton_seterr(cton_ctx *ctx, cton_err err)
+void
+cton_seterr(cton_ctx *ctx, cton_err err)
 {
     ctx->err = err;
 }
@@ -373,7 +375,8 @@ void cton_seterr(cton_ctx *ctx, cton_err err)
  * no error has occured.
  *   
  */
-cton_err cton_geterr(cton_ctx *ctx)
+cton_err
+cton_geterr(cton_ctx *ctx)
 {
     return ctx->err;
 }
@@ -389,7 +392,8 @@ cton_err cton_geterr(cton_ctx *ctx)
  *   Printible error message string pointer.
  *   
  */
-char * cton_strerr(cton_err err)
+char *
+cton_strerr(cton_err err)
 {
     static char str[] = "Not Implemented.\n";
 
