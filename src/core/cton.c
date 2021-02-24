@@ -318,26 +318,26 @@ cton_init(cton_memhook *hook)
 
 /**
  * cton_destroy()
- *   - Destroy a cton context object.
  *
- * PARAMETER
- *   ctx: the cton context to be destroied.
-
- * RETURN VALUE
- *   0 for success or other value for any errors (?)
+ *   - Destroy a CTON context.
  *
  * DESCRIPTION
- *   The cton_destroy() function will try to destroy a cton context object. If
- * pdestroy is not NULL in he memory hook, it will just call this handle and
- * destroy the whole memory pool. but if this handle is not set in the memory
- * hook, this function will try to call pfree method for every object created
- * from this cton context. If pfree handle is also not set, this function will
- * return -1 and set the cton_err as INVALID_MHOOK.
- *   
+ *
+ *   The cton_destroy() function will destroy a cton context and collects all
+ * of the memory alloced from the context.
+ *   If pdestroy is available in memory hook, this function will call it to
+ * destroy the whole memory pool. Or, this function will try to call free hook
+ * to free object created from this context one by one.
+ *   This function may do nothing if `pfree` hook is also invalid.
+ *
+ * ISSUE
+ * 
+ *   1. This function is not finished yet.
+ *   2. This function may ignore the hash object, this is considered as a bug.
  */
 int cton_destory(cton_ctx *ctx)
 {
-    /** TODO */
+    /** TODO: Finish this function please */
     cton_pdestroy(ctx);
     return 0;
 }
