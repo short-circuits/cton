@@ -243,39 +243,44 @@ cton_pdestroy(cton_ctx *ctx)
  *   Manipulate in same context in different threads always requests additional
  * protection by programmer, as it does not guarantee thread safety. But mani-
  * pulate in different context will always be safe.
+ *   All of the memory used by CTON, including the CTON context it-self will be
+ * allocated from given memory hook. It is possible to initlize an CTON context
+ * by a memory pool, and when you destroy or reset a memory pool, all memory
+ * used by the CTON context initlized by this memory pool will be collect.
  *
  ******************************************************************************/
 
 
 /**
  * cton_init()
- *   - Create cton context object.
  *
- * PARAMETER
- *   hook: the cton memory hook.
-
- * RETURN VALUE
- *   Handle of CTON context object created or NULL for any exception.
+ *   - Create CTON context.
  *
  * DESCRIPTION
- *   cton_init() creates a cton context object and initlize it by memory hook
- * defined by parameter. If NULL pointer is passed, this function will init the
- * default memory hook as just a proxy for malloc/free in C standard library.
- *   In convenient, this object is also allocated from memory pool passed by
- * parameter, so you may not need to call destroy method of cton context, call
- * destroy method of your memory pool will destroy the cton context as well.
- *   At least palloc handle is needed for the memory hook, if the palloc method
- * is NULL, this function will failed and return NULL.
- *   This method is threads safe. But the method to create memory hook is not
- * thread-safe yet, so you may need to treating this method as not thread-safe.
+ *
+ *   cton_init() creates a CTON context and initlize it by memory hook given by
+ * `hook` parameter. If `NULL` pointer is given, this function will initlize the
+ * context by default memory hook given by this library.
+ *   At least `palloc` hook is needed for the memory hook, if `palloc` hook is
+ * not available, this function treat the parameter as invalid memory hook, and
+ * returns `NULL` to point that there is a failure.
+ *   The memory requested by context is also allocated from memory pool given by
+ * `hook` parameter, If the given memory hook returns `NULL` when called, this
+ * function will failed and returns `NULL`
+ *
+ * RETURN VALUE
+ *
+ *   Handle of the CTON context created or `NULL` for any exception.
  *
  */
-cton_ctx *cton_init(cton_memhook *hook)
+cton_ctx *
+cton_init(cton_memhook *hook)
 {
-    cton_ctx *ctx;
     extern cton_memhook cton_std_hook;
+    cton_ctx *ctx;
 
     if (hook == NULL) {
+        /* Use default memory hook */
         hook = &cton_std_hook;
     }
 
@@ -284,12 +289,17 @@ cton_ctx *cton_init(cton_memhook *hook)
         return NULL;
     }
 
+    /* cton_alloc() is not avaliable yet */
     ctx = hook->palloc(hook->pool, sizeof(cton_ctx));
 
     if (ctx == NULL) {
         return NULL;
     }
 
+    /*
+     * Dump the memory hook
+     * After this step, this context is thread safe completely.
+     */
     ctx->memhook.pool     = hook->pool;
     ctx->memhook.palloc   = hook->palloc;
     ctx->memhook.prealloc = hook->prealloc;
