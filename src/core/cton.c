@@ -20,17 +20,15 @@
  *
  ******************************************************************************/
 
+
 #include <core/cton_core.h>
 #include <core/cton_llib.h>
 #include <limits.h>
 
-static void  cton_string_init(cton_obj *str);
-static void  cton_string_delete(cton_obj *str);
-static void  cton_array_init(cton_obj *obj);
-static void  cton_array_delete(cton_obj *obj);
-static void *cton_array_getptr(cton_obj *obj);
-static void  cton_hash_init(cton_obj *obj);
-static void  cton_hash_delete(cton_obj *obj);
+
+static void cton_string_init(cton_obj *str);
+static void cton_array_init(cton_obj *obj);
+static void cton_hash_init(cton_obj *obj);
 
 static void cton_int8_init(cton_obj *obj);
 static void cton_int16_init(cton_obj *obj);
@@ -45,18 +43,23 @@ static void cton_float16_init(cton_obj *obj);
 static void cton_float32_init(cton_obj *obj);
 static void cton_float64_init(cton_obj *obj);
 
-static void * cton_int8_getptr(cton_obj *obj);
-static void * cton_int16_getptr(cton_obj *obj);
-static void * cton_int32_getptr(cton_obj *obj);
-static void * cton_int64_getptr(cton_obj *obj);
-static void * cton_uint8_getptr(cton_obj *obj);
-static void * cton_uint16_getptr(cton_obj *obj);
-static void * cton_uint32_getptr(cton_obj *obj);
-static void * cton_uint64_getptr(cton_obj *obj);
-static void * cton_float8_getptr(cton_obj *obj);
-static void * cton_float16_getptr(cton_obj *obj);
-static void * cton_float32_getptr(cton_obj *obj);
-static void * cton_float64_getptr(cton_obj *obj);
+static void cton_string_delete(cton_obj *str);
+static void cton_array_delete(cton_obj *obj);
+static void cton_hash_delete(cton_obj *obj);
+
+static void *cton_array_getptr(cton_obj *obj);
+static void *cton_int8_getptr(cton_obj *obj);
+static void *cton_int16_getptr(cton_obj *obj);
+static void *cton_int32_getptr(cton_obj *obj);
+static void *cton_int64_getptr(cton_obj *obj);
+static void *cton_uint8_getptr(cton_obj *obj);
+static void *cton_uint16_getptr(cton_obj *obj);
+static void *cton_uint32_getptr(cton_obj *obj);
+static void *cton_uint64_getptr(cton_obj *obj);
+static void *cton_float8_getptr(cton_obj *obj);
+static void *cton_float16_getptr(cton_obj *obj);
+static void *cton_float32_getptr(cton_obj *obj);
+static void *cton_float64_getptr(cton_obj *obj);
 
 static int cton_bool_cmp(cton_obj *a, cton_obj *b);
 static int cton_binary_cmp(cton_obj *a, cton_obj *b);
@@ -74,7 +77,10 @@ static int cton_float64_cmp(cton_obj *a, cton_obj *b);
 
 
 /*******************************************************************************
- * CTON memory hook
+ *
+ *  CTON memory hook
+ *
+ *******************************************************************************
  *
  * CTON requests a memory hook to mamage the memory.
  * CTON will try to create the structure of cton_ctx in the memory pool offered.
@@ -91,24 +97,33 @@ static void  cton_free(cton_ctx *ctx, void *ptr);
 static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
 static void  cton_pdestroy(cton_ctx *ctx);
 
-/*
- * Just proxy the call of malloc() and free()
+/**
+ * cton_std_malloc()
+ * cton_std_free()
+ * cton_std_realloc()
+ *   - Proxies to malloc() and free() in standard library.
+ *
+ * NOTE:
+ *   Private function, Not avaliable for calling outside this file.
  */
-static void *cton_std_malloc(void *pool, size_t size)
+static void *
+cton_std_malloc(void *pool, size_t size)
 {
     (void) pool;
 
     return malloc(size);
 }
 
-static void  cton_std_free(void *pool, void *ptr)
+static void
+cton_std_free(void *pool, void *ptr)
 {
     (void) pool;
 
     free(ptr);
 }
 
-static void *cton_std_realloc(void *pool, void *ptr, size_t size)
+static void *
+cton_std_realloc(void *pool, void *ptr, size_t size)
 {
     (void) pool;
     
@@ -119,10 +134,13 @@ cton_memhook cton_std_hook = {
     NULL, cton_std_malloc, cton_std_realloc, cton_std_free, NULL
 };
 
-/*
- * Create a memory hook and return it's pointer.
- * it will not allocate new memory for this pool.
- * and it is not thread safe.
+
+/**
+ * cton_memhook_init()
+ *   - Create new memory hook by given function pointer
+ *
+ * NOTE:
+ *   This function is **NOT** thread-safe yet.
  */
 cton_memhook* cton_memhook_init (void * pool,
     void * (*palloc)(void *pool, size_t size),
@@ -141,18 +159,19 @@ cton_memhook* cton_memhook_init (void * pool,
     return &hook;
 }
 
-/*
+
+/**
  * cton_alloc()
+ * cton_free()
+ * cton_realloc()
+ * cton_pdestroy()
+ *   - allocate and free dynamic memory from memory pool specificed by context.
  *
- * DESCRIPTION
- *   Allocates size bytes of memory from mem pool and returns a pointer to the
- *  allocated memory.
- *
- * PARAMETER
- *   ctx: cton context
- *   size: the size that will be allocated.
+ * NOTE:
+ *   Private function, Not avaliable for calling outside this file.
  */
-static void * cton_alloc(cton_ctx *ctx, size_t size)
+static void *
+cton_alloc(cton_ctx *ctx, size_t size)
 {
     void * ptr;
     ptr = ctx->memhook.palloc(ctx->memhook.pool, size);
@@ -164,15 +183,16 @@ static void * cton_alloc(cton_ctx *ctx, size_t size)
     return ptr;
 }
 
-static void cton_free(cton_ctx *ctx, void *ptr)
+static void
+cton_free(cton_ctx *ctx, void *ptr)
 {
     if (ctx->memhook.pfree != NULL) {
         ctx->memhook.pfree(ctx->memhook.pool, ptr);
     }
 }
 
-static void * cton_realloc(cton_ctx *ctx,
-    void *ptr, size_t size_ori, size_t size_new)
+static void *
+cton_realloc(cton_ctx *ctx, void *ptr, size_t size_ori, size_t size_new)
 {
     void * new_ptr;
 
@@ -203,7 +223,8 @@ static void * cton_realloc(cton_ctx *ctx,
     return new_ptr;
 }
 
-static void cton_pdestroy(cton_ctx *ctx)
+static void
+cton_pdestroy(cton_ctx *ctx)
 {
     if (ctx->memhook.pdestroy != NULL) {
         ctx->memhook.pdestroy(ctx->memhook.pool);
@@ -211,13 +232,10 @@ static void cton_pdestroy(cton_ctx *ctx)
 }
 
 
-
 /*******************************************************************************
  *
- *    CTON Common methods
+ *    CTON Context
  *
- *******************************************************************************
- *         CTON Context
  *******************************************************************************
  *   CTON context is an object purposed to hold most important information for a
  * context. The same context object does not guarantee thread safety, but you
