@@ -479,31 +479,28 @@ cton_class_hook_s cton_class_hook[CTON_TYPE_CNT] = {
     }
 };
 
-/**
- * cton_object(s) are managed by cton_ctx by Doubly linked list.
- *
- * cton_ctx.
- *
- */
 
-/*
+/**
  * cton_object_create()
+ *   -Create a CTON object
  *
  * DESCRIPTION
- *   Create an object with the specific type and add it to the object list.
- *
- * PARAMETER
- *   ctx: cton context
- *   type: the type that the new object will hold
+ *   `cton_object_create` is a function that creates and initializes a CTON
+ * object. The created object belongs to the CTON context specified by the
+ * parameter.
+ *   The only initialization for the created object is to initialize the data
+ * structure. In other words, it does not allocate memory for arrays and
+ * character strings.
  *
  * RETURN
- *     Handle of new created object or NULL for any exception.
+ *   If successful, it returns a pointer to the created object. If it fails,
+ * `NULL` is returned.
  */
-cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
+cton_obj *
+cton_object_create(cton_ctx *ctx, cton_type type)
 {
-    cton_obj *obj;
-
     extern cton_class_hook_s cton_class_hook[CTON_TYPE_CNT];
+    cton_obj *obj;
 
     if (type == CTON_INVALID || type == CTON_OBJECT) {
         /* These types are not valid for stand alone object */
@@ -512,6 +509,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     }
 
     obj = cton_alloc(ctx, sizeof(cton_obj));
+
     if (obj == NULL) {
         return NULL;
     }
@@ -524,6 +522,10 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     obj->next  = NULL;
     obj->ctx   = ctx;
 
+    if (cton_class_hook[type].init != NULL) {
+        cton_class_hook[type].init(obj);
+    }
+
     /* Insert object into object pool linked list */
     if (ctx->nodes == NULL) {
         ctx->nodes = obj;
@@ -535,10 +537,6 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     }
 
     ctx->nodes_last = obj;
-
-    if (cton_class_hook[type].init != NULL) {
-        cton_class_hook[type].init(obj);
-    }
 
     return obj;
 }

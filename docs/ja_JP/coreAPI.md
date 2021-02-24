@@ -3,12 +3,6 @@
 - [CTONコンテキスト](./context.md)
 - [CTONオブジェクト](./object.md)
 
-int cton_destory(cton_ctx *ctx);
-void cton_seterr(cton_ctx *ctx, cton_err err);
-cton_err cton_geterr(cton_ctx *ctx);
-char * cton_strerr(cton_err err);
-#define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
-
 
 int cton_gc(cton_ctx *ctx);
 void cton_gc_mark(cton_obj *obj);

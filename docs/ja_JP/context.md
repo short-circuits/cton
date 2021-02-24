@@ -80,3 +80,5 @@ CTONコンテキスト自身を含んで、CTONが使うすべてのメモリは
 ## cton_geterr
 
 ## cton_strerr
+
+## cton\_err\_clear
