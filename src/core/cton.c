@@ -237,9 +237,13 @@ cton_pdestroy(cton_ctx *ctx)
  *    CTON Context
  *
  *******************************************************************************
- *   CTON context is an object purposed to hold most important information for a
- * context. The same context object does not guarantee thread safety, but you
- * can safely manipulate different objects in different threads.
+ *
+ *   CTON Context is the memory management unit in libCTON, and designed to be
+ * the minimal thread safe unit.
+ *   Manipulate in same context in different threads always requests additional
+ * protection by programmer, as it does not guarantee thread safety. But mani-
+ * pulate in different context will always be safe.
+ *
  ******************************************************************************/
 
 
