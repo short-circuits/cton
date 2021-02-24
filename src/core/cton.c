@@ -381,6 +381,7 @@ cton_geterr(cton_ctx *ctx)
     return ctx->err;
 }
 
+
 /**
  * cton_strerr()
  *   - look up the error message string corresponding to an error number.
@@ -404,7 +405,24 @@ cton_strerr(cton_err err)
 
 
 /*******************************************************************************
- * CTON Object methods
+ *
+ *    CTON Object
+ *
+ *******************************************************************************
+ *
+ *   CTON object is represents one of CTON's data types. It is used to store
+ * more complex entities. CTON objects can be created using specific constructor
+ *   Almost every object in CTON is an instance of a CTON object. CTON objects
+ * always have one of the following data types:
+ *   CTON_NULL, CTON_BOOL, CTON_BINARY, CTON_STRING, CTON_ARRAY, CTON_HASH,
+ *   CTON_INT8, CTON_INT16, CTON_INT32, CTON_INT64, CTON_UINT8, CTON_UINT16,
+ *   CTON_UINT32, CTON_UINT64, CTON_FLOAT8, CTON_FLOAT16, CTON_FLOAT32,
+ *   CTON_FLOAT64
+ *   This data type is specified when the object is created. Since CTON is a
+ * statically typed library, most objects cannot be type converted. However,
+ * binary and C-style strings are an exception, It can be converted on certain
+ * assumptions.
+ *
  ******************************************************************************/
 
 typedef struct {
