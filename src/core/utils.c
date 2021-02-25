@@ -137,6 +137,17 @@ int cton_util_buffer_putchar(cton_buf *buf, int c)
     return c;
 }
 
+int cton_util_buffer_puts(cton_buf *buf, const char *s)
+{
+
+    while (*s != '\0') {
+        cton_util_buffer_putchar(buf, *s);
+        s += 1;
+    }
+
+    return 0;
+}
+
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path)
 {
     cton_obj *data;
