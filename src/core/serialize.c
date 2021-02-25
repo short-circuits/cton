@@ -74,10 +74,7 @@ cton_serialize(cton_ctx *ctx, cton_obj *obj)
 
 	buf = cton_util_buffer_create(ctx);
 
-	cton_util_buffer_putchar(buf, 'T');
-	cton_util_buffer_putchar(buf, 'B');
-	cton_util_buffer_putchar(buf, 'O');
-	cton_util_buffer_putchar(buf, 'N');
+	cton_util_buffer_puts(buf, "TBON");
 
 	/* Version */
 	cton_util_buffer_putchar(buf, 0x00);
