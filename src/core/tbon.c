@@ -54,21 +54,6 @@ static uint8_t cton_getid(cton_type type)
 	return 255;
 }
 
-#if 0
-static cton_obj *cton_json_parse_value(cton_ctx *ctx,
-	const char *json, size_t *index, size_t len);
-static cton_obj *cton_json_parse_number(cton_ctx *ctx, 
-	const char *json, size_t *index, size_t len);
-static cton_obj *cton_json_parse_array(cton_ctx *ctx, 
-	const char *json, size_t *index, size_t len);
-static cton_obj *cton_json_parse_hash(cton_ctx *ctx, 
-	const char *json, size_t *index, size_t len);
-static cton_obj *cton_json_parse_string(cton_ctx *ctx, 
-	const char *json, size_t *index, size_t len);
-static size_t cton_json_skip_whitespace(cton_ctx *ctx,
-	const char *json, size_t *start, size_t len);
-#endif
-
 
 static int cton_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int cton_serialize_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
