@@ -10,10 +10,15 @@
 #ifndef _CTON_CORELIB_HEADER_
 #define _CTON_CORELIB_HEADER_ 1
 
+#include <inttypes.h>
+#include <stddef.h>
+
 #define _CTON_CORELIB_ 1
 
 #include <cton.h>
+#include <auto_config.h>
 
+#define CTON_STRUCT_MAGIC 0x4E4F5443
 
 /*
  * cton_objtype(obj)

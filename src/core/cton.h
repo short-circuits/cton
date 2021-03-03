@@ -15,48 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef _CTON_CORELIB_
-
-typedef struct {
-    void *      pool;
-    void *    (*palloc)(void *pool, size_t size);
-    void *    (*prealloc)(void *pool, void *ptr, size_t size);
-    void      (*pfree)(void *pool, void *ptr);
-    void      (*pdestroy)(void *pool);
-} cton_memhook;
-
-extern cton_memhook cton_std_hook;
-
-#else
-
-typedef void cton_memhook;
-
-#endif
-
-/*
- * CTON object types
- */
-
-#ifdef _CTON_CORELIB_
-
-typedef struct cton_obj_s       cton_obj;
-typedef struct cton_string_s    cton_string;
-typedef struct cton_array_s     cton_array;
-#ifdef CTON_HASH_LIST
-typedef struct cton_hash_item_s cton_hash_item;
-typedef struct cton_hash_s      cton_hash;
-#endif
-
-#else
-
-typedef void cton_obj;
-typedef void cton_string;
-typedef void cton_array;
-typedef void cton_hash_item;
-typedef void cton_hash;
-
-#endif
-
 enum cton_type_e {
     CTON_INVALID = 0,
     CTON_OBJECT  = 1,
@@ -87,15 +45,83 @@ enum cton_bool_e {
     CTON_TRUE  = 1
 };
 
+enum cton_error_e {
+    CTON_OK            = 0,
+    CTON_ERROR_INVAL,         /* Invalid CTON object */
+    CTON_ERROR_ALLOC,         /* Memory allocation failed
+                                 (NULL was returnd from alloc) */
+    CTON_ERROR_CREATE,        /* Tring to create objcet with invalid type
+                                 (Only: cton_object_create() ) */
+    CTON_ERROR_TYPE,          /* Type specific method received object
+                                 with wrong type */
+    CTON_ERROR_INVSUBTYPE,    /* Tring to set array by invalid element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_RSTSUBTYPE,    /* Tring to reset array element type
+                                 (Only: cton_array_settype() ) */
+    CTON_ERROR_IMPLEM,
+    CTON_ERROR_OVF,
+    CTON_ERROR_REPLACE,
+    CTON_ERROR_SUBTYPE,
+    CTON_ERROR_INDEX,
+    CTON_ERROR_INPUT,
+    CTON_ERROR_BROKEN,        /* Data is not complele (more data except) */
+    CTON_ERROR_SYNTAX,        /* Syntax error while parsing data */
+    CTON_ERROR_UNKNOWN = 127  /* Unknown error */
+};
+
+typedef enum cton_type_e      cton_type;
+typedef enum cton_bool_e      cton_bool;
+typedef enum cton_error_e     cton_err;
+
+
+#ifndef _CTON_CORELIB_
+
+typedef void cton_memhook;
+typedef void cton_obj;
+typedef void cton_string;
+typedef void cton_array;
+typedef void cton_hash_item;
+typedef void cton_hash;
+typedef void cton_buf;
+typedef void cton_ctx;
+
+#else
+
+typedef struct {
+    void *      pool;
+    void *    (*palloc)(void *pool, size_t size);
+    void *    (*prealloc)(void *pool, void *ptr, size_t size);
+    void      (*pfree)(void *pool, void *ptr);
+    void      (*pdestroy)(void *pool);
+} cton_memhook;
+
+extern cton_memhook cton_std_hook;
+
+
+typedef struct cton_obj_s       cton_obj;
+typedef struct cton_string_s    cton_string;
+typedef struct cton_array_s     cton_array;
+#ifdef CTON_HASH_LIST
+typedef struct cton_hash_item_s cton_hash_item;
+typedef struct cton_hash_s      cton_hash;
+#endif
+typedef struct cton_ctx_s       cton_ctx;
+
+
+
+typedef struct cton_buf_s cton_buf;
+struct cton_buf_s {
+    cton_ctx *ctx;
+    cton_obj *arr;
+    cton_obj *container;
+    size_t   index;
+};
 
 struct cton_string_s {
     size_t   len;
     size_t   used;
     uint8_t *ptr;
 };
-
-
-#ifdef _CTON_CORELIB_
 
 struct cton_array_s {
     size_t       len;
@@ -153,6 +179,8 @@ struct cton_obj_s {
     enum cton_type_e type;   /* CTON type */
     uint8_t ref;
 
+    struct cton_ctx_s *ctx;
+
     union {
         enum cton_bool_e   b;
         cton_string str;
@@ -170,63 +198,6 @@ struct cton_obj_s {
         double      f64;
     } payload;
 };
-
-#endif
-
-typedef enum   cton_type_e      cton_type;
-typedef enum   cton_bool_e      cton_bool;
-
-#define CTON_STRUCT_MAGIC 0x4E4F5443
-
-
-
-
-/*******************************************************************************
- * CTON context types
- * 用来保存内存池结构体，对应的错误指，节点池，以及全局参数。
- * 同一个上下文结构体不保证写线程安全。
- * TODO 是否保留一个内存池的互斥锁接口，通过锁住整个上下文的方式保证线程安全？
- * 
- * 不同上下文结构体之间应保证线程安全。（避免static变量的使用）
- * 是否要求所有函数都使用上下文结构体作为第一个传入参数？
- ******************************************************************************/
-#ifdef _CTON_CORELIB_
-
-typedef struct cton_ctx_s       cton_ctx;
-
-#else
-
-typedef void cton_ctx;
-
-#endif
-
-enum cton_error_e {
-    CTON_OK            = 0,
-    CTON_ERROR_INVAL,         /* Invalid CTON object */
-    CTON_ERROR_ALLOC,         /* Memory allocation failed
-                                 (NULL was returnd from alloc) */
-    CTON_ERROR_CREATE,        /* Tring to create objcet with invalid type
-                                 (Only: cton_object_create() ) */
-    CTON_ERROR_TYPE,          /* Type specific method received object
-                                 with wrong type */
-    CTON_ERROR_INVSUBTYPE,    /* Tring to set array by invalid element type
-                                 (Only: cton_array_settype() ) */
-    CTON_ERROR_RSTSUBTYPE,    /* Tring to reset array element type
-                                 (Only: cton_array_settype() ) */
-    CTON_ERROR_IMPLEM,
-    CTON_ERROR_OVF,
-    CTON_ERROR_REPLACE,
-    CTON_ERROR_SUBTYPE,
-    CTON_ERROR_INDEX,
-    CTON_ERROR_INPUT,
-    CTON_ERROR_BROKEN,        /* Data is not complele (more data except) */
-    CTON_ERROR_SYNTAX,        /* Syntax error while parsing data */
-    CTON_ERROR_UNKNOWN = 127  /* Unknown error */
-};
-
-typedef enum cton_error_e       cton_err;
-
-#ifdef _CTON_CORELIB_
 
 struct cton_ctx_s {
     cton_memhook memhook;
@@ -258,77 +229,67 @@ char * cton_strerr(cton_err err);
 #define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
 
 int cton_gc(cton_ctx *ctx);
-void cton_gc_mark(cton_ctx *ctx, cton_obj *obj);
+void cton_gc_mark(cton_obj *obj);
 
 /* cton_obj common methods */
 cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
-void cton_object_delete(cton_ctx *ctx, cton_obj *obj);
-cton_type cton_object_gettype(cton_ctx *ctx, cton_obj *obj);
-void * cton_object_getvalue(cton_ctx *ctx, cton_obj *obj);
+void cton_object_delete(cton_obj *obj);
+cton_type cton_object_gettype(cton_obj *obj);
+void * cton_object_getvalue(cton_obj *obj);
+cton_ctx *cton_object_getctx(cton_obj *obj);
 
 /* cton bool type specific methods */
-int cton_bool_set(cton_ctx *ctx, cton_obj *obj, cton_bool val);
-cton_bool cton_bool_get(cton_ctx *ctx, cton_obj *obj);
+int cton_bool_set(cton_obj *obj, cton_bool val);
+cton_bool cton_bool_get(cton_obj *obj);
 
 /* cton string type specific methods */
-int cton_string_setlen(cton_ctx *ctx, cton_obj *obj, size_t len);
-size_t cton_string_getlen(cton_ctx *ctx, cton_obj *obj);
-char * cton_string_getptr(cton_ctx *ctx, cton_obj *obj);
-void * cton_binary_getptr(cton_ctx *ctx, cton_obj *obj);
-#define cton_cstr(str) {sizeof(str), sizeof(str), (str)}
+int cton_string_setlen(cton_obj *obj, size_t len);
+size_t cton_string_getlen(cton_obj *obj);
+char * cton_string_getptr(cton_obj *obj);
+
+int cton_binary_setlen(cton_obj *obj, size_t len);
+size_t cton_binary_getlen(cton_obj *obj);
+void * cton_binary_getptr(cton_obj *obj);
+cton_obj * cton_string_create(cton_ctx *ctx, size_t len, const char *str);
+#define cton_string(ctx, str) (cton_string_create((ctx), sizeof(str), (str)))
 
 /* cton array type specific methods */
-int cton_array_settype(cton_ctx *ctx, cton_obj *arr, cton_type type);
-cton_type cton_array_gettype(cton_ctx *ctx, cton_obj *arr);
-size_t cton_array_setlen(cton_ctx *ctx, cton_obj *arr, size_t len);
-size_t cton_array_getlen(cton_ctx *ctx, cton_obj *arr);
-int cton_array_set(cton_ctx *ctx, cton_obj *arr, cton_obj *obj, size_t index);
-cton_obj * cton_array_get(cton_ctx *ctx, cton_obj *arr, size_t index);
-int cton_array_foreach(cton_ctx *ctx, cton_obj *arr, void *rctx,
+int cton_array_settype(cton_obj *arr, cton_type type);
+cton_type cton_array_gettype(cton_obj *arr);
+size_t cton_array_setlen(cton_obj *arr, size_t len);
+size_t cton_array_getlen(cton_obj *arr);
+int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index);
+cton_obj * cton_array_get(cton_obj *arr, size_t index);
+int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
 /* cton hash type specific methods */
-cton_obj * cton_hash_set(cton_ctx *ctx, cton_obj *h, cton_obj *k, cton_obj *v);
-cton_obj * cton_hash_get(cton_ctx *ctx, cton_obj *h, cton_obj *k);
-cton_obj * cton_hash_get_s(cton_ctx *ctx, cton_obj *h, const char *ks);
-size_t cton_hash_getlen(cton_ctx *ctx, cton_obj *h);
-int cton_hash_foreach(cton_ctx *ctx, cton_obj *hash, void *rctx,
+cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v);
+cton_obj * cton_hash_get(cton_obj *h, cton_obj *k);
+cton_obj * cton_hash_sget(cton_obj *h, const char *ks);
+cton_obj * cton_hash_get_s(cton_obj *h, const char *ks);
+size_t cton_hash_getlen(cton_obj *h);
+int cton_hash_foreach(cton_obj *hash, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, cton_obj *, size_t, void*));
 
 /* cton numeric types specific methods */
-int64_t cton_numeric_setint(cton_ctx *ctx, cton_obj *obj, int64_t val);
-int64_t cton_numeric_getint(cton_ctx *ctx, cton_obj *obj);
-uint64_t cton_numeric_setuint(cton_ctx *ctx, cton_obj *obj, uint64_t val);
-uint64_t cton_numeric_getuint(cton_ctx *ctx, cton_obj *obj);
-double cton_numeric_setfloat(cton_ctx *ctx, cton_obj *obj, double val);
-double cton_numeric_getfloat(cton_ctx *ctx, cton_obj *obj);
+int64_t cton_numeric_setint(cton_obj *obj, int64_t val);
+int64_t cton_numeric_getint(cton_obj *obj);
+uint64_t cton_numeric_setuint(cton_obj *obj, uint64_t val);
+uint64_t cton_numeric_getuint(cton_obj *obj);
+double cton_numeric_setfloat(cton_obj *obj, double val);
+double cton_numeric_getfloat(cton_obj *obj);
 
 /* cton_util.c */
-cton_obj * cton_util_create_str(cton_ctx *ctx,
-    const char *str, char end, char quote);
-cton_obj * cton_util_strcstr(cton_ctx *ctx, const char *cstr);
-
-#ifdef _CTON_CORELIB_
-typedef struct cton_buf_s cton_buf;
-struct cton_buf_s {
-    cton_ctx *ctx;
-    cton_obj *arr;
-    cton_obj *container;
-    size_t   index;
-};
-#else
-typedef void cton_buf;
-#endif
-
 cton_buf *cton_util_buffer_create(cton_ctx *ctx);
 void cton_util_buffer_destroy(cton_buf *buf);
 size_t cton_util_buffer_getlen(cton_buf *buf);
 cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
 int cton_util_buffer_putchar(cton_buf *buf, int c);
+int cton_util_buffer_puts(cton_buf *buf, const char *s);
 
-int cton_util_strcmp(cton_obj *s1, cton_obj *s2);
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
-int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+int cton_util_writefile(cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w);
 cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
