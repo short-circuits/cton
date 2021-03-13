@@ -230,7 +230,7 @@ cton_type cton_array_gettype(cton_obj *arr);
 size_t cton_array_setlen(cton_obj *arr, size_t len);
 size_t cton_array_getlen(cton_obj *arr);
 int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index);
-cton_obj * cton_array_get(cton_obj *arr, size_t index);
+void* cton_array_get(cton_obj *arr, size_t index);
 int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 

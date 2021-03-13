@@ -1100,7 +1100,7 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
  * cton_array_get()
  *
  * DESCRIPTION
- *   Get the sub object in array container by index.
+ *   Get the sub object pointer in array container by index.
  *
  * PARAMETER
  *   ctx: The cton context
@@ -1114,9 +1114,10 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
  *   CTON_ERROR_TYPE: Parameter arr is not an array object.
  *   CTON_ERROR_INDEX: The requested index is out of the range.
  */
-cton_obj * cton_array_get(cton_obj *obj, size_t index)
+void* cton_array_get(cton_obj *obj, size_t index)
 {
     struct cton_array_s *arr;
+    void   *ret = NULL;
 
     arr = (struct cton_array_s *)obj;
 
@@ -1125,7 +1126,24 @@ cton_obj * cton_array_get(cton_obj *obj, size_t index)
         return NULL;
     }
 
-    return ((cton_obj **)arr->ptr)[index];
+    switch (cton_objtype(obj)) {
+        case CTON_INT8:    ret = &((int8_t *)arr->ptr)[index];   break;
+        case CTON_INT16:   ret = &((int16_t *)arr->ptr)[index];  break;
+        case CTON_INT32:   ret = &((int32_t *)arr->ptr)[index];  break;
+        case CTON_INT64:   ret = &((int64_t *)arr->ptr)[index];  break;
+        case CTON_UINT8:   ret = &((uint8_t *)arr->ptr)[index];  break;
+        case CTON_UINT16:  ret = &((uint16_t *)arr->ptr)[index]; break;
+        case CTON_UINT32:  ret = &((uint32_t *)arr->ptr)[index]; break;
+        case CTON_UINT64:  ret = &((uint64_t *)arr->ptr)[index]; break;
+        case CTON_FLOAT8:  ret = &((uint8_t *)arr->ptr)[index];  break;
+        case CTON_FLOAT16: ret = &((uint16_t *)arr->ptr)[index]; break;
+        case CTON_FLOAT32: ret = &((float *)arr->ptr)[index];    break;
+        case CTON_FLOAT64: ret = &((double *)arr->ptr)[index];   break;
+        default:
+            ret = ((cton_obj **)arr->ptr)[index];
+    }
+
+    return ret;
 }
 
 /*
