@@ -1,5 +1,4 @@
 #include <cton.h>
-#include <cton_json.h>
 
 int main(int argc, const char **argv)
 {
@@ -19,7 +18,7 @@ int main(int argc, const char **argv)
 
 	out = cton_json_stringify(ctx, data);
 
-	printf("%s\n", cton_string_getptr(ctx, out));
+	printf("%s\n", cton_string_getptr(out));
 
 	return 0;
 }
