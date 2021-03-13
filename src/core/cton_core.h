@@ -34,4 +34,49 @@
  */
 #define cton_objtype(obj) ((obj)->type)
 
+struct cton_bool_s {
+	struct cton_obj_s obj;
+	enum   cton_bool_e val;
+};
+
+struct cton_string_s {
+	struct   cton_obj_s obj;
+    size_t   len;
+    size_t   used;
+    uint8_t  *ptr;
+};
+
+struct cton_array_s {
+	struct           cton_obj_s obj;
+    size_t           len;
+    size_t           used;
+    void             *ptr;
+
+    enum cton_type_e sub_type;
+};
+
+typedef struct cton_rbtree_node_s cton_rbtree_node_t;
+
+struct cton_rbtree_node_s {
+    cton_obj            *key;
+    cton_obj            *value;
+    cton_rbtree_node_t  *left;
+    cton_rbtree_node_t  *right;
+    cton_rbtree_node_t  *parent;
+    u_char              color;
+};
+
+typedef struct cton_rbtree_s cton_rbtree_t;
+
+struct cton_rbtree_s {
+    cton_rbtree_node_t *root;
+    cton_rbtree_node_t *sentinel;
+};
+
+struct cton_hash_s {
+	struct cton_obj_s    obj;
+    struct cton_rbtree_s tree;
+    int count;
+};
+
 #endif /* _CTON_CORELIB_HEADER_ */
