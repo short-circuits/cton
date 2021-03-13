@@ -88,7 +88,7 @@ cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type)
     buf_cnt = cton_array_getlen(buf->arr);
 
     for (buf_index = 0; buf_index < buf_cnt; buf_index ++) {
-        buf_seg = cton_array_get(buf->arr, buf_index);
+        buf_seg = *(cton_obj **)cton_array_get(buf->arr, buf_index);
 
         buf_ptr = cton_string_getptr(buf_seg);
 
@@ -129,7 +129,7 @@ int cton_util_buffer_putchar(cton_buf *buf, int c)
         cton_array_set(buf->arr, str, array_len - 1);
     }
 
-    str = cton_array_get(buf->arr, array_len - 1);
+    str = *(cton_obj **)cton_array_get(buf->arr, array_len - 1);
     ptr = cton_binary_getptr(str);
     ptr[buf->index % CTON_BUFFER_PAGESIZE] = c;
     buf->index += 1;
