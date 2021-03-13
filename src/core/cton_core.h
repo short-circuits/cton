@@ -63,7 +63,7 @@ struct cton_rbtree_node_s {
     cton_rbtree_node_t  *left;
     cton_rbtree_node_t  *right;
     cton_rbtree_node_t  *parent;
-    u_char              color;
+    unsigned char        color;
 };
 
 typedef struct cton_rbtree_s cton_rbtree_t;
