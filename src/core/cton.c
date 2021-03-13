@@ -1140,7 +1140,7 @@ void* cton_array_get(cton_obj *obj, size_t index)
         case CTON_FLOAT32: ret = &((float *)arr->ptr)[index];    break;
         case CTON_FLOAT64: ret = &((double *)arr->ptr)[index];   break;
         default:
-            ret = ((cton_obj **)arr->ptr)[index];
+            ret = &((cton_obj **)arr->ptr)[index];
     }
 
     return ret;
@@ -1182,7 +1182,7 @@ int cton_array_set(cton_obj *obj, cton_obj *item, size_t index)
         return -1;
     }
 
-    ((cton_obj **)arr->ptr)[index] = obj;
+    ((cton_obj **)arr->ptr)[index] = item;
     return 0;
 }
 
