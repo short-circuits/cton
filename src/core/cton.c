@@ -385,26 +385,26 @@ cton_typehook_s cton_type_hook[CTON_TYPE_CNT] = {
     {
         CTON_INVALID, 0, 0, NULL, NULL, NULL, NULL
     },{
-        CTON_OBJECT, 0, sizeof(cton_obj *), NULL, NULL, NULL, NULL
+        CTON_OBJECT, sizeof(cton_obj *), 0, NULL, NULL, NULL, NULL
     },{
         CTON_NULL, sizeof(cton_obj), 0, NULL, NULL, NULL, NULL
     },{
-        CTON_BOOL, sizeof(struct cton_bool_s), sizeof(enum cton_bool_e),
+        CTON_BOOL, sizeof(struct cton_bool_s), 0,
         NULL, NULL, NULL, cton_bool_cmp
     },{
-        CTON_BINARY, sizeof(struct cton_string_s), sizeof(struct cton_string_s),
+        CTON_BINARY, sizeof(struct cton_string_s), 0,
         cton_string_init, cton_string_delete,
         (void *(*)(cton_obj *))cton_string_getptr,
         cton_binary_cmp
     },{
-        CTON_STRING, sizeof(struct cton_string_s), sizeof(struct cton_string_s),
+        CTON_STRING, sizeof(struct cton_string_s), 0,
         cton_string_init, cton_string_delete,
         (void *(*)(cton_obj *))cton_string_getptr, cton_string_cmp
     },{
-        CTON_ARRAY, sizeof(struct cton_array_s), sizeof(struct cton_array_s),
+        CTON_ARRAY, sizeof(struct cton_array_s), 0,
         cton_array_init, cton_array_delete, cton_array_getptr, NULL
     },{
-        CTON_HASH, sizeof(struct cton_hash_s), sizeof(struct cton_hash_s),
+        CTON_HASH, sizeof(struct cton_hash_s), 0,
         cton_hash_init, cton_hash_delete, NULL, NULL
     },{
         CTON_INT8, sizeof(cton_obj) + sizeof(int8_t), sizeof(int8_t),
@@ -1038,6 +1038,7 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
     extern cton_typehook_s cton_type_hook[CTON_TYPE_CNT];
     struct cton_array_s *arr;
     void   *ptr;
+    size_t item_size;
 
     arr = (struct cton_array_s *)obj;
 
@@ -1046,10 +1047,14 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
         return 0;
     }
 
+    item_size = cton_type_hook[arr->sub_type].arr_size;
+    if (item_size == 0) {
+        item_size = cton_type_hook[arr->sub_type].obj_size;
+    }
+
     if (arr->ptr == NULL) {
         /* Space have not been allocated yet */
-        ptr = cton_alloc(obj->ctx,
-            len * cton_type_hook[arr->sub_type].arr_size);
+        ptr = cton_alloc(obj->ctx, len * item_size);
 
         if ( ptr == NULL ) {
             return 0;
@@ -1068,9 +1073,8 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
 
     } else if (arr->len < len) {
 
-        ptr = cton_realloc(obj->ctx,
-            arr->ptr, arr->len * cton_type_hook[arr->sub_type].arr_size,
-            len * cton_type_hook[arr->sub_type].arr_size);
+        ptr = cton_realloc(obj->ctx, arr->ptr, \
+            arr->len * item_size, len * item_size);
 
         if ( ptr == NULL ) {
             return 0;
@@ -1189,25 +1193,81 @@ int cton_array_set(cton_obj *obj, cton_obj *item, size_t index)
 int cton_array_foreach(cton_obj *obj, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*))
 {
+    extern cton_typehook_s cton_type_hook[CTON_TYPE_CNT];
     struct cton_array_s *arr;
     size_t len;
     size_t index;
     int    ret;
     void  *ptr;
 
+    cton_obj *item;
+    cton_type type;
+
     arr = (struct cton_array_s *)obj;
 
     ret = 0;
     len = arr->used;
     ptr = arr->ptr;
+    type = arr->sub_type;
 
-    for (index = 0; index < len; index ++) {
-        ret = func(obj->ctx, ((cton_obj **)ptr)[index], index, rctx);
+    if ( cton_type_hook[type].arr_size == 0 ) {
 
-        if (ret != 0) {
-            break;
+        for (index = 0; index < len; index ++) {
+            ret = func(obj->ctx, ((cton_obj **)ptr)[index], index, rctx);
+
+            if (ret != 0) {
+                break;
+            }
         }
+    } else {
+        item = cton_object_create(obj->ctx, type);
+
+        for (index = 0; index < len; index ++) {
+
+            switch (type) {
+                case CTON_INT8:    *(int8_t *)&item[1] = ((int8_t *)ptr)[index];   break;
+                case CTON_INT16:   *(int16_t *)&item[1] = ((int16_t *)ptr)[index];  break;
+                case CTON_INT32:   *(int32_t *)&item[1] = ((int32_t *)ptr)[index];  break;
+                case CTON_INT64:   *(int64_t *)&item[1] = ((int64_t *)ptr)[index];  break;
+                case CTON_UINT8:   *(uint8_t *)&item[1] = ((uint8_t *)ptr)[index];  break;
+                case CTON_UINT16:  *(uint16_t *)&item[1] = ((uint16_t *)ptr)[index]; break;
+                case CTON_UINT32:  *(uint32_t *)&item[1] = ((uint32_t *)ptr)[index]; break;
+                case CTON_UINT64:  *(uint64_t *)&item[1] = ((uint64_t *)ptr)[index]; break;
+                case CTON_FLOAT8:  *(uint8_t *)&item[1] = ((uint8_t *)ptr)[index];  break;
+                case CTON_FLOAT16: *(uint16_t *)&item[1] = ((uint16_t *)ptr)[index]; break;
+                case CTON_FLOAT32: *(float *)&item[1] = ((float *)ptr)[index];    break;
+                case CTON_FLOAT64: *(double *)&item[1] = ((double *)ptr)[index];   break;
+                default:
+                    break;
+            }
+
+            ret = func(obj->ctx, item, index, rctx);
+
+            switch (type) {
+                case CTON_INT8:    ((int8_t *)ptr)[index] = *(int8_t *)&item[1];   break;
+                case CTON_INT16:   ((int16_t *)ptr)[index] = *(int16_t *)&item[1];  break;
+                case CTON_INT32:   ((int32_t *)ptr)[index] = *(int32_t *)&item[1];  break;
+                case CTON_INT64:   ((int64_t *)ptr)[index] = *(int64_t *)&item[1];  break;
+                case CTON_UINT8:   ((uint8_t *)ptr)[index] = *(uint8_t *)&item[1];  break;
+                case CTON_UINT16:  ((uint16_t *)ptr)[index] = *(uint16_t *)&item[1]; break;
+                case CTON_UINT32:  ((uint32_t *)ptr)[index] = *(uint32_t *)&item[1]; break;
+                case CTON_UINT64:  ((uint64_t *)ptr)[index] = *(uint64_t *)&item[1]; break;
+                case CTON_FLOAT8:  ((uint8_t *)ptr)[index] = *(uint8_t *)&item[1];  break;
+                case CTON_FLOAT16: ((uint16_t *)ptr)[index] = *(uint16_t *)&item[1]; break;
+                case CTON_FLOAT32: ((float *)ptr)[index] = *(float *)&item[1];    break;
+                case CTON_FLOAT64: ((double *)ptr)[index] = *(double *)&item[1];   break;
+                default:
+                    break;
+            }
+
+            if (ret != 0) {
+                break;
+            }
+        }
+
+        cton_object_delete(item);
     }
+
 
     return ret;
 }
