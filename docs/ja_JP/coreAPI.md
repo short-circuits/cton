@@ -1,30 +1,7 @@
-# CTON API解析
+# CTON coreAPI
 
-## CTONコンテキスト
-
-### cton_init
-
-`cton_ctx *cton_init(cton_memhook *hook);`
-
-- CTONコンテキストを生成する。
-
-引数でメモリ確保や解放をするときに使う関数を指定できる。具体の使い方はメモリフークの部分を参照してください。
-
-パラメータによる定義されたメモリフークが使えない場合やメモリ確保失敗した時に、この関数は`NULL`で戻る。
-
-### cton_destory
-
-`cton_destory(cton_ctx *ctx);`
-
-- CTONコンテキストを回収する。
-
-この関数はCTONコンテキストを回収する。このコンテキストから確保したすべてのメモリも回収される。もしメモリフークのなかで`destroy`関数が有効であれば、その関数が呼び出され、メモリプールがリリースされることを望まれる。
-
-int cton_destory(cton_ctx *ctx);
-void cton_seterr(cton_ctx *ctx, cton_err err);
-cton_err cton_geterr(cton_ctx *ctx);
-char * cton_strerr(cton_err err);
-#define cton_err_clear(ctx) {cton_seterr((ctx), CTON_OK)}
+- [CTONコンテキスト](./context.md)
+- [CTONオブジェクト](./object.md)
 
 
 int cton_gc(cton_ctx *ctx);
