@@ -20,17 +20,15 @@
  *
  ******************************************************************************/
 
+
 #include <core/cton_core.h>
 #include <core/cton_llib.h>
 #include <limits.h>
 
-static void  cton_string_init(cton_obj *str);
-static void  cton_string_delete(cton_obj *str);
-static void  cton_array_init(cton_obj *obj);
-static void  cton_array_delete(cton_obj *obj);
-static void *cton_array_getptr(cton_obj *obj);
-static void  cton_hash_init(cton_obj *obj);
-static void  cton_hash_delete(cton_obj *obj);
+
+static void cton_string_init(cton_obj *str);
+static void cton_array_init(cton_obj *obj);
+static void cton_hash_init(cton_obj *obj);
 
 static void cton_int8_init(cton_obj *obj);
 static void cton_int16_init(cton_obj *obj);
@@ -45,18 +43,23 @@ static void cton_float16_init(cton_obj *obj);
 static void cton_float32_init(cton_obj *obj);
 static void cton_float64_init(cton_obj *obj);
 
-static void * cton_int8_getptr(cton_obj *obj);
-static void * cton_int16_getptr(cton_obj *obj);
-static void * cton_int32_getptr(cton_obj *obj);
-static void * cton_int64_getptr(cton_obj *obj);
-static void * cton_uint8_getptr(cton_obj *obj);
-static void * cton_uint16_getptr(cton_obj *obj);
-static void * cton_uint32_getptr(cton_obj *obj);
-static void * cton_uint64_getptr(cton_obj *obj);
-static void * cton_float8_getptr(cton_obj *obj);
-static void * cton_float16_getptr(cton_obj *obj);
-static void * cton_float32_getptr(cton_obj *obj);
-static void * cton_float64_getptr(cton_obj *obj);
+static void cton_string_delete(cton_obj *str);
+static void cton_array_delete(cton_obj *obj);
+static void cton_hash_delete(cton_obj *obj);
+
+static void *cton_array_getptr(cton_obj *obj);
+static void *cton_int8_getptr(cton_obj *obj);
+static void *cton_int16_getptr(cton_obj *obj);
+static void *cton_int32_getptr(cton_obj *obj);
+static void *cton_int64_getptr(cton_obj *obj);
+static void *cton_uint8_getptr(cton_obj *obj);
+static void *cton_uint16_getptr(cton_obj *obj);
+static void *cton_uint32_getptr(cton_obj *obj);
+static void *cton_uint64_getptr(cton_obj *obj);
+static void *cton_float8_getptr(cton_obj *obj);
+static void *cton_float16_getptr(cton_obj *obj);
+static void *cton_float32_getptr(cton_obj *obj);
+static void *cton_float64_getptr(cton_obj *obj);
 
 static int cton_bool_cmp(cton_obj *a, cton_obj *b);
 static int cton_binary_cmp(cton_obj *a, cton_obj *b);
@@ -74,7 +77,10 @@ static int cton_float64_cmp(cton_obj *a, cton_obj *b);
 
 
 /*******************************************************************************
- * CTON memory hook
+ *
+ *  CTON memory hook
+ *
+ *******************************************************************************
  *
  * CTON requests a memory hook to mamage the memory.
  * CTON will try to create the structure of cton_ctx in the memory pool offered.
@@ -91,24 +97,33 @@ static void  cton_free(cton_ctx *ctx, void *ptr);
 static void *cton_realloc(cton_ctx *ctx, void *ptr, size_t ori, size_t new);
 static void  cton_pdestroy(cton_ctx *ctx);
 
-/*
- * Just proxy the call of malloc() and free()
+/**
+ * cton_std_malloc()
+ * cton_std_free()
+ * cton_std_realloc()
+ *   - Proxies to malloc() and free() in standard library.
+ *
+ * NOTE:
+ *   Private function, Not avaliable for calling outside this file.
  */
-static void *cton_std_malloc(void *pool, size_t size)
+static void *
+cton_std_malloc(void *pool, size_t size)
 {
     (void) pool;
 
     return malloc(size);
 }
 
-static void  cton_std_free(void *pool, void *ptr)
+static void
+cton_std_free(void *pool, void *ptr)
 {
     (void) pool;
 
     free(ptr);
 }
 
-static void *cton_std_realloc(void *pool, void *ptr, size_t size)
+static void *
+cton_std_realloc(void *pool, void *ptr, size_t size)
 {
     (void) pool;
     
@@ -119,10 +134,13 @@ cton_memhook cton_std_hook = {
     NULL, cton_std_malloc, cton_std_realloc, cton_std_free, NULL
 };
 
-/*
- * Create a memory hook and return it's pointer.
- * it will not allocate new memory for this pool.
- * and it is not thread safe.
+
+/**
+ * cton_memhook_init()
+ *   - Create new memory hook by given function pointer
+ *
+ * NOTE:
+ *   This function is **NOT** thread-safe yet.
  */
 cton_memhook* cton_memhook_init (void * pool,
     void * (*palloc)(void *pool, size_t size),
@@ -141,18 +159,19 @@ cton_memhook* cton_memhook_init (void * pool,
     return &hook;
 }
 
-/*
+
+/**
  * cton_alloc()
+ * cton_free()
+ * cton_realloc()
+ * cton_pdestroy()
+ *   - allocate and free dynamic memory from memory pool specificed by context.
  *
- * DESCRIPTION
- *   Allocates size bytes of memory from mem pool and returns a pointer to the
- *  allocated memory.
- *
- * PARAMETER
- *   ctx: cton context
- *   size: the size that will be allocated.
+ * NOTE:
+ *   Private function, Not avaliable for calling outside this file.
  */
-static void * cton_alloc(cton_ctx *ctx, size_t size)
+static void *
+cton_alloc(cton_ctx *ctx, size_t size)
 {
     void * ptr;
     ptr = ctx->memhook.palloc(ctx->memhook.pool, size);
@@ -164,15 +183,16 @@ static void * cton_alloc(cton_ctx *ctx, size_t size)
     return ptr;
 }
 
-static void cton_free(cton_ctx *ctx, void *ptr)
+static void
+cton_free(cton_ctx *ctx, void *ptr)
 {
     if (ctx->memhook.pfree != NULL) {
         ctx->memhook.pfree(ctx->memhook.pool, ptr);
     }
 }
 
-static void * cton_realloc(cton_ctx *ctx,
-    void *ptr, size_t size_ori, size_t size_new)
+static void *
+cton_realloc(cton_ctx *ctx, void *ptr, size_t size_ori, size_t size_new)
 {
     void * new_ptr;
 
@@ -203,7 +223,8 @@ static void * cton_realloc(cton_ctx *ctx,
     return new_ptr;
 }
 
-static void cton_pdestroy(cton_ctx *ctx)
+static void
+cton_pdestroy(cton_ctx *ctx)
 {
     if (ctx->memhook.pdestroy != NULL) {
         ctx->memhook.pdestroy(ctx->memhook.pool);
@@ -211,49 +232,55 @@ static void cton_pdestroy(cton_ctx *ctx)
 }
 
 
-
 /*******************************************************************************
  *
- *    CTON Common methods
+ *    CTON Context
  *
  *******************************************************************************
- *         CTON Context
- *******************************************************************************
- *   CTON context is an object purposed to hold most important information for a
- * context. The same context object does not guarantee thread safety, but you
- * can safely manipulate different objects in different threads.
+ *
+ *   CTON Context is the memory management unit in libCTON, and designed to be
+ * the minimal thread safe unit.
+ *   Manipulate in same context in different threads always requests additional
+ * protection by programmer, as it does not guarantee thread safety. But mani-
+ * pulate in different context will always be safe.
+ *   All of the memory used by CTON, including the CTON context it-self will be
+ * allocated from given memory hook. It is possible to initlize an CTON context
+ * by a memory pool, and when you destroy or reset a memory pool, all memory
+ * used by the CTON context initlized by this memory pool will be collect.
+ *
  ******************************************************************************/
 
 
 /**
  * cton_init()
- *   - Create cton context object.
  *
- * PARAMETER
- *   hook: the cton memory hook.
-
- * RETURN VALUE
- *   Handle of CTON context object created or NULL for any exception.
+ *   - Create CTON context.
  *
  * DESCRIPTION
- *   cton_init() creates a cton context object and initlize it by memory hook
- * defined by parameter. If NULL pointer is passed, this function will init the
- * default memory hook as just a proxy for malloc/free in C standard library.
- *   In convenient, this object is also allocated from memory pool passed by
- * parameter, so you may not need to call destroy method of cton context, call
- * destroy method of your memory pool will destroy the cton context as well.
- *   At least palloc handle is needed for the memory hook, if the palloc method
- * is NULL, this function will failed and return NULL.
- *   This method is threads safe. But the method to create memory hook is not
- * thread-safe yet, so you may need to treating this method as not thread-safe.
+ *
+ *   cton_init() creates a CTON context and initlize it by memory hook given by
+ * `hook` parameter. If `NULL` pointer is given, this function will initlize the
+ * context by default memory hook given by this library.
+ *   At least `palloc` hook is needed for the memory hook, if `palloc` hook is
+ * not available, this function treat the parameter as invalid memory hook, and
+ * returns `NULL` to point that there is a failure.
+ *   The memory requested by context is also allocated from memory pool given by
+ * `hook` parameter, If the given memory hook returns `NULL` when called, this
+ * function will failed and returns `NULL`
+ *
+ * RETURN VALUE
+ *
+ *   Handle of the CTON context created or `NULL` for any exception.
  *
  */
-cton_ctx *cton_init(cton_memhook *hook)
+cton_ctx *
+cton_init(cton_memhook *hook)
 {
-    cton_ctx *ctx;
     extern cton_memhook cton_std_hook;
+    cton_ctx *ctx;
 
     if (hook == NULL) {
+        /* Use default memory hook */
         hook = &cton_std_hook;
     }
 
@@ -262,12 +289,17 @@ cton_ctx *cton_init(cton_memhook *hook)
         return NULL;
     }
 
+    /* cton_alloc() is not avaliable yet */
     ctx = hook->palloc(hook->pool, sizeof(cton_ctx));
 
     if (ctx == NULL) {
         return NULL;
     }
 
+    /*
+     * Dump the memory hook
+     * After this step, this context is thread safe completely.
+     */
     ctx->memhook.pool     = hook->pool;
     ctx->memhook.palloc   = hook->palloc;
     ctx->memhook.prealloc = hook->prealloc;
@@ -286,26 +318,27 @@ cton_ctx *cton_init(cton_memhook *hook)
 
 /**
  * cton_destroy()
- *   - Destroy a cton context object.
  *
- * PARAMETER
- *   ctx: the cton context to be destroied.
-
- * RETURN VALUE
- *   0 for success or other value for any errors (?)
+ *   - Destroy a CTON context.
  *
  * DESCRIPTION
- *   The cton_destroy() function will try to destroy a cton context object. If
- * pdestroy is not NULL in he memory hook, it will just call this handle and
- * destroy the whole memory pool. but if this handle is not set in the memory
- * hook, this function will try to call pfree method for every object created
- * from this cton context. If pfree handle is also not set, this function will
- * return -1 and set the cton_err as INVALID_MHOOK.
- *   
+ *
+ *   The cton_destroy() function will destroy a cton context and collects all
+ * of the memory alloced from the context.
+ *   If pdestroy is available in memory hook, this function will call it to
+ * destroy the whole memory pool. Or, this function will try to call free hook
+ * to free object created from this context one by one.
+ *   This function may do nothing if `pfree` hook is also invalid.
+ *
+ * ISSUE
+ * 
+ *   1. This function is not finished yet.
+ *   2. This function may ignore the hash object, this is considered as a bug.
  */
-int cton_destory(cton_ctx *ctx)
+int
+cton_destory(cton_ctx *ctx)
 {
-    /** TODO */
+    /** TODO: Finish this function please */
     cton_pdestroy(ctx);
     return 0;
 }
@@ -320,7 +353,8 @@ int cton_destory(cton_ctx *ctx)
  *   err: The error that happened.
  *   
  */
-void cton_seterr(cton_ctx *ctx, cton_err err)
+void
+cton_seterr(cton_ctx *ctx, cton_err err)
 {
     ctx->err = err;
 }
@@ -341,10 +375,12 @@ void cton_seterr(cton_ctx *ctx, cton_err err)
  * no error has occured.
  *   
  */
-cton_err cton_geterr(cton_ctx *ctx)
+cton_err
+cton_geterr(cton_ctx *ctx)
 {
     return ctx->err;
 }
+
 
 /**
  * cton_strerr()
@@ -357,7 +393,8 @@ cton_err cton_geterr(cton_ctx *ctx)
  *   Printible error message string pointer.
  *   
  */
-char * cton_strerr(cton_err err)
+char *
+cton_strerr(cton_err err)
 {
     static char str[] = "Not Implemented.\n";
 
@@ -368,7 +405,24 @@ char * cton_strerr(cton_err err)
 
 
 /*******************************************************************************
- * CTON Object methods
+ *
+ *    CTON Object
+ *
+ *******************************************************************************
+ *
+ *   CTON object is represents one of CTON's data types. It is used to store
+ * more complex entities. CTON objects can be created using specific constructor
+ *   Almost every object in CTON is an instance of a CTON object. CTON objects
+ * always have one of the following data types:
+ *   CTON_NULL, CTON_BOOL, CTON_BINARY, CTON_STRING, CTON_ARRAY, CTON_HASH,
+ *   CTON_INT8, CTON_INT16, CTON_INT32, CTON_INT64, CTON_UINT8, CTON_UINT16,
+ *   CTON_UINT32, CTON_UINT64, CTON_FLOAT8, CTON_FLOAT16, CTON_FLOAT32,
+ *   CTON_FLOAT64
+ *   This data type is specified when the object is created. Since CTON is a
+ * statically typed library, most objects cannot be type converted. However,
+ * binary and C-style strings are an exception, It can be converted on certain
+ * assumptions.
+ *
  ******************************************************************************/
 
 typedef struct {
@@ -445,31 +499,28 @@ cton_typehook_s cton_type_hook[CTON_TYPE_CNT] = {
     }
 };
 
-/**
- * cton_object(s) are managed by cton_ctx by Doubly linked list.
- *
- * cton_ctx.
- *
- */
 
-/*
+/**
  * cton_object_create()
+ *   -Create a CTON object
  *
  * DESCRIPTION
- *   Create an object with the specific type and add it to the object list.
- *
- * PARAMETER
- *   ctx: cton context
- *   type: the type that the new object will hold
+ *   `cton_object_create` is a function that creates and initializes a CTON
+ * object. The created object belongs to the CTON context specified by the
+ * parameter.
+ *   The only initialization for the created object is to initialize the data
+ * structure. In other words, it does not allocate memory for arrays and
+ * character strings.
  *
  * RETURN
- *     Handle of new created object or NULL for any exception.
+ *   If successful, it returns a pointer to the created object. If it fails,
+ * `NULL` is returned.
  */
-cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
+cton_obj *
+cton_object_create(cton_ctx *ctx, cton_type type)
 {
-    cton_obj *obj;
-
     extern cton_typehook_s cton_type_hook[CTON_TYPE_CNT];
+    cton_obj *obj;
 
     if (type == CTON_INVALID || type == CTON_OBJECT) {
         /* These types are not valid for stand alone object */
@@ -489,6 +540,10 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type)
     obj->prev  = NULL;
     obj->next  = NULL;
     obj->ctx   = ctx;
+
+    if (cton_type_hook[type].init != NULL) {
+        cton_type_hook[type].init(obj);
+    }
 
     /* Insert object into object pool linked list */
     if (ctx->nodes == NULL) {

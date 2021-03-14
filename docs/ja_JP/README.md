@@ -12,10 +12,6 @@ JSON解析機能実装したため、データ交換が便利。そして独自�
 
 ---
 
-*こいつは研究になれるの？*
-
-どちらが日本語ドキュメントを作ってくれたらありがたいです🥺
-
 ## みなもと
 
 - The C Object System: Using C as a High-Level Object-Oriented Language ([arXiv](https://arxiv.org/abs/1003.2547), [GitHub](https://github.com/CObjectSystem/COS))
