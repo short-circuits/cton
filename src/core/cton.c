@@ -1186,8 +1186,41 @@ int cton_array_set(cton_obj *obj, cton_obj *item, size_t index)
         return -1;
     }
 
-    ((cton_obj **)arr->ptr)[index] = item;
+    switch (arr->sub_type) {
+        case CTON_INT8:
+        case CTON_UINT8:
+        case CTON_FLOAT8:
+            ((uint8_t *)arr->ptr)[index]   = *(uint8_t *)&item[1]; break;
+        case CTON_INT16:
+        case CTON_UINT16:
+        case CTON_FLOAT16:
+            ((uint16_t *)arr->ptr)[index]  = *(uint16_t *)&item[1]; break;
+        case CTON_INT32:
+        case CTON_UINT32:
+        case CTON_FLOAT32:
+            ((uint32_t *)arr->ptr)[index]  = *(uint32_t *)&item[1]; break;
+        case CTON_INT64:
+        case CTON_UINT64:
+        case CTON_FLOAT64:
+            ((uint64_t *)arr->ptr)[index]  = *(uint64_t *)&item[1]; break;
+        default:
+            ((cton_obj **)arr->ptr)[index] = item;
+    }
+
     return 0;
+}
+
+int cton_array_complex(cton_obj *obj)
+{ 
+    struct cton_array_s *arr;
+
+    arr = (struct cton_array_s *)obj;
+
+    if (cton_type_hook[arr->sub_type].arr_size == 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 int cton_array_foreach(cton_obj *obj, void *rctx,

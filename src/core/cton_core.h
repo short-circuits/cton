@@ -79,4 +79,6 @@ struct cton_hash_s {
     int count;
 };
 
+int cton_array_complex(cton_obj *obj);
+
 #endif /* _CTON_CORELIB_HEADER_ */
