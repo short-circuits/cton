@@ -304,6 +304,9 @@ cton_parse_number(cton_ctx *ctx, struct cton_string_s *ton, size_t *index,
 
     void *nptr;
 
+    number_f = 0.0;
+    number_i = 0;
+
     for (dump_index = 0; dump_index < 128; dump_index ++) {
         ch = ton->ptr[*index + dump_index];
         if ((ch >= '0' && ch <= '9') || ch == '+' || ch == '-' || \
