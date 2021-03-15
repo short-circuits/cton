@@ -1184,7 +1184,6 @@ size_t cton_array_setlen(cton_obj *obj, size_t len)
 void* cton_array_get(cton_obj *obj, size_t index)
 {
     struct cton_array_s *arr;
-    void   *ret = NULL;
 
     arr = (struct cton_array_s *)obj;
 
@@ -1193,24 +1192,26 @@ void* cton_array_get(cton_obj *obj, size_t index)
         return NULL;
     }
 
-    switch (cton_objtype(obj)) {
-        case CTON_INT8:    ret = &((int8_t *)arr->ptr)[index];   break;
-        case CTON_INT16:   ret = &((int16_t *)arr->ptr)[index];  break;
-        case CTON_INT32:   ret = &((int32_t *)arr->ptr)[index];  break;
-        case CTON_INT64:   ret = &((int64_t *)arr->ptr)[index];  break;
-        case CTON_UINT8:   ret = &((uint8_t *)arr->ptr)[index];  break;
-        case CTON_UINT16:  ret = &((uint16_t *)arr->ptr)[index]; break;
-        case CTON_UINT32:  ret = &((uint32_t *)arr->ptr)[index]; break;
-        case CTON_UINT64:  ret = &((uint64_t *)arr->ptr)[index]; break;
-        case CTON_FLOAT8:  ret = &((uint8_t *)arr->ptr)[index];  break;
-        case CTON_FLOAT16: ret = &((uint16_t *)arr->ptr)[index]; break;
-        case CTON_FLOAT32: ret = &((float *)arr->ptr)[index];    break;
-        case CTON_FLOAT64: ret = &((double *)arr->ptr)[index];   break;
-        default:
-            ret = &((cton_obj **)arr->ptr)[index];
+
+    if (arr->sub_type == CTON_INT8 || arr->sub_type == CTON_UINT8 ||\
+        arr->sub_type == CTON_FLOAT8) {
+        return &((uint8_t *)arr->ptr)[index];
+
+    } else if (arr->sub_type == CTON_INT16 || arr->sub_type == CTON_UINT16 || \
+        arr->sub_type == CTON_FLOAT16) {
+        return &((uint16_t *)arr->ptr)[index];
+        
+    } else if (arr->sub_type == CTON_INT32 || arr->sub_type == CTON_UINT32 || \
+        arr->sub_type == CTON_FLOAT32) {
+        return &((uint32_t *)arr->ptr)[index];
+        
+    } else if (arr->sub_type == CTON_INT64 || arr->sub_type == CTON_UINT64 || \
+        arr->sub_type == CTON_FLOAT64) {
+        return &((uint64_t *)arr->ptr)[index];
+        
     }
 
-    return ret;
+    return &((cton_obj **)arr->ptr)[index];;
 }
 
 /*
@@ -1249,25 +1250,26 @@ int cton_array_set(cton_obj *obj, cton_obj *item, size_t index)
         return -1;
     }
 
-    switch (arr->sub_type) {
-        case CTON_INT8:
-        case CTON_UINT8:
-        case CTON_FLOAT8:
-            ((uint8_t *)arr->ptr)[index]   = *(uint8_t *)&item[1]; break;
-        case CTON_INT16:
-        case CTON_UINT16:
-        case CTON_FLOAT16:
-            ((uint16_t *)arr->ptr)[index]  = *(uint16_t *)&item[1]; break;
-        case CTON_INT32:
-        case CTON_UINT32:
-        case CTON_FLOAT32:
-            ((uint32_t *)arr->ptr)[index]  = *(uint32_t *)&item[1]; break;
-        case CTON_INT64:
-        case CTON_UINT64:
-        case CTON_FLOAT64:
-            ((uint64_t *)arr->ptr)[index]  = *(uint64_t *)&item[1]; break;
-        default:
-            ((cton_obj **)arr->ptr)[index] = item;
+
+    if (arr->sub_type == CTON_INT8 || arr->sub_type == CTON_UINT8 ||\
+        arr->sub_type == CTON_FLOAT8) {
+        ((uint8_t *)arr->ptr)[index]   = *(uint8_t *)&item[1];
+
+    } else if (arr->sub_type == CTON_INT16 || arr->sub_type == CTON_UINT16 || \
+        arr->sub_type == CTON_FLOAT16) {
+        ((uint16_t *)arr->ptr)[index]  = *(uint16_t *)&item[1]
+        
+    } else if (arr->sub_type == CTON_INT32 || arr->sub_type == CTON_UINT32 || \
+        arr->sub_type == CTON_FLOAT32) {
+        ((uint32_t *)arr->ptr)[index]  = *(uint32_t *)&item[1];
+        
+    } else if (arr->sub_type == CTON_INT64 || arr->sub_type == CTON_UINT64 || \
+        arr->sub_type == CTON_FLOAT64) {
+        ((uint64_t *)arr->ptr)[index]  = *(uint64_t *)&item[1];
+        
+    } else {
+        ((cton_obj **)arr->ptr)[index] = item;
+
     }
 
     return 0;
