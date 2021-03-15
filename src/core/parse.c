@@ -530,7 +530,7 @@ cton_parse_type(struct cton_string_s *ton, size_t *index)
     }
 
     if (type != CTON_OBJECT && ton->ptr[pos + 1] == ':') {
-        *index = pos + 1;
+        *index = pos + 2;
     }
 
     return type;
