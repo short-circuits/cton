@@ -860,7 +860,15 @@ int cton_binary_setlen(cton_obj *obj, size_t len)
 
 int cton_string_setlen(cton_obj *obj, size_t len)
 {
-    return cton_binary_setlen(obj, len + 1);
+    struct cton_string_s *str;
+    size_t ret;
+
+    str = (struct cton_string_s *)obj;
+
+    ret = cton_binary_setlen(obj, len + 1);
+    str->ptr[len] = '\0';
+
+    return ret;
 }
 
 static int cton_binary_cmp(cton_obj *obj_a, cton_obj *obj_b)

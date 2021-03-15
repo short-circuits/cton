@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <core/cton_core.h>
+#include <assert.h>
 
 #define TBON_ID_OBJECT  0
 #define TBON_ID_NULL    1
@@ -59,6 +60,7 @@ static int cton_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int cton_serialize_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int cton_serialize_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 static int cton_serialize_string(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
+static int cton_serialize_binary(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 
 static void cton_serialize_8bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
 static void cton_serialize_16bit(cton_ctx *ctx, cton_buf *buf, void *ptr);
@@ -107,7 +109,7 @@ static void cton_serialize_value(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 			}
 			break;
 
-		case CTON_BINARY: 
+		case CTON_BINARY:  cton_serialize_binary(ctx, buf, obj); break;
 		case CTON_STRING: cton_serialize_string(ctx, buf, obj); break;
 		case CTON_ARRAY: cton_serialize_array(ctx, buf, obj); break;
 		case CTON_HASH: cton_serialize_hash(ctx, buf, obj); break;
@@ -271,12 +273,35 @@ static void cton_serialize_vw(cton_ctx *ctx, cton_buf *buf, uint64_t data)
 static int cton_serialize_string(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
 	uint64_t length;
-	uint8_t  *ptr;
+	char  *ptr;
 
 	length = cton_string_getlen(obj);
 	cton_serialize_vw(ctx, buf, length);
 
+	ptr = cton_string_getptr(obj);
+
+	length -= 1;
+
+	while (length > 0) {
+		cton_util_buffer_putchar(buf, *ptr);
+		ptr ++;
+		length --;
+	}
+
+	return 0;
+}
+
+static int cton_serialize_binary(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
+{
+	uint64_t length;
+	uint8_t  *ptr;
+
+	length = cton_binary_getlen(obj);
+	cton_serialize_vw(ctx, buf, length);
+
 	ptr = cton_binary_getptr(obj);
+
+	length -= 1;
 
 	while (length > 0) {
 		cton_util_buffer_putchar(buf, *ptr);
@@ -621,6 +646,8 @@ cton_deserialize_array(cton_ctx *ctx, size_t *index, uint8_t *ptr, size_t len)
 	} else {
 
 		for (arr_index = 0; arr_index < arr_len; arr_index += 1) {
+
+			fprintf(stderr, "%ld, %02x\n", *index - 1, ptr[*index - 1]);
 			obj = cton_deserialize_value(ctx, index, ptr, type, len);
 			cton_array_set(arr, obj, arr_index);
 		}
