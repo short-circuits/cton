@@ -35,6 +35,7 @@ CTONは静的型付けライブラリなので、ほぼのオブジェクトは�
 しかし、バイナリとCスタイル文字列は例外であり、
 一定の前提で変換することができます。
 
+
 ## cton\_object\_create
 
 - CTONオブジェクトを生成する
@@ -50,7 +51,7 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
 ### 説明
 
 `cton_object_create`はCTONオブジェクトを作成して初期化する関数です。
-作ったオブジェクトはパラメータによる指定されたCTONコンテキストに所属します。
+作ったオブジェクトはパラメータに**ctx**よる指定されたCTONコンテキストに所属します。
 
 作成したオブジェクトに対する初期化は、データ構造の初期化のみです。
 すなわち、配列や文字列などのメモリ確保とかは行いません。
@@ -60,3 +61,69 @@ cton_obj * cton_object_create(cton_ctx *ctx, cton_type type);
 成功すると作成したオブジェクトのポインターを返します。
 失敗すると`NULL`が返されます。
 
+
+## cton\_object\_delete
+
+- CTONオブジェクトを削除する
+
+### 書式
+
+```C
+#include <cton.h>
+
+void cton_object_delete(cton_obj *obj);
+```
+
+### 説明
+
+CTONオブジェクト**obj**を削除します。
+**obj**のため確保されたメモリも全部解放されます。
+この関数はオブジェクトを削除するのみです。
+すなわち、配列などに所属したオブジェクトに再帰的に削除することは**しません**。
+
+
+## cton\_object\_gettype
+
+- CTONオブジェクトのデータ型を返す
+
+### 書式
+
+```C
+#include <cton.h>
+
+cton_type cton_object_gettype(cton_obj *obj);
+```
+
+### 説明
+
+`cton_object_create`はCTONオブジェクトが持つデータ型を返します。
+確認できないオブジェクトに対してはすべて`CTON_INVALID`でかえします。
+
+**obj**ポインタはCTONオブジェクトポインタじゃない時にも、
+`CTON_INVALID`で返すことがありますが、
+この特性であるポインタはCTONオブジェクトであるかどうかを判断することはできません。
+
+
+## cton\_object\_getvalue
+
+- CTONオブジェクトのデータポインタを返す。
+
+### 書式
+
+```C
+#include <cton.h>
+
+void * cton_object_getvalue(cton_obj *obj);
+```
+
+## cton\_object\_getctx
+
+- CTONオブジェクトのデータポインタを返す。
+
+### 書式
+
+```C
+#include <cton.h>
+
+cton_ctx *cton_object_getctx(cton_obj *obj);
+```
