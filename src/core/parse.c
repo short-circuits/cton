@@ -423,6 +423,7 @@ cton_parse_c_comment(struct cton_string_s *ton, size_t *index)
 
     while (*index < len) {
         if ( ton->ptr[*index] == '/' && ton->ptr[*index - 1] == '*') {
+            *index += 1;
             break;
         }
 
