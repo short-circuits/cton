@@ -414,7 +414,7 @@ cton_strerr(cton_err err)
  ******************************************************************************/
 
 typedef struct {
-    cton_type   type;
+    char       *name;
     size_t      obj_size;
     size_t      arr_size;
     void      (*init)(cton_obj *obj);
@@ -424,67 +424,165 @@ typedef struct {
 } cton_typehook_s;
 
 cton_typehook_s cton_type_hook[CTON_TYPE_CNT] = {
-    {
-        CTON_INVALID, 0, 0, NULL, NULL, NULL, NULL
-    },{
-        CTON_OBJECT, sizeof(cton_obj *), 0, NULL, NULL, NULL, NULL
-    },{
-        CTON_NULL, sizeof(cton_obj), 0, NULL, NULL, NULL, NULL
-    },{
-        CTON_BOOL, sizeof(struct cton_bool_s), 0,
-        NULL, NULL, NULL, cton_bool_cmp
-    },{
-        CTON_BINARY, sizeof(struct cton_string_s), 0,
-        cton_string_init, cton_string_delete,
-        (void *(*)(cton_obj *))cton_string_getptr,
-        cton_binary_cmp
-    },{
-        CTON_STRING, sizeof(struct cton_string_s), 0,
-        cton_string_init, cton_string_delete,
-        (void *(*)(cton_obj *))cton_string_getptr, cton_string_cmp
-    },{
-        CTON_ARRAY, sizeof(struct cton_array_s), 0,
-        cton_array_init, cton_array_delete, cton_array_getptr, NULL
-    },{
-        CTON_HASH, sizeof(struct cton_hash_s), 0,
-        cton_hash_init, cton_hash_delete, NULL, NULL
-    },{
-        CTON_INT8, sizeof(cton_obj) + sizeof(int8_t), sizeof(int8_t),
-        cton_int8_init, NULL, NULL, cton_int8_cmp
-    },{
-        CTON_INT16, sizeof(cton_obj) + sizeof(int16_t), sizeof(int16_t),
-        cton_int16_init, NULL, NULL, cton_int16_cmp
-    },{
-        CTON_INT32, sizeof(cton_obj) + sizeof(int32_t), sizeof(int32_t),
-        cton_int32_init, NULL, NULL, cton_int32_cmp
-    },{
-        CTON_INT64, sizeof(cton_obj) + sizeof(int64_t), sizeof(int64_t),
-        cton_int64_init, NULL, NULL, cton_int64_cmp
-    },{
-        CTON_UINT8, sizeof(cton_obj) + sizeof(uint8_t), sizeof(uint8_t),
-        cton_uint8_init, NULL, NULL, cton_uint8_cmp
-    },{
-        CTON_UINT16, sizeof(cton_obj) + sizeof(uint16_t), sizeof(uint16_t),
-        cton_uint16_init, NULL, NULL, cton_uint16_cmp
-    },{
-        CTON_UINT32, sizeof(cton_obj) + sizeof(uint32_t), sizeof(uint32_t),
-        cton_uint32_init, NULL, NULL, cton_uint32_cmp
-    },{
-        CTON_UINT64, sizeof(cton_obj) + sizeof(uint64_t), sizeof(uint64_t),
-        cton_uint64_init, NULL, NULL, cton_uint64_cmp
-    },{
-        CTON_FLOAT8, sizeof(cton_obj) + sizeof(uint8_t), sizeof(uint8_t),
-        cton_float8_init, NULL, NULL, NULL
-    },{
-        CTON_FLOAT16, sizeof(cton_obj) + sizeof(uint16_t), sizeof(uint16_t),
-        cton_float16_init, NULL, NULL, NULL
-    },{
-        CTON_FLOAT32, sizeof(cton_obj) + sizeof(float), sizeof(float),
-        cton_float32_init, NULL, NULL, cton_float32_cmp
-    },{
-        CTON_FLOAT64, sizeof(cton_obj) + sizeof(double), sizeof(double),
-        cton_float64_init, NULL, NULL, cton_float64_cmp
-    }
+
+    { "CTON_INVALID",
+      0,
+      0,
+      NULL,
+      NULL,
+      NULL,
+      NULL },
+
+    { "CTON_OBJECT",
+      sizeof(cton_obj *),
+      0,
+      NULL,
+      NULL,
+      NULL,
+      NULL },
+
+    { "CTON_NULL",
+      sizeof(cton_obj),
+      0,
+      NULL,
+      NULL,
+      NULL,
+      NULL },
+
+    { "CTON_BOOL",
+      sizeof(struct cton_bool_s),
+      0,
+      NULL,
+      NULL,
+      NULL,
+      cton_bool_cmp },
+
+    { "CTON_BINARY",
+      sizeof(struct cton_string_s),
+      0,
+      cton_string_init,
+      cton_string_delete,
+      (void *(*)(cton_obj *))cton_string_getptr,
+      cton_binary_cmp },
+
+    { "CTON_STRING",
+      sizeof(struct cton_string_s),
+      0,
+      cton_string_init, cton_string_delete,
+      (void *(*)(cton_obj *))cton_string_getptr,
+      cton_string_cmp },
+
+    { "CTON_ARRAY",
+      sizeof(struct cton_array_s),
+      0,
+      cton_array_init,
+      cton_array_delete,
+      cton_array_getptr,
+      NULL },
+
+    { "CTON_HASH",
+      sizeof(struct cton_hash_s),
+      0,
+      cton_hash_init,
+      cton_hash_delete,
+      NULL,
+      NULL },
+
+    { "CTON_INT8",
+      sizeof(cton_obj) + sizeof(int8_t),
+      sizeof(int8_t),
+      cton_int8_init,
+      NULL,
+      NULL,
+      cton_int8_cmp },
+
+    { "CTON_INT16",
+      sizeof(cton_obj) + sizeof(int16_t),
+      sizeof(int16_t),
+      cton_int16_init,
+      NULL,
+      NULL,
+      cton_int16_cmp },
+
+    { "CTON_INT32",
+      sizeof(cton_obj) + sizeof(int32_t),
+      sizeof(int32_t),
+      cton_int32_init,
+      NULL,
+      NULL,
+      cton_int32_cmp },
+
+    { "CTON_INT64",
+      sizeof(cton_obj) + sizeof(int64_t),
+      sizeof(int64_t),
+      cton_int64_init,
+      NULL,
+      NULL,
+      cton_int64_cmp },
+
+    { "CTON_UINT8",
+      sizeof(cton_obj) + sizeof(uint8_t),
+      sizeof(uint8_t),
+      cton_uint8_init,
+      NULL,
+      NULL,
+      cton_uint8_cmp },
+
+    { "CTON_UINT16",
+      sizeof(cton_obj) + sizeof(uint16_t),
+      sizeof(uint16_t),
+      cton_uint16_init,
+      NULL,
+      NULL,
+      cton_uint16_cmp },
+
+    { "CTON_UINT32",
+      sizeof(cton_obj) + sizeof(uint32_t),
+      sizeof(uint32_t),
+      cton_uint32_init,
+      NULL,
+      NULL,
+      cton_uint32_cmp },
+
+    { "CTON_UINT64",
+      sizeof(cton_obj) + sizeof(uint64_t),
+      sizeof(uint64_t),
+      cton_uint64_init,
+      NULL,
+      NULL,
+      cton_uint64_cmp },
+
+    { "CTON_FLOAT8",
+      sizeof(cton_obj) + sizeof(uint8_t),
+      sizeof(uint8_t),
+      cton_float8_init,
+      NULL,
+      NULL,
+      NULL },
+
+    { "CTON_FLOAT16",
+      sizeof(cton_obj) + sizeof(uint16_t),
+      sizeof(uint16_t),
+      cton_float16_init,
+      NULL,
+      NULL,
+      NULL },
+
+    { "CTON_FLOAT32",
+      sizeof(cton_obj) + sizeof(float),
+      sizeof(float),
+      cton_float32_init,
+      NULL,
+      NULL,
+      cton_float32_cmp },
+
+    { "CTON_FLOAT64",
+      sizeof(cton_obj) + sizeof(double),
+      sizeof(double),
+      cton_float64_init,
+      NULL,
+      NULL,
+      cton_float64_cmp }
 };
 
 
