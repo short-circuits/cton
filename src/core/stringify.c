@@ -25,13 +25,13 @@ cton_stringify(cton_ctx *ctx, cton_obj *obj)
 	cton_buf *buf;
 	cton_obj *output;
 
-	buf = cton_util_buffer_create(ctx);
+	buf = cton_buffer_create(ctx);
 
 	cton_object_stringify(buf, obj);
 
-	output = cton_util_buffer_pack(buf, CTON_STRING);
+	output = cton_buffer_pack(buf, CTON_STRING);
 
-	cton_util_buffer_destroy(buf);
+	cton_buffer_destroy(buf);
 
 	return output;
 }
@@ -46,11 +46,11 @@ static void cton_type_stringify(cton_buf *buf, cton_type type)
 			break;
 
 		case CTON_BINARY:
-			cton_util_buffer_puts(buf, "c:");
+			cton_buffer_puts(buf, "c:");
 			break;
 
 		case CTON_STRING:
-			cton_util_buffer_puts(buf, "s:");
+			cton_buffer_puts(buf, "s:");
 			break;
 
 		case CTON_ARRAY:
@@ -60,43 +60,43 @@ static void cton_type_stringify(cton_buf *buf, cton_type type)
 			break;
 
 		case CTON_INT8:
-			cton_util_buffer_puts(buf, "i8:");
+			cton_buffer_puts(buf, "i8:");
 			break;
 
 		case CTON_INT16:
-			cton_util_buffer_puts(buf, "i16:");
+			cton_buffer_puts(buf, "i16:");
 			break;
 
 		case CTON_INT32:
-			cton_util_buffer_puts(buf, "i32:");
+			cton_buffer_puts(buf, "i32:");
 			break;
 
 		case CTON_INT64:
-			cton_util_buffer_puts(buf, "i64:");
+			cton_buffer_puts(buf, "i64:");
 			break;
 
 		case CTON_UINT8:
-			cton_util_buffer_puts(buf, "u8:");
+			cton_buffer_puts(buf, "u8:");
 			break;
 
 		case CTON_UINT16:
-			cton_util_buffer_puts(buf, "u16:");
+			cton_buffer_puts(buf, "u16:");
 			break;
 
 		case CTON_UINT32:
-			cton_util_buffer_puts(buf, "u32:");
+			cton_buffer_puts(buf, "u32:");
 			break;
 
 		case CTON_UINT64:
-			cton_util_buffer_puts(buf, "u64:");
+			cton_buffer_puts(buf, "u64:");
 			break;
 
 		case CTON_FLOAT32:
-			cton_util_buffer_puts(buf, "f32:");
+			cton_buffer_puts(buf, "f32:");
 			break;
 
 		case CTON_FLOAT64:
-			cton_util_buffer_puts(buf, "f64:");
+			cton_buffer_puts(buf, "f64:");
 			break;
 
 		case CTON_FLOAT8:
@@ -112,67 +112,67 @@ static void cton_arrtype_stringify(cton_buf *buf, cton_type type)
 {
 	switch (type) {
 		case CTON_NULL:
-			cton_util_buffer_puts(buf, "n:");
+			cton_buffer_puts(buf, "n:");
 			break;
 
 		case CTON_BOOL:
-			cton_util_buffer_puts(buf, "b:");
+			cton_buffer_puts(buf, "b:");
 			break;
 
 		case CTON_BINARY:
-			cton_util_buffer_puts(buf, "c:");
+			cton_buffer_puts(buf, "c:");
 			break;
 
 		case CTON_STRING:
-			cton_util_buffer_puts(buf, "s:");
+			cton_buffer_puts(buf, "s:");
 			break;
 
 		case CTON_ARRAY:
-			cton_util_buffer_puts(buf, "a:");
+			cton_buffer_puts(buf, "a:");
 			break;
 
 		case CTON_HASH:
-			cton_util_buffer_puts(buf, "h:");
+			cton_buffer_puts(buf, "h:");
 			break;
 
 		case CTON_INT8:
-			cton_util_buffer_puts(buf, "i8:");
+			cton_buffer_puts(buf, "i8:");
 			break;
 
 		case CTON_INT16:
-			cton_util_buffer_puts(buf, "i16:");
+			cton_buffer_puts(buf, "i16:");
 			break;
 
 		case CTON_INT32:
-			cton_util_buffer_puts(buf, "i32:");
+			cton_buffer_puts(buf, "i32:");
 			break;
 
 		case CTON_INT64:
-			cton_util_buffer_puts(buf, "i64:");
+			cton_buffer_puts(buf, "i64:");
 			break;
 
 		case CTON_UINT8:
-			cton_util_buffer_puts(buf, "u8:");
+			cton_buffer_puts(buf, "u8:");
 			break;
 
 		case CTON_UINT16:
-			cton_util_buffer_puts(buf, "u16:");
+			cton_buffer_puts(buf, "u16:");
 			break;
 
 		case CTON_UINT32:
-			cton_util_buffer_puts(buf, "u32:");
+			cton_buffer_puts(buf, "u32:");
 			break;
 
 		case CTON_UINT64:
-			cton_util_buffer_puts(buf, "u64:");
+			cton_buffer_puts(buf, "u64:");
 			break;
 
 		case CTON_FLOAT32:
-			cton_util_buffer_puts(buf, "f32:");
+			cton_buffer_puts(buf, "f32:");
 			break;
 
 		case CTON_FLOAT64:
-			cton_util_buffer_puts(buf, "f64:");
+			cton_buffer_puts(buf, "f64:");
 			break;
 
 		case CTON_FLOAT8:
@@ -195,26 +195,26 @@ static int cton_value_stringify(cton_buf *buf, cton_obj *obj, cton_type type)
 	switch (type) {
 
 		case CTON_NULL:
-			cton_util_buffer_putchar(buf, 'n');
-			cton_util_buffer_putchar(buf, 'u');
-			cton_util_buffer_putchar(buf, 'l');
-			cton_util_buffer_putchar(buf, 'l');
+			cton_buffer_putchar(buf, 'n');
+			cton_buffer_putchar(buf, 'u');
+			cton_buffer_putchar(buf, 'l');
+			cton_buffer_putchar(buf, 'l');
 			break;
 
 		case CTON_BOOL:
 			b = (cton_bool *)ptr;
 
 			if (*b == CTON_TRUE) {
-				cton_util_buffer_putchar(buf, 't');
-				cton_util_buffer_putchar(buf, 'r');
-				cton_util_buffer_putchar(buf, 'u');
-				cton_util_buffer_putchar(buf, 'e');
+				cton_buffer_putchar(buf, 't');
+				cton_buffer_putchar(buf, 'r');
+				cton_buffer_putchar(buf, 'u');
+				cton_buffer_putchar(buf, 'e');
 			} else {
-				cton_util_buffer_putchar(buf, 'f');
-				cton_util_buffer_putchar(buf, 'a');
-				cton_util_buffer_putchar(buf, 'l');
-				cton_util_buffer_putchar(buf, 's');
-				cton_util_buffer_putchar(buf, 'e');
+				cton_buffer_putchar(buf, 'f');
+				cton_buffer_putchar(buf, 'a');
+				cton_buffer_putchar(buf, 'l');
+				cton_buffer_putchar(buf, 's');
+				cton_buffer_putchar(buf, 'e');
 			}
 			break;
 
@@ -240,7 +240,7 @@ static int cton_value_stringify(cton_buf *buf, cton_obj *obj, cton_type type)
 			return -1;
 	}
 
-	cton_util_buffer_puts(buf, itoa_buf);
+	cton_buffer_puts(buf, itoa_buf);
 
 	return 0;
 }
@@ -259,7 +259,7 @@ static int cton_string_stringify(cton_buf *buf, cton_obj *obj)
 	size_t len;
 	size_t index;
 
-	cton_util_buffer_putchar(buf, '\"');
+	cton_buffer_putchar(buf, '\"');
 
 	len = cton_string_getlen(obj);
 	ptr = (char *)cton_string_getptr(obj);
@@ -268,29 +268,29 @@ static int cton_string_stringify(cton_buf *buf, cton_obj *obj)
 
 	for (index = 0; index < len; index ++) {
 		if (ptr[index] == '\"' || ptr[index] == '\\') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, ptr[index]);
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, ptr[index]);
 		} else if (ptr[index] == '\b') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'b');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'b');
 		} else if (ptr[index] == '\f') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'f');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'f');
 		} else if (ptr[index] == '\n') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'n');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'n');
 		} else if (ptr[index] == '\r') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'r');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'r');
 		} else if (ptr[index] == '\t') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 't');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 't');
 		} else {
-			cton_util_buffer_putchar(buf, ptr[index]);
+			cton_buffer_putchar(buf, ptr[index]);
 		}
 	}
 
-	cton_util_buffer_putchar(buf, '\"');
+	cton_buffer_putchar(buf, '\"');
 
 	return 0;
 }
@@ -305,7 +305,7 @@ cton_binary_stringify(cton_buf *buf, cton_obj *obj)
 
 	ptr = (char *)cton_string_getptr(base64);
 
-	cton_util_buffer_puts(buf, ptr);
+	cton_buffer_puts(buf, ptr);
 
 	cton_object_delete(base64);
 
@@ -318,7 +318,7 @@ cton_array_stringify_object(cton_ctx *ctx,
 {
 	(void) ctx;
 	if (index != 0) {
-		cton_util_buffer_putchar(buf, ',');
+		cton_buffer_putchar(buf, ',');
 	}
 
 	cton_object_stringify(buf, arr_item);
@@ -332,7 +332,7 @@ cton_array_stringify_value(cton_ctx *ctx,
 {
 	(void) ctx;
 	if (index != 0) {
-		cton_util_buffer_putchar(buf, ',');
+		cton_buffer_putchar(buf, ',');
 	}
 
 	cton_value_stringify(buf, arr_item, cton_object_gettype(arr_item));
@@ -351,7 +351,7 @@ cton_array_stringify(cton_buf *buf, cton_obj *obj)
 		cton_arrtype_stringify(buf, type);
 	}
 
-	cton_util_buffer_putchar(buf, '[');
+	cton_buffer_putchar(buf, '[');
 
 	if (type == CTON_OBJECT) {
 		cton_array_foreach(obj, (void *)buf, cton_array_stringify_object);
@@ -359,7 +359,7 @@ cton_array_stringify(cton_buf *buf, cton_obj *obj)
 		cton_array_foreach(obj, (void *)buf, cton_array_stringify_value);
 	}
 
-	cton_util_buffer_putchar(buf, ']');
+	cton_buffer_putchar(buf, ']');
 
 	return 0;
 }
@@ -370,12 +370,12 @@ static int cton_hash_stringify_item(cton_ctx *ctx,
 	(void) ctx;
 
 	if (index > 0) {
-		cton_util_buffer_putchar(buf, ',');
+		cton_buffer_putchar(buf, ',');
 	}
 	
 	cton_string_stringify(buf, key);
-	cton_util_buffer_putchar(buf, ':');
-	cton_util_buffer_putchar(buf, ' ');
+	cton_buffer_putchar(buf, ':');
+	cton_buffer_putchar(buf, ' ');
 	cton_object_stringify(buf, value);
 
 	return 0;
@@ -383,11 +383,11 @@ static int cton_hash_stringify_item(cton_ctx *ctx,
 
 static int cton_hash_stringify(cton_buf *buf, cton_obj *obj)
 {	
-	cton_util_buffer_putchar(buf, '{');
+	cton_buffer_putchar(buf, '{');
 
 	cton_hash_foreach(obj, (void *)buf, cton_hash_stringify_item);
 
-	cton_util_buffer_putchar(buf, '}');
+	cton_buffer_putchar(buf, '}');
 
 	return 0;
 }

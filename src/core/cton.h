@@ -251,13 +251,13 @@ uint64_t cton_numeric_getuint(cton_obj *obj);
 double cton_numeric_setfloat(cton_obj *obj, double val);
 double cton_numeric_getfloat(cton_obj *obj);
 
-/* cton_util.c */
-cton_buf *cton_util_buffer_create(cton_ctx *ctx);
-void cton_util_buffer_destroy(cton_buf *buf);
-size_t cton_util_buffer_getlen(cton_buf *buf);
-cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
-int cton_util_buffer_putchar(cton_buf *buf, int c);
-int cton_util_buffer_puts(cton_buf *buf, const char *s);
+/* buffer.c */
+cton_buf *cton_buffer_create(cton_ctx *ctx);
+void cton_buffer_destroy(cton_buf *buf);
+size_t cton_buffer_getlen(cton_buf *buf);
+cton_obj *cton_buffer_pack(cton_buf *buf, cton_type type);
+int cton_buffer_putchar(cton_buf *buf, int c);
+int cton_buffer_puts(cton_buf *buf, const char *s);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
 int cton_util_writefile(cton_obj* obj, const char *path);
