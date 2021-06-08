@@ -27,7 +27,7 @@ cton_buf *cton_buffer_create(cton_ctx *ctx)
 }
 
 static int 
-cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
+cton_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
 {
     (void) ctx;
     (void) i;
@@ -36,9 +36,9 @@ cton_util_buffer_destroy_arr(cton_ctx *ctx, cton_obj *obj, size_t i, void *c)
     return 0;
 }
 
-void cton_util_buffer_destroy(cton_buf *buf)
+void cton_buffer_destroy(cton_buf *buf)
 {
-    cton_array_foreach(buf->arr, NULL, cton_util_buffer_destroy_arr);
+    cton_array_foreach(buf->arr, NULL, cton_buffer_destroy_arr);
     cton_object_delete(buf->arr);
     cton_object_delete(buf->container);
 }
@@ -131,7 +131,7 @@ int cton_buffer_putchar(cton_buf *buf, int c)
     return c;
 }
 
-int cton_util_buffer_puts(cton_buf *buf, const char *s)
+int cton_buffer_puts(cton_buf *buf, const char *s)
 {
 
     while (*s != '\0') {

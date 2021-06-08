@@ -13,7 +13,7 @@ static int
 tbonv2_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj);
 
 cton_obj *
-cton_tbonv2_serialize(cton_ctx *ctx, cton_obj *obj)
+tbonv2_serialize(cton_ctx *ctx, cton_obj *obj)
 {
 	cton_buf *buf;
 	cton_obj *output;

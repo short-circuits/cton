@@ -4,12 +4,12 @@
 
 
 cton_obj *
-cton_tbonv2_serialize(cton_ctx *ctx, cton_obj *obj);
+tbonv2_serialize(cton_ctx *ctx, cton_obj *obj);
 
 cton_obj *
 cton_serialize(cton_ctx *ctx, cton_obj *obj)
 {
-	return cton_tbonv2_serialize(ctx, obj);
+	return tbonv2_serialize(ctx, obj);
 }
 
 
@@ -44,13 +44,6 @@ cton_obj *cton_deserialize(cton_ctx *ctx, cton_obj *tbon)
 		index = 6;
 
 		return tbonv1_deserialize_object(ctx, &index, ptr, len);
-
-	} else if (ptr[4] == 0x00 && ptr[5] == 0x02) {
-
-		/* Version 0.2*/
-		index = 6;
-
-		return tbonv2_deserialize_object(ctx, &index, ptr, len);
 
 	}
 

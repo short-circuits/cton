@@ -606,16 +606,21 @@ cton_typehook_s cton_typehook[CTON_TYPE_CNT] = {
       cton_float64_cmp }
 };
 
+#if 0
 static char *cton_type_name(cton_type type);
+#endif
+
 static size_t cton_type_size(cton_type type);
 static void cton_type_init(cton_obj *obj, cton_type type);
 
+#if 0
 static char *
 cton_type_name(cton_type type)
 {
     extern cton_typehook_s cton_typehook[CTON_TYPE_CNT];
     return cton_typehook[type].name;
 }
+#endif
 
 static size_t
 cton_type_size(cton_type type)
