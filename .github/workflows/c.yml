@@ -17,7 +17,5 @@ jobs:
       run: ./configure
     - name: make
       run: make
-    - name: tbon_test_compile
-      run: cc -Ibuild test/tbon/tbon_test.c build/libcton.o -o tbon_test
-    - name: tbon_test_run
-      run: ./tbon_test test/tbon/data1.tbon
+    - name: tbon_test
+      run: make -C test
