@@ -237,7 +237,7 @@ cton_json_parse_string(cton_ctx *ctx,
 	}
 
 	obj = cton_object_create(ctx, CTON_STRING);
-	cton_string_setlen(obj, str_len + 1);
+	cton_string_setlen(obj, str_len);
 
 	dst = (char *)cton_string_getptr(obj);
 	str_index = 0;
