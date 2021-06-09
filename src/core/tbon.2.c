@@ -354,7 +354,7 @@ struct tbonv2_callback {
     void    (*serialize)(cton_buf *, cton_obj *);
 };
 
-const static struct tbonv2_callback tbonv2_hook[CTON_TYPE_CNT] = {
+static const struct tbonv2_callback tbonv2_hook[CTON_TYPE_CNT] = {
     { 0x00, NULL }, /* CTON_INVALID = 0, */
     { 0x00, NULL }, /* CTON_OBJECT  = 1, */
     { 0x01, NULL }, /* CTON_NULL    = 2, */
@@ -380,14 +380,14 @@ const static struct tbonv2_callback tbonv2_hook[CTON_TYPE_CNT] = {
 static int
 tbonv2_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
-    uint8_t id;
-
     cton_type  type;
     cton_type  subtype;
 
     cton_bool *b;
     uint8_t   *ptr;
     uint64_t   length;
+
+    (void) ctx;
 
     type = cton_object_gettype(obj);
 
@@ -420,7 +420,7 @@ tbonv2_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 
         tbonv2_serialize_id_with_length(buf, 0x80, length);
 
-        ptr = cton_string_getptr(obj);
+        ptr = cton_binary_getptr(obj);
 
         tbonv2_serialize_bytes(buf, ptr, length);
 
@@ -429,7 +429,7 @@ tbonv2_serialize_object(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 
         tbonv2_serialize_id_with_length(buf, 0xA0, length);
 
-        ptr = cton_string_getptr(obj);
+        ptr = (uint8_t *)cton_string_getptr(obj);
 
         tbonv2_serialize_bytes(buf, ptr, length);
 
@@ -549,7 +549,7 @@ tbonv2_serialize_array_string(cton_ctx *ctx, cton_obj *obj, size_t index,
 
     tbonv2_buffer_put_varint(buf, length);
 
-    ptr = cton_string_getptr(obj);
+    ptr = (uint8_t *)cton_string_getptr(obj);
 
     tbonv2_serialize_bytes(buf, ptr, length);
 
@@ -570,7 +570,7 @@ tbonv2_serialize_array_binary(cton_ctx *ctx, cton_obj *obj, size_t index,
 
     tbonv2_buffer_put_varint(buf, length);
 
-    ptr = cton_string_getptr(obj);
+    ptr = cton_binary_getptr(obj);
 
     tbonv2_serialize_bytes(buf, ptr, length);
 
@@ -681,7 +681,7 @@ struct tbonv2_array_callbacks {
     int     (*callback)(cton_ctx *, cton_obj *, size_t, void *);
 };
 
-const static struct tbonv2_array_callbacks tbonv2_arr_hook[CTON_TYPE_CNT] = {
+static const struct tbonv2_array_callbacks tbonv2_arr_hook[CTON_TYPE_CNT] = {
     { 0x00, NULL }, /* CTON_INVALID = 0, */
     { 0x00, NULL }, /* CTON_OBJECT  = 1, */
     { 0x01, tbonv2_serialize_array_null }, /* CTON_NULL    = 2, */
@@ -707,10 +707,6 @@ const static struct tbonv2_array_callbacks tbonv2_arr_hook[CTON_TYPE_CNT] = {
 static int
 tbonv2_serialize_array_items(cton_buf *buf, cton_obj *arr, cton_type type)
 {
-    cton_bool *b;
-    uint8_t   *ptr;
-    uint64_t   length;
-
     cton_buffer_putchar(buf, tbonv2_arr_hook[type].id);
     cton_array_foreach(arr, (void *)buf, tbonv2_arr_hook[type].callback);
 
@@ -796,7 +792,7 @@ tbonv2_buffer_put_varint(cton_buf *buf, uint64_t data)
 
     while (data >= 0x80) {
         byte = data % 0x80 + 0x80;
-        data >> 7;
+        data = data >> 7;
         cton_buffer_putchar(buf, byte);
     }
 
