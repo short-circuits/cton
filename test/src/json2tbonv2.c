@@ -7,8 +7,8 @@ int main(int argc, const char **argv)
 	cton_obj *data;
 	cton_obj *out;
 
-	if (argc == 1) {
-		printf("Usage: %s [filename]\n", argv[0]);
+	if (argc <= 2) {
+		printf("Usage: %s [input filename] [output filename]\n", argv[0]);
 	}
 
 	ctx = cton_init(NULL);
@@ -18,7 +18,7 @@ int main(int argc, const char **argv)
 
 	out = cton_serialize(ctx, data);
 
-	printf("%s\n", cton_string_getptr(out));
+	cton_util_writefile(out, argv[2]);
 
 	return 0;
 }
