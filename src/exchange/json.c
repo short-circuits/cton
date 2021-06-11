@@ -522,8 +522,6 @@ static int cton_json_stringify_string(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 	len = cton_string_getlen(obj);
 	ptr = (char *)cton_string_getptr(obj);
 
-	len --;
-
 	for (index = 0; index < len; index ++) {
 		if (ptr[index] == '\"' || ptr[index] == '\\') {
 			cton_buffer_putchar(buf, '\\');
