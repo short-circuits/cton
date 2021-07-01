@@ -117,41 +117,10 @@ struct cton_buf_s {
     size_t   index;
 };
 
-struct cton_string_s {
-    size_t   len;
-    size_t   used;
-    uint8_t *ptr;
-};
-
-struct cton_array_s {
-    size_t       len;
-    size_t       used;
-    cton_obj   **ptr;
-    enum cton_type_e    sub_type;
-};
-
 
 #ifndef CTON_HASH_LIST
 
-typedef struct cton_rbtree_node_s cton_rbtree_node_t;
 
-struct cton_rbtree_node_s {
-    cton_obj            *key;
-    cton_obj            *value;
-    cton_rbtree_node_t  *left;
-    cton_rbtree_node_t  *right;
-    cton_rbtree_node_t  *parent;
-    u_char              color;
-};
-
-typedef struct cton_rbtree_s cton_hash;
-typedef struct cton_rbtree_s cton_rbtree_t;
-
-struct cton_rbtree_s {
-    size_t count;
-    cton_rbtree_node_t *root;
-    cton_rbtree_node_t *sentinel;
-};
 
 #else
 
@@ -172,6 +141,8 @@ struct cton_hash_s {
 struct cton_obj_s {
     uint64_t  magic;  /* Magic number for debug. */
 
+    struct cton_ctx_s *ctx;
+
     /* For object pool */
     struct cton_obj_s *next;
     struct cton_obj_s *prev;
@@ -179,8 +150,7 @@ struct cton_obj_s {
     enum cton_type_e type;   /* CTON type */
     uint8_t ref;
 
-    struct cton_ctx_s *ctx;
-
+#if 0
     union {
         enum cton_bool_e   b;
         cton_string str;
@@ -197,6 +167,7 @@ struct cton_obj_s {
         float       f32;
         double      f64;
     } payload;
+#endif
 };
 
 struct cton_ctx_s {
@@ -259,13 +230,14 @@ cton_type cton_array_gettype(cton_obj *arr);
 size_t cton_array_setlen(cton_obj *arr, size_t len);
 size_t cton_array_getlen(cton_obj *arr);
 int cton_array_set(cton_obj *arr, cton_obj *obj, size_t index);
-cton_obj * cton_array_get(cton_obj *arr, size_t index);
+void* cton_array_get(cton_obj *arr, size_t index);
 int cton_array_foreach(cton_obj *arr, void *rctx,
     int (*func)(cton_ctx *, cton_obj *, size_t, void*));
 
 /* cton hash type specific methods */
 cton_obj * cton_hash_set(cton_obj *h, cton_obj *k, cton_obj *v);
 cton_obj * cton_hash_get(cton_obj *h, cton_obj *k);
+cton_obj * cton_hash_sget(cton_obj *h, const char *ks);
 cton_obj * cton_hash_get_s(cton_obj *h, const char *ks);
 size_t cton_hash_getlen(cton_obj *h);
 int cton_hash_foreach(cton_obj *hash, void *rctx,
@@ -279,15 +251,16 @@ uint64_t cton_numeric_getuint(cton_obj *obj);
 double cton_numeric_setfloat(cton_obj *obj, double val);
 double cton_numeric_getfloat(cton_obj *obj);
 
-/* cton_util.c */
-cton_buf *cton_util_buffer_create(cton_ctx *ctx);
-void cton_util_buffer_destroy(cton_buf *buf);
-size_t cton_util_buffer_getlen(cton_buf *buf);
-cton_obj *cton_util_buffer_pack(cton_buf *buf, cton_type type);
-int cton_util_buffer_putchar(cton_buf *buf, int c);
+/* buffer.c */
+cton_buf *cton_buffer_create(cton_ctx *ctx);
+void cton_buffer_destroy(cton_buf *buf);
+size_t cton_buffer_getlen(cton_buf *buf);
+cton_obj *cton_buffer_pack(cton_buf *buf, cton_type type);
+int cton_buffer_putchar(cton_buf *buf, int c);
+int cton_buffer_puts(cton_buf *buf, const char *s);
 
 cton_obj *cton_util_readfile(cton_ctx *ctx, const char *path);
-int cton_util_writefile(cton_ctx *ctx, cton_obj* obj, const char *path);
+int cton_util_writefile(cton_obj* obj, const char *path);
 cton_obj *cton_util_linesplit(cton_ctx *ctx, cton_obj *src_obj);
 cton_obj *cton_util_linewrap(cton_ctx *ctx, cton_obj *src, size_t col, char w);
 cton_obj *cton_util_encode16(cton_ctx *ctx, cton_obj* obj, int option);
