@@ -17,3 +17,5 @@ jobs:
       run: ./configure
     - name: make
       run: make
+    - name: tbon_test
+      run: make -C test

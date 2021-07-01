@@ -141,7 +141,7 @@ cton_parse_string(cton_ctx *ctx, struct cton_string_s *ton, size_t *index)
     }
 
     obj = cton_object_create(ctx, CTON_STRING);
-    cton_string_setlen(obj, str_len + 1);
+    cton_string_setlen(obj, str_len);
 
     dst = (char *)cton_string_getptr(obj);
     str_index = 0;
