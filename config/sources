@@ -1,11 +1,12 @@
 
-CTON_SOURCES="src/core/cton.c       \
+CTON_SOURCES="src/core/buffer.c   \
+            src/core/cton.c       \
             src/core/tbon.c       \
             src/core/utils.c      \
-            src/core/tree.c      \
+            src/core/tree.c       \
             src/exchange/json.c   \
             src/exchange/base64.c \
-            src/exchange/bmp.c \
+            src/exchange/bmp.c    \
             src/crypto/sha1.c"
 
 CTON_SOURCES=`find src | grep -e '\.c$'`

@@ -237,7 +237,7 @@ cton_json_parse_string(cton_ctx *ctx,
 	}
 
 	obj = cton_object_create(ctx, CTON_STRING);
-	cton_string_setlen(obj, str_len + 1);
+	cton_string_setlen(obj, str_len);
 
 	dst = (char *)cton_string_getptr(obj);
 	str_index = 0;
@@ -404,13 +404,13 @@ cton_json_stringify(cton_ctx *ctx, cton_obj *obj)
 	cton_buf *buf;
 	cton_obj *output;
 
-	buf = cton_util_buffer_create(ctx);
+	buf = cton_buffer_create(ctx);
 
 	cton_json_stringify_obj(ctx, buf, obj);
 
-	output = cton_util_buffer_pack(buf, CTON_STRING);
+	output = cton_buffer_pack(buf, CTON_STRING);
 
-	cton_util_buffer_destroy(buf);
+	cton_buffer_destroy(buf);
 
 	return output;
 }
@@ -423,26 +423,26 @@ static int cton_json_stringify_obj(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 	switch (cton_object_gettype(obj)) {
 
 		case CTON_NULL:
-			cton_util_buffer_putchar(buf, 'n');
-			cton_util_buffer_putchar(buf, 'u');
-			cton_util_buffer_putchar(buf, 'l');
-			cton_util_buffer_putchar(buf, 'l');
+			cton_buffer_putchar(buf, 'n');
+			cton_buffer_putchar(buf, 'u');
+			cton_buffer_putchar(buf, 'l');
+			cton_buffer_putchar(buf, 'l');
 			break;
 
 		case CTON_BOOL:
 			b = (cton_bool *)cton_object_getvalue(obj);
 
 			if (*b == CTON_TRUE) {
-				cton_util_buffer_putchar(buf, 't');
-				cton_util_buffer_putchar(buf, 'r');
-				cton_util_buffer_putchar(buf, 'u');
-				cton_util_buffer_putchar(buf, 'e');
+				cton_buffer_putchar(buf, 't');
+				cton_buffer_putchar(buf, 'r');
+				cton_buffer_putchar(buf, 'u');
+				cton_buffer_putchar(buf, 'e');
 			} else {
-				cton_util_buffer_putchar(buf, 'f');
-				cton_util_buffer_putchar(buf, 'a');
-				cton_util_buffer_putchar(buf, 'l');
-				cton_util_buffer_putchar(buf, 's');
-				cton_util_buffer_putchar(buf, 'e');
+				cton_buffer_putchar(buf, 'f');
+				cton_buffer_putchar(buf, 'a');
+				cton_buffer_putchar(buf, 'l');
+				cton_buffer_putchar(buf, 's');
+				cton_buffer_putchar(buf, 'e');
 			}
 			break;
 
@@ -503,7 +503,7 @@ static int cton_json_stringify_number(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 			break;
 		}
 
-		cton_util_buffer_putchar(buf, itoa_buf[ch_index]);
+		cton_buffer_putchar(buf, itoa_buf[ch_index]);
 	}
 
 	return 0;
@@ -517,38 +517,36 @@ static int cton_json_stringify_string(cton_ctx *ctx, cton_buf *buf, cton_obj *ob
 
 	(void) ctx;
 
-	cton_util_buffer_putchar(buf, '\"');
+	cton_buffer_putchar(buf, '\"');
 
 	len = cton_string_getlen(obj);
 	ptr = (char *)cton_string_getptr(obj);
 
-	len --;
-
 	for (index = 0; index < len; index ++) {
 		if (ptr[index] == '\"' || ptr[index] == '\\') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, ptr[index]);
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, ptr[index]);
 		} else if (ptr[index] == '\b') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'b');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'b');
 		} else if (ptr[index] == '\f') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'f');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'f');
 		} else if (ptr[index] == '\n') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'n');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'n');
 		} else if (ptr[index] == '\r') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 'r');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 'r');
 		} else if (ptr[index] == '\t') {
-			cton_util_buffer_putchar(buf, '\\');
-			cton_util_buffer_putchar(buf, 't');
+			cton_buffer_putchar(buf, '\\');
+			cton_buffer_putchar(buf, 't');
 		} else {
-			cton_util_buffer_putchar(buf, ptr[index]);
+			cton_buffer_putchar(buf, ptr[index]);
 		}
 	}
 
-	cton_util_buffer_putchar(buf, '\"');
+	cton_buffer_putchar(buf, '\"');
 
 	return 0;
 }
@@ -573,7 +571,7 @@ cton_json_stringify_array_item(cton_ctx *ctx,
 {
 	(void) ctx;
 	if (index != 0) {
-		cton_util_buffer_putchar(buf, ',');
+		cton_buffer_putchar(buf, ',');
 	}
 
 	cton_json_stringify_obj(ctx, buf, arr_item);
@@ -586,11 +584,11 @@ cton_json_stringify_array(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
 	(void) ctx;
 
-	cton_util_buffer_putchar(buf, '[');
+	cton_buffer_putchar(buf, '[');
 
 	cton_array_foreach(obj, (void *)buf, cton_json_stringify_array_item);
 
-	cton_util_buffer_putchar(buf, ']');
+	cton_buffer_putchar(buf, ']');
 
 	return 0;
 }
@@ -601,12 +599,12 @@ static int cton_json_stringify_hash_item(cton_ctx *ctx,
 	(void) ctx;
 
 	if (index > 0) {
-		cton_util_buffer_putchar(buf, ',');
+		cton_buffer_putchar(buf, ',');
 	}
 	
 	cton_json_stringify_string(ctx, buf, key);
-	cton_util_buffer_putchar(buf, ':');
-	cton_util_buffer_putchar(buf, ' ');
+	cton_buffer_putchar(buf, ':');
+	cton_buffer_putchar(buf, ' ');
 	cton_json_stringify_obj(ctx, buf, value);
 
 	return 0;
@@ -616,11 +614,11 @@ static int cton_json_stringify_hash(cton_ctx *ctx, cton_buf *buf, cton_obj *obj)
 {
 	(void) ctx;
 	
-	cton_util_buffer_putchar(buf, '{');
+	cton_buffer_putchar(buf, '{');
 
 	cton_hash_foreach(obj, (void *)buf, cton_json_stringify_hash_item);
 
-	cton_util_buffer_putchar(buf, '}');
+	cton_buffer_putchar(buf, '}');
 
 	return 0;
 }
